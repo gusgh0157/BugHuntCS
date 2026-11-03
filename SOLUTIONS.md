@@ -939,3 +939,345 @@ CPU 사용량:  RegexParser, RegexWriter 등 패턴 해석 코드가 핫 경로�
 **수정:** `return int.TryParse(arg, out int max) ? max : 100;`
 
 **교훈:** 예상되는 실패(사용자 입력, 파일 없음, 키 없음)는 값으로 다룬다: `TryParse`, `TryGetValue`, `File.Exists`. 예외는 정말 예외적인 상황용이다. `dotnet-counters`의 예외 수가 초당 수백 개를 넘거나 출력 창에 첫 예외 메시지가 쏟아지면 그 자체가 성능 버그의 단서다. 공격자가 예외 경로를 일부러 두드리면 서비스 거부가 되기도 한다.
+
+---
+
+# 새 부(임시 번호): 인터페이스와 상속
+
+## Lab 62 — `new`로 숨긴 메서드는 기반 형식으로 부르면 안 불린다
+```
+FireSkill.Damage 중단점:   TotalDamage 에서는 안 멈춤 (Run 의 기대값 계산에서만 멈춤)
+F11 (s.Damage(attack)):    Skill.Damage 로 들어감
+조사식 s.GetType():        FireSkill   (정적 형식은 Skill)
+진짜 원인:  FireSkill·IceSkill 의 Damage 가 override 가 아니라 new. 기반 메서드를 덮어쓰지 않고 같은 이름의 새 메서드를 만들었다.
+           Skill 형식의 변수로 부르면 Skill.Damage 가 불린다. new 를 지우면 CS0108 경고가 나서 누군가 new 로 눌러 둔 것.
+```
+**수정:** 두 파생 클래스 모두 `public override int Damage(int attack)`.
+**교훈:** CS0108("숨깁니다. 의도한 것이면 new 를 쓰세요")은 대개 `override`를 빠뜨렸다는 뜻입니다. `new`는 기반 클래스를 바꿀 수 없는데 같은 이름이 꼭 필요한 드문 경우에만 씁니다. 불 스킬만 고치면 숨은 케이스(얼음 스킬)에서 걸립니다.
+
+## Lab 63 — 시그니처가 다른 메서드 대신 인터페이스 기본 구현이 불림
+```
+Boss.DropCount 중단점:     RollDrops 에서는 안 멈춤
+F11 (monster.DropCount):   IDropSource.DropCount 의 기본 구현 (=> 1) 으로 들어감
+진짜 원인:  Boss.DropCount(int, bool = false), Elite.DropCount(long) 은 인터페이스의 int DropCount(int) 와 시그니처가 달라서
+           구현으로 인정되지 않는다. 인터페이스에 기본 구현이 있으니 컴파일 오류도 경고도 없다.
+```
+**수정:** 시그니처를 인터페이스와 똑같이 맞춘다.
+```csharp
+public int DropCount(int luck) => baseDrops + luck / 10;      // Boss
+public int DropCount(int luck) => 2 + luck / 20;              // Elite
+```
+정예 보스 같은 변형은 생성자 인자나 별도 오버로드로 받는다.
+**교훈:** 선택적 매개변수를 붙이거나 매개변수 형식을 넓히면(`int` → `long`) 호출하는 쪽 코드는 똑같아 보여도 **다른 메서드**입니다. 기본 구현(DIM)이 있는 인터페이스는 "구현을 빠뜨려도 컴파일된다"는 위험을 같이 들고 옵니다. 기본 구현을 잠깐 지워 보면 구현이 빠진 클래스가 컴파일 오류로 드러납니다.
+
+## Lab 64 — 명시적 인터페이스 구현이 다른 값을 돌려줌
+```
+조사식 r.Gold:            600     (IReward 로 봄 → 명시적 구현)
+조사식 ((Quest)r).Gold:   1200    (Quest 로 봄 → public 구현)
+진짜 원인:  Quest 에 Gold 가 둘. public int Gold(배율 적용)와 int IReward.Gold(배율 없음).
+           퀘스트 창은 Quest 로, 정산은 IReward 로 읽어서 서로 다른 구현이 불린다.
+```
+**수정:** `int IReward.Gold => Gold;` 또는 명시적 구현을 지운다(public `Gold`가 인터페이스를 구현).
+**교훈:** 명시적 구현은 이름 충돌을 피하거나 멤버를 인터페이스 쪽으로만 보이게 할 때 씁니다. 두 번째 로직을 두는 자리가 아닙니다. 정산에서 2배를 하는 수정은 숨은 케이스(다른 배율)에서 걸립니다.
+
+## Lab 65 — struct를 인터페이스로 다뤄서 박싱 사본만 바뀜
+```
+Buff.Tick 중단점:     불림. this.Turns 가 줄어드는 것도 보임
+EndTurn 뒤 buffs[0].Turns:   그대로
+Tick 안에서 this 에 개체 ID 만들기:   불가 (값 형식)
+진짜 원인:  foreach (ITickable buff in buffs) 가 칸마다 Buff 를 박싱해 힙 사본을 만들고, Tick 은 그 사본을 고친다.
+```
+**수정 (택1):**
+- `for (int i = 0; i < buffs.Length; i++) buffs[i].Tick();`
+- `foreach (ref Buff buff in buffs.AsSpan()) buff.Tick();`
+- 제네릭 제약: `static void TickAll<T>(Span<T> items) where T : ITickable { foreach (ref T it in items) it.Tick(); }`
+- 바뀌는 데이터면 `class`로.
+
+**교훈:** 값 형식을 인터페이스, `object`로 바꾸는 순간 복사본이 생깁니다(랩 4 박싱 해제, 랩 11 박싱된 `==`, 랩 20 `List<struct>` 인덱서와 같은 뿌리). 바뀌는 struct에 인터페이스를 붙이면 이 버그가 숨어 들어오기 쉽습니다.
+
+## Lab 66 — 생성자 안의 가상 호출
+```
+Knight.MaxHp 중단점 (처음 멈춤):   armor == 0, baseHp == 100
+호출 스택:   Unit..ctor → Knight.MaxHp   (Knight..ctor 본문은 아직)
+진짜 원인:  생성 순서는 파생 필드 이니셜라이저 → 기반 생성자 → 파생 생성자 본문.
+           기반 생성자가 부른 가상 메서드는 이미 Knight.MaxHp 로 가지만, armor 는 파생 생성자 본문에서야 들어간다.
+```
+**수정:** 기반 생성자가 필요한 값을 인자로 받는다.
+```csharp
+protected Unit(string name, int maxHp) { Name = name; Hp = maxHp; }
+public Knight(string name, int armor) : base(name, 100 + armor * 10) { this.armor = armor; }
+public Mage(string name, int wisdom) : base(name, 60 + wisdom * 5) { this.wisdom = wisdom; }
+```
+또는 체력 채우기를 생성이 끝난 뒤의 `Spawn()` 단계로 옮긴다.
+**교훈:** 생성자에서 가상 메서드를 부르면 파생 클래스가 아직 준비되지 않은 객체를 보게 됩니다(CA2214). 필드 이니셜라이저(`baseHp = 100`)는 기반 생성자보다 **먼저**, 생성자 본문은 **나중에** 실행된다는 차이가 증상을 헷갈리게 만듭니다. `Knight` 생성자 끝에서 `Hp`를 다시 채우는 수정은 숨은 케이스(마법사)에서 걸립니다.
+
+## Lab 67 — `Equals(object)`와 `IEquatable<T>.Equals`가 다른 규칙
+```
+bag.Contains(loot):         true    → Equals(ItemStack) (Id 만 비교)
+favorites.Contains(loot):   false   → Equals(object)    (Id + 품질 비교)
+조사식 favorites.Comparer:  ObjectEqualityComparer<IItem>
+진짜 원인:  EqualityComparer<T>.Default 는 T 가 IEquatable<T> 이면 Equals(T), 아니면 Equals(object) 를 부른다.
+           List<ItemStack> 은 T = ItemStack, HashSet<IItem> 은 T = IItem 이라 서로 다른 Equals 를 탄다.
+```
+**수정:** `public override bool Equals(object? obj) => Equals(obj as ItemStack);` (한 규칙에 위임)
+**교훈:** 같은 형식이 `IEquatable<T>`, `object`, 인터페이스 형식의 컬렉션, `==` 연산자 등 여러 경로로 비교됩니다. 모든 경로가 같은 규칙이어야 하고, `GetHashCode`도 같은 규칙이어야 합니다(랩 17은 해시가 어긋난 경우). 즐겨찾기를 `HashSet<ItemStack>`으로 바꾸는 수정도 통과하지만, 다른 `IItem` 구현이 들어오는 순간 다시 깨집니다.
+
+## Lab 68 — 기반 형식을 먼저 검사해서 파생 분기에 닿지 않음
+```
+return 500; 중단점:   안 멈춤
+조사식 killed is Enemy:       true   (보스도 Enemy)
+조사식 killed is BossEnemy:   true
+진짜 원인:  if (killed is Enemy) 가 첫 분기라서 보스·정예도 모두 10G. 뒤의 else if 두 개는 닿을 수 없다.
+           같은 순서를 switch 식으로 쓰면 CS8120("이미 앞의 case 가 처리")으로 컴파일이 안 되지만, if/else if 에는 그런 검사가 없다.
+```
+**수정:** 가장 파생된 형식부터 검사한다 (보스 → 정예 → 일반 적). 더 나은 방법은 `switch` 식으로 써서 컴파일러가 순서를 검사하게 하거나, `Unit`에 `virtual int KillReward`를 둬서 형식 검사 자체를 없애는 것.
+**교훈:** 보스 분기만 위로 올리면 숨은 케이스(정예가 섞인 웨이브)에서 걸립니다.
+
+## Lab 69 — 배열 공변성
+```
+예외:      ArrayTypeMismatchException: Attempted to access an element as a type incompatible with the array.
+멈춘 곳:   Put 의 bag[slot] = item
+조사식 bag.GetType():   Lab97+Weapon[]   (선언 형식은 Item[])
+진짜 원인:  CreateBag 이 new Weapon[size] 를 만들어 Item[] 로 돌려줬다. 배열 공변성 덕에 컴파일은 되지만 실제 배열은 Weapon 만 받는다.
+```
+**수정:** `var bag = new Item[size];`
+**교훈:** 참조 형식 배열은 공변이라 `Weapon[]`을 `Item[]` 변수에 넣을 수 있지만, 쓰기는 런타임 검사로 막힙니다. `List<T>`는 공변이 아니어서 이 실수가 컴파일되지 않고, 읽기 전용 공변성은 `IEnumerable<out T>`, `IReadOnlyList<out T>`로 얻습니다. 예외를 삼키고 건너뛰면 물약이 사라져 채워진 칸 수에서 걸립니다. (블라인드 챌린지 B-4도 같은 범주입니다)
+
+---
+
+# 새 부(임시 번호): 파일 입출력
+
+## Lab 70 — 상대 경로는 작업 디렉터리 기준
+```
+예외:        DirectoryNotFoundException: Could not find a part of the path '...\Lab98_SaveFolder\mods\saves\slot1.sav'.
+저장할 때 경로:  ...\Lab98_SaveFolder\game\saves\slot1.sav
+조사식:      Environment.CurrentDirectory == ...\mods,  Path.GetFullPath("saves") == ...\mods\saves
+진짜 원인:  SavePath 가 "saves\slot1.sav" 라는 상대 경로를 만든다. 상대 경로는 그때그때의 작업 디렉터리 기준인데,
+           폴더 열기(파일 대화상자)가 작업 디렉터리를 바꿨다. SaveSystem 은 GameDir 을 받아 두고도 쓰지 않았다.
+```
+**수정:** `Path.Combine(GameDir, "saves", slot + ".sav")`, `Directory.CreateDirectory`도 같은 기준으로.
+**교훈:** 작업 디렉터리는 프로세스 전체가 공유하는 바뀌는 상태입니다(런처, 바로 가기의 시작 위치, 파일 대화상자, 다른 폴더에서 친 명령줄). 실행 파일 폴더는 `AppContext.BaseDirectory`, 사용자 데이터는 `Environment.GetFolderPath(SpecialFolder.LocalApplicationData)` 아래가 맞습니다. 불러오기 전에 작업 디렉터리를 되돌리는 수정은 다음에 작업 디렉터리를 바꾸는 코드가 생기면 다시 깨집니다.
+
+## Lab 71 — 안쪽 스트림만 닫아서 `StreamWriter` 버퍼가 버려짐
+```
+SaveLog 끝:   stream.Position 이 써야 할 양보다 작음
+writer [Raw View] _charPos:   0 이 아님 (버퍼에 남은 글자)
+진짜 원인:  using 은 FileStream 에만 붙어 있다. StreamWriter 는 자기 버퍼(1024자)가 찰 때마다 스트림으로 보내는데,
+           마지막에 남은 글자는 writer 의 Flush/Dispose 때만 나간다. 안쪽 스트림을 닫아도 바깥 writer 의 버퍼는 비워지지 않는다.
+```
+**수정:** `using var writer = new StreamWriter(stream);` (선언 역순으로 닫혀 writer가 먼저 닫힘) 또는 `using var writer = new StreamWriter(path);`
+**교훈:** 래퍼가 겹치면(`StreamWriter`, `BinaryWriter`, `GZipStream`, `CryptoStream`) **가장 바깥부터** 닫습니다. 바깥만 닫으면 안쪽까지 닫히고, 안쪽을 계속 쓰려면 `leaveOpen: true`. 랩 36은 아예 닫지 않아 파일이 비고 핸들이 남은 경우, 이번은 안쪽만 닫아 꼬리가 잘린 경우입니다.
+
+## Lab 72 — `FileShare`가 맞지 않아 쓰는 중인 파일을 못 읽음
+```
+first chance:  IOException: The process cannot access the file '...chat.log' because it is being used by another process.
+멈춘 곳:      File.ReadAllLines (Upload 의 catch 가 삼켜서 0줄 업로드)
+진짜 원인:  ChatLogger 의 StreamWriter(append) 는 FileAccess.Write + FileShare.Read 로 열려 있다.
+           File.ReadAllLines 는 FileAccess.Read + FileShare.Read 로 연다. 즉 "남이 쓰고 있으면 거부". "다른 프로세스"는 사실 이 프로세스.
+```
+**수정:** 읽는 쪽이 쓰기 공유를 허용한다.
+```csharp
+using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+using var reader = new StreamReader(stream);
+```
+**교훈:** 두 핸들이 공존하려면 서로의 `FileAccess`가 상대의 `FileShare`에 들어 있어야 합니다. 쓰는 쪽은 `AutoFlush`나 `Flush`도 해야 읽는 쪽이 최신 내용을 봅니다. 업로드 전에 로거를 닫는 수정도 동작하지만 신고 중에 온 채팅을 놓칠 수 있습니다. `catch (IOException)`이 실패를 "0줄"로 바꾼 것도 랩 33(예외를 삼키고 성공을 돌려줌)과 같은 냄새입니다. Linux/macOS는 공유 모드를 강제하지 않아 이 랩은 `SKIP`합니다.
+
+## Lab 73 — `Path.Combine`의 두 번째 인자가 절대 경로
+```
+콘솔:      "저장 →" 세 줄 중 하나만 ...\old-install\saves\mira
+조사식:    Path.Combine(saveRoot, profile.Folder) == profile.Folder,  Path.IsPathRooted(profile.Folder) == true
+진짜 원인:  Path.Combine 은 뒤 인자가 루트 경로면 앞의 인자를 전부 버린다(문서에 적힌 동작, 예외 없음).
+           옛 설치에서 가져온 프로필의 Folder 가 절대 경로라 세이브 루트 밖에 저장됐고, 백업이 세이브 루트만 훑어 빠졌다.
+```
+**수정:** 바깥에서 온 값은 폴더 이름으로만 쓴다: `Path.Combine(saveRoot, Path.GetFileName(profile.Folder))`. 또는 `Path.IsPathRooted`, `..` 포함이면 거부하고, 합친 뒤 `Path.GetFullPath(결과)`가 세이브 루트 안인지 확인.
+**교훈:** 사용자 입력, 세이브 파일, 서버 응답, 압축 파일 안의 이름을 `Path.Combine`에 그대로 넣으면 경로 탈출(path traversal)이 됩니다. `Path.Join`은 앞을 버리지 않지만 엉뚱한 경로를 만들 뿐 검증을 대신하지 않습니다.
+
+## Lab 74 — 바이트를 UTF-8로만 디코딩: BOM과 CP949
+```
+모드 A (UTF-8 BOM):  table.Keys.First().Length == firstKey.Length + 1,  첫 글자 '﻿'
+모드 B (CP949):      bytes 의 한글이 2바이트씩. UTF8.GetString 결과에 '�'(�)
+모드 C (UTF-8):      정상
+진짜 원인:  Encoding.UTF8.GetString 은 BOM 을 지우지 않고(U+FEFF 로 남음), 잘못된 바이트는 예외 없이 �로 바꾼다.
+           File.ReadAllText/StreamReader 는 BOM 을 처리하지만 바이트를 직접 디코딩하면 그렇지 않다.
+```
+**수정:**
+```csharp
+string text;
+if (bytes.AsSpan().StartsWith(Encoding.UTF8.Preamble))
+    text = Encoding.UTF8.GetString(bytes, 3, bytes.Length - 3);
+else
+{
+    try { text = new UTF8Encoding(false, throwOnInvalidBytes: true).GetString(bytes); }
+    catch (DecoderFallbackException) { text = Encoding.GetEncoding(949).GetString(bytes); }   // CodePagesEncodingProvider 등록 필요
+}
+```
+**교훈:** .NET Core 이후는 기본으로 UTF-8, UTF-16, ASCII, Latin-1 정도만 들어 있고 CP949·Shift_JIS(932) 같은 코드 페이지는 `Encoding.RegisterProvider(CodePagesEncodingProvider.Instance)`를 해야 씁니다. 키에서 `﻿`만 지우는 수정은 모드 B를 못 고칩니다. 저장하는 쪽이라면 BOM 없는 UTF-8로 통일합니다(`File.WriteAllText`의 기본값).
+
+## Lab 75 — `\n`으로만 잘라서 `\r`과 빈 항목이 남음
+```
+콘솔 "읽은 항목":   "Kael\r", "Mira\r", "Doran\r", ""
+조사식:            text.Contains('\r') == true
+진짜 원인:  메모장은 CRLF 로 저장한다. Split('\n') 은 각 항목 끝에 '\r' 을 남기고, 끝 줄바꿈 뒤에 빈 문자열을 하나 더 만든다.
+```
+**수정:** `File.ReadAllLines(path)`(또는 `File.ReadLines`, `StreamReader.ReadLine`). 직접 자른다면 `text.Split(["\r\n", "\n"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)`.
+**교훈:** `ReadLine` 계열은 `\r\n`, `\n`, `\r`을 모두 줄 끝으로 처리하고 끝 줄바꿈 뒤에 빈 줄을 만들지 않습니다. `TrimEnd('\r')`만 붙이면 빈 항목이 남고, `Split("\r\n")`만 쓰면 숨은 케이스(LF 파일)에서 한 줄로 붙어 걸립니다.
+
+## Lab 76 — 원본을 직접 덮어쓰다 실패해서 반쯤 쓴 파일
+```
+Save(path, broken) 직전:  inventory.sav 정상
+Save 의 첫 줄(new StreamWriter(path)) 직후:  0바이트
+예외 뒤:  개수 줄 + 앞쪽 아이템 몇 줄만 (Load 가 손상으로 판정)
+진짜 원인:  new StreamWriter(path) 는 FileMode.Create 라서 여는 순간 기존 파일을 자른다. 예외가 나도 using 이 그때까지 쓴 앞부분을 내보낸다.
+```
+**수정:** 다른 파일에 끝까지 쓰고, 다 쓴 뒤 한 번에 바꿔치기.
+```csharp
+string tmp = path + ".tmp";
+try
+{
+    using var writer = new StreamWriter(tmp);
+    ... (같은 내용)
+}
+catch
+{
+    File.Delete(tmp);
+    throw;
+}
+if (File.Exists(path)) File.Replace(tmp, path, null);   // 백업을 남기려면 세 번째 인자에 경로
+else File.Move(tmp, path);
+```
+**교훈:** 정전, 강제 종료, 디스크 꽉 참도 같은 결과입니다. 같은 볼륨 안의 `File.Replace`/`File.Move(…, overwrite: true)`는 이름만 바꾸므로 중간 상태가 남지 않습니다. 먼저 메모리에서 전부 검사한 뒤에 여는 수정은 이 예외는 피하지만 쓰는 도중의 중단에는 여전히 약합니다. 실패한 저장의 임시 파일은 지웁니다(세 번째 판정).
+
+## Lab 77 — 비동기 쓰기를 기다리지 않고 그 파일을 읽음
+```
+중단점 순서:   ReadAllTextAsync 가 WriteAllTextAsync 보다 먼저 멈춤
+조사식:        save.IsCompleted == false, save.Status == WaitingForActivation
+작업 창:       SaveSettingsAsync 가 Task.Delay 에서 대기 중
+진짜 원인:  ApplyAsync 가 저장 Task 를 대기열에 넣기만 하고 await 하지 않은 채 파일을 읽는다. 읽는 것은 이전 설정.
+           Task 를 변수로 받았기 때문에 CS4014 경고도 나지 않는다.
+```
+**수정:** 읽기 전에 `await save;`.
+**교훈:** 순서는 시간(`Task.Delay`)이 아니라 작업 완료로 맞춥니다. 저장한 내용을 업로드에 직접 넘겨 파일을 다시 읽지 않는 것도 방법입니다. 랩 28은 기다리지 않은 작업이 아예 안 끝나는 경우, 이번은 끝나기는 하지만 다른 코드가 너무 일찍 그 결과(파일)를 보는 경우입니다.
+
+---
+
+# 새 부(임시 번호): 직렬화 (JSON/XML)
+
+## Lab 78 — JSON 이름의 대소문자가 안 맞아 조용히 기본값
+```
+받은 JSON:     {"title":"...","author":"...","priority":3,"pinned":true}
+Title set 중단점:   Deserialize 중에 안 불림
+진짜 원인:  System.Text.Json 기본 옵션은 이름을 대소문자까지 정확히 비교한다. "title" ≠ Title.
+           모르는 속성은 기본으로 무시하므로 예외 없이 모든 속성이 초기값으로 남는다.
+```
+**수정:** `new JsonSerializerOptions(JsonSerializerDefaults.Web)` (또는 `PropertyNameCaseInsensitive = true`, `PropertyNamingPolicy = JsonNamingPolicy.CamelCase`, 속성마다 `[JsonPropertyName]`).
+**교훈:** 직렬화 옵션은 **상대와 맞추는 계약**입니다. 형식을 맞추는 동안에는 `UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow`로 "모르는 속성이면 예외"를 켜 두면 이런 버그가 바로 드러납니다. (참고: Newtonsoft.Json은 기본이 대소문자 무시라서, 옮겨 온 코드에서 이 버그가 자주 생깁니다.)
+
+## Lab 79 — 필드와 `private set`은 왕복되지 않음
+```
+세이브 파일:   {"name":"아린","level":5}      ← gold 가 없음
+Level private set 중단점:   Load 중에 안 불림
+진짜 원인:  Gold 는 필드. System.Text.Json 은 기본으로 public 속성만 다룬다 → 저장부터 빠짐.
+           Level 은 public get 이라 저장은 되지만 set 이 private 이라 읽을 때 건너뜀 → 초기값 1.
+```
+**수정:** `[JsonInclude] public int Gold;`, `[JsonInclude] public int Level { get; private set; } = 1;` (또는 `IncludeFields = true` + Level에 `[JsonInclude]`, 또는 `[JsonConstructor]` 생성자).
+**교훈:** "저장은 되는데 못 읽는 멤버"는 경고가 없습니다. 세이브 형식에는 저장 → 불러오기 → 비교하는 왕복 테스트를 둡니다.
+
+## Lab 80 — 다형성 정보가 없어 파생 형식이 기반 형식으로 돌아옴
+```
+서버 저장:    {"to":"아린","attachments":[{"source":"주간 퀘스트"},{"source":"주간 퀘스트"}]}   ← amount, itemName 없음
+조사식 received.Attachments[0].GetType():   Lab108+Reward
+진짜 원인:  List<Reward> 의 항목을 선언 형식 Reward 로 직렬화해서 파생 형식의 속성이 빠지고,
+           JSON 에 형식 구분자가 없으니 읽을 때도 전부 Reward 로 만든다.
+```
+**수정:**
+```csharp
+[JsonPolymorphic(TypeDiscriminatorPropertyName = "$type")]
+[JsonDerivedType(typeof(GoldReward), "gold")]
+[JsonDerivedType(typeof(ItemReward), "item")]
+[JsonDerivedType(typeof(ExpReward), "exp")]
+class Reward { ... }
+```
+**교훈:** System.Text.Json은 보안상 "JSON에 적힌 형식 이름으로 아무 형식이나 만드는" 기능이 없고, 허용할 파생 형식을 직접 등록합니다. 하나라도 빠뜨리면 그 형식을 직렬화할 때 `NotSupportedException`이 납니다(숨은 케이스의 경험치 보상). 기반 형식을 `abstract`로 만들어 두면 등록을 잊었을 때 역직렬화가 조용히 넘어가지 않고 예외를 내 줍니다.
+
+## Lab 81 — 공유 참조가 왕복 뒤 두 사본이 됨
+```
+Restore 전:   party.Leader 와 party.Members[0] 의 개체 ID 가 같음 ($1)
+스냅샷:       리더의 name/hp 가 members 안과 leader 에 두 번 적힘
+Restore 뒤:   restored.Leader 와 restored.Members[0] 의 개체 ID 가 다름
+진짜 원인:  JSON 에는 "같은 객체" 개념이 없다. 적힌 곳마다 새 객체를 만든다. MainTank 도 마찬가지.
+```
+**수정 (택1):**
+- 저장·복원 양쪽 옵션에 `ReferenceHandler = ReferenceHandler.Preserve` (`$id`/`$ref`가 붙음).
+- 형식을 바꾼다: `Leader` 대신 `LeaderIndex`(또는 고유 Id)를 저장하고 읽은 뒤 다시 잇는다.
+
+**교훈:** 객체 그래프를 그대로 직렬화하면 공유가 사라지고, 순환이 있으면 `JsonException`(깊이 초과)이 납니다. 세이브 형식으로는 Id로 참조하는 쪽이 더 단단합니다(`$ref`는 다른 프로그램이 이해하지 못할 수 있음). 리더만 이름으로 다시 잇는 수정은 메인 탱커에서 걸립니다.
+
+## Lab 82 — 없는 값(missing), null, 0을 구별하지 못함
+```
+{"item":"마나 물약"}              → 받음 "마나 물약 x0"     (count 없음 → int 기본값 0, 예외 없음)
+{"item":"화살","count":null}      → 거절                    (int 에 null → JsonException)
+{"item":null,"count":5}  (숨은)   → 받음 "(null) x5"        (string 은 null 을 받을 수 있음)
+진짜 원인:  System.Text.Json 은 JSON 에 없는 속성을 건드리지 않는다. nullable 주석(string 은 null 아님)도 기본으로는 검사하지 않는다.
+```
+**수정:**
+```csharp
+public required string Item { get; set; } = "";
+public required int Count { get; set; }
+static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web) { RespectNullableAnnotations = true };
+```
+**교훈:** `required`(또는 `[JsonRequired]`)는 "있는가"만 보고, null 여부는 `RespectNullableAnnotations`(.NET 9+)가 봅니다. 둘은 다른 질문입니다. `required`만 붙이면 숨은 케이스(`"item": null`)에서 걸립니다. 받은 뒤 `Count == 0`을 거르는 수정은 진짜 0개를 구별하지 못하고 이름 없는 보상도 못 거릅니다.
+
+## Lab 83 — `XmlSerializer`: 매개변수 없는 생성자와 `Dictionary`
+```
+예외:   InvalidOperationException: There was an error reflecting type 'BugHunt.Lab111.GameOptions'.
+ ---> InvalidOperationException: Cannot serialize member 'BugHunt.Lab111+GameOptions.Graphics' of type 'BugHunt.Lab111+GraphicsOptions', see inner exception for more details.
+ ---> InvalidOperationException: BugHunt.Lab111.GraphicsOptions cannot be serialized because it does not have a parameterless constructor.
+멈춘 곳:  new XmlSerializer(typeof(GameOptions))   (데이터와 상관없이 생성자에서)
+그것을 고치면 다음:  Cannot serialize member ...KeyBindings of type Dictionary`2 ... because it implements IDictionary.
+```
+**수정:** `GraphicsOptions`를 매개변수 없는 생성자와 public set이 있는 class로. `KeyBindings`는 `[XmlIgnore]`로 두고 XML에는 배열 대리 속성으로:
+```csharp
+[XmlIgnore] public Dictionary<string, string> KeyBindings { get; set; } = [];
+[XmlArray("KeyBindings")]
+public KeyBinding[] KeyBindingList
+{
+    get => [.. KeyBindings.Select(p => new KeyBinding { Action = p.Key, Key = p.Value })];
+    set => KeyBindings = value.ToDictionary(b => b.Action, b => b.Key);
+}
+public sealed class KeyBinding { [XmlAttribute] public string Action { get; set; } = ""; [XmlAttribute] public string Key { get; set; } = ""; }
+```
+또는 이 파일을 System.Text.Json으로 저장한다(record와 Dictionary를 그대로 다룸).
+**교훈:** `XmlSerializer`는 public 형식, 매개변수 없는 생성자, 읽고 쓸 수 있는 public 멤버만 다루고 `IDictionary`는 못 다룹니다. 형식 전체를 생성자에서 검사하므로 "There was an error reflecting type"이 나오면 **내부 예외를 끝까지** 읽습니다(랩 6의 `AggregateException`과 같은 읽는 법).
+
+## Lab 84 — 기본 네임스페이스가 붙은 XML을 접두어 없는 XPath로 찾음
+```
+조사식 doc.SelectSingleNode("/quests"):            null
+조사식 doc.DocumentElement.NamespaceURI:           "urn:bughunt:quests"
+조사식 doc.SelectSingleNode("/*[local-name()='quests']"):   찾음
+진짜 원인:  xmlns="urn:bughunt:quests" 로 모든 요소가 그 네임스페이스에 속하게 됐는데, XPath 1.0 의 접두어 없는 이름은 "네임스페이스 없음"만 찾는다.
+           RewardGold 가 못 찾은 것(null)을 0G 로 바꿔 조용히 넘어갔다.
+```
+**수정:**
+```csharp
+var ns = new XmlNamespaceManager(doc.NameTable);
+ns.AddNamespace("q", "urn:bughunt:quests");
+XmlNode? reward = doc.SelectSingleNode($"/q:quests/q:quest[@id='{questId}']/q:reward", ns);
+```
+LINQ to XML이면 `XNamespace q = "urn:bughunt:quests";` 그리고 `root.Elements(q + "quest")`.
+**교훈:** 속성은 접두어가 없으면 네임스페이스에 속하지 않으므로 `@id`는 그대로 씁니다. 필수 데이터를 못 찾았을 때 기본값(0)을 돌려주면 이런 버그가 숨습니다. 예외를 내세요. (공백 텍스트 노드: `PreserveWhitespace = true`로 읽으면 들여쓰기도 노드가 되어 `ChildNodes`/`FirstChild`가 엉뚱한 노드를 가리킵니다. 요소만 볼 때는 `SelectNodes`, `Elements()`를 씁니다.)
+
+## Lab 85 — 문자열로 이어 붙인 XML의 이스케이프 누락
+```
+(받는 쪽) 읽을 수 없는 메시지를 버림: Name cannot begin with the '3' character, hexadecimal value 0x33. Line 1, position N.
+보낸 XML:   <invite guild="불꽃 연대" from="케인"><message>레이드 같이 가요 <3</message></invite>
+진짜 원인:  BuildInvite 가 사용자 입력을 그대로 XML 문법 안에 넣는다. < 와 & 는 텍스트에서, " 는 속성 값에서 문서를 깨뜨린다.
+           받는 쪽은 XmlException 을 삼켜 "도착하지 않음"으로 만들었다.
+```
+**수정:** `new XElement("invite", new XAttribute("guild", guild), new XAttribute("from", from), new XElement("message", message)).ToString(SaveOptions.DisableFormatting)` (또는 `XmlWriter`). 꼭 문자열이어야 하면 값마다 `SecurityElement.Escape`.
+**교훈:** `<`만 바꾸는 수정은 숨은 케이스의 `&`, `"`에서 걸립니다. 같은 실수가 SQL 주입, HTML(XSS), 셸 명령, JSON 문자열 이어 붙이기에도 있습니다. 구조를 아는 API가 만들게 하세요.
+
+### 참고: XML과 보안 (랩 없음)
+
+- **XXE(외부 엔터티)**: .NET Core 이후 `XmlDocument`, `XDocument`, `XmlReader.Create`, `XmlSerializer`는 기본으로 외부 엔터티를 해석하지 않습니다(`XmlResolver`가 null, `DtdProcessing.Prohibit`). 신뢰할 수 없는 XML을 받을 때 `XmlReaderSettings { DtdProcessing = DtdProcessing.Parse, XmlResolver = new XmlUrlResolver() }`처럼 **기본값을 풀지 마세요**. .NET Framework 4.5.2 이전에서 옮겨 온 코드는 확인이 필요합니다.
+- **엔터티 확장(Billion laughs)**: DTD를 허용해야 한다면 `MaxCharactersFromEntities`로 제한합니다.
+- **형식 이름으로 객체 만들기**: `BinaryFormatter`(.NET 9에서 제거), Newtonsoft.Json의 `TypeNameHandling.All`, `XmlSerializer`에 바깥에서 받은 형식을 넘기는 코드는 원격 코드 실행으로 이어질 수 있습니다. 랩 80의 `JsonDerivedType`처럼 **허용 목록**을 쓰세요.
