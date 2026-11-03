@@ -147,7 +147,7 @@ static class Program
 
     const int ChallengePart = 0;   // --list 의 part 값. 번호 붙은 부가 아니라는 뜻. 채점기는 "챌린지"로 표시한다
 
-    const int Part2Start = 8, Part3Start = 19, Part4Start = 26, Part5Start = 36, Part6Start = 39, Part7Start = 45, Part8Start = 51, OperatorsStart = 58, InheritanceStart = 62, FileIoStart = 70, SerializationStart = 78;
+    const int Part2Start = 8, Part3Start = 19, Part4Start = 26, Part5Start = 36, Part6Start = 39, Part7Start = 45, Part8Start = 51, OperatorsStart = 58, InheritanceStart = 62, FileIoStart = 70, SerializationStart = 78, LanguageTrapsStart = 86, OverflowStart = 93;
 
     static string BuildName =>
 #if DEBUG
@@ -174,6 +174,8 @@ static class Program
             else if (n == InheritanceStart) Console.WriteLine("\n[새 부, 임시] 인터페이스와 상속 - 조사식의 실제 형식, 가상 호출 따라가기");
             else if (n == FileIoStart) Console.WriteLine("\n[새 부, 임시] 파일 입출력 - 경로, 공유 모드, 인코딩, 반쯤 쓴 파일");
             else if (n == SerializationStart) Console.WriteLine("\n[새 부, 임시] 직렬화 (JSON/XML) - 저장한 것과 불러온 것을 나란히 비교하세요");
+            else if (n == LanguageTrapsStart) Console.WriteLine("\n[새 부, 임시] C# 언어 함정 - 식을 쪼개 조사식에 하나씩 넣어 보세요");
+            else if (n == OverflowStart) Console.WriteLine("\n[1부·6부 추가, 임시] 스택 오버플로와 버퍼 오버런 - 호출 스택 창, 메모리 창 (랩 94는 1부, 93·95는 6부)");
             Console.WriteLine($"  {n,2}. {Labs[i].Title}  - {Labs[i].Symptom}");
         }
         Console.WriteLine("\n[챌린지] 힌트 없음. 1~8부를 먼저 끝내세요. C: 여러 파일을 거치는 깊은 추적, B: 범주를 알려 주지 않는 블라인드");
@@ -258,5 +260,5 @@ static class Program
     }
 
     static int PartOf(int n) =>
-        n >= SerializationStart ? 11 : n >= FileIoStart ? 10 : n >= InheritanceStart ? 9 : n >= OperatorsStart ? 2 : n >= Part8Start ? 8 : n >= Part7Start ? 7 : n >= Part6Start ? 6 : n >= Part5Start ? 5 : n >= Part4Start ? 4 : n >= Part3Start ? 3 : n >= Part2Start ? 2 : 1;
+        n == OverflowStart + 1 ? 1 : n >= OverflowStart ? 6 : n >= LanguageTrapsStart ? 12 : n >= SerializationStart ? 11 : n >= FileIoStart ? 10 : n >= InheritanceStart ? 9 : n >= OperatorsStart ? 2 : n >= Part8Start ? 8 : n >= Part7Start ? 7 : n >= Part6Start ? 6 : n >= Part5Start ? 5 : n >= Part4Start ? 4 : n >= Part3Start ? 3 : n >= Part2Start ? 2 : 1;
 }

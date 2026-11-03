@@ -95,6 +95,19 @@ Parallel.ForEach(Files, file =>
 
 ---
 
+## Lab 94 — `ToString`이 `$"{this}"`로 자기를 불러 무한 재귀
+```
+호출 스택:  DamageLabel.ToString → DamageLabel.ToString → … (수천 단계)
+진짜 원인:  $"{this} 피해"의 {this}는 this.ToString()을 부른다. 그게 지금 실행 중인 ToString이다.
+           무한 재귀로 스택을 다 쓰면 StackOverflowException으로 프로세스가 즉시 죽는다.
+```
+**수정:** `ToString`에서 그 객체 자신을 보간하지 말고 필드를 직접 씁니다: `$"{Amount} 피해"`.
+**교훈:** `ToString`, `GetHashCode`, `Equals`, 연산자 오버로드, 속성 `get` 안에서 **자기 자신을 다시 부르지** 않도록 조심합니다. 흔한 형태: `ToString`에서 `$"{this}"`, `Equals`에서 `this == other`(→ `==` 연산자가 다시 `Equals`), `get`에서 같은 속성 대입. 랩 5(지갑)의 `set => Gold = ...`도 같은 뿌리입니다. 증상(프로그램이 조용히 사라짐)이 같으면 호출 스택부터 보세요.
+
+> 랩 94는 임시 번호입니다. 최종 재배치 때 1부 끝 번호로 옮깁니다.
+
+---
+
 # 2부: 흐름 추적
 
 ## Lab 8 — 루프 변수 캡처
@@ -734,6 +747,32 @@ Marshal.SizeOf<PacketHeader>():  12
 **교훈:** 바이트 형식이 정해진 데이터(네트워크, 파일, 네이티브 구조체)를 구조체로 그대로 읽을 때는 **크기와 오프셋을 먼저 확인**한다. `Marshal.SizeOf`(마샬링 크기)와 `Unsafe.SizeOf`/`sizeof`(메모리 크기)는 다를 수도 있다. 예를 들어 `bool` 필드는 메모리에서는 1바이트지만 마샬링하면 4바이트(Win32 `BOOL`)다.
 
 
+## Lab 93 — 입력 크기로 `stackalloc` 해서 스택 오버플로
+```
+조사식 packet.Length:  20000000 (입력에서 온 값)
+Checksum 첫 줄 F10:    프로그램이 사라짐. [FAIL]도 예외 창도 없음. 채점기 결과 CRASH (0xC00000FD)
+진짜 원인:  stackalloc byte[n]은 스택에 n 바이트를 잡는다. 스택은 보통 1 MB로 고정이라
+           수백만 바이트를 잡으면 StackOverflowException. 이 예외는 catch로 못 잡고 프로세스를 즉시 끝낸다.
+```
+**수정:** `stackalloc` 크기는 작고 고정된 상한(예: 1024 바이트) 안에서만 쓰고, 큰 입력은 힙(`ArrayPool<byte>`나 `new byte[n]`)으로 처리합니다. `const int StackCap = 1024;` 뒤 `packet.Length <= StackCap`일 때만 `stackalloc`, 아니면 `ArrayPool<byte>.Shared.Rent(...)` 후 `finally`에서 `Return`.
+**교훈:** `stackalloc`의 크기는 **반드시 컴파일 시점에 아는 작은 상한** 안에 두세요. 입력·반복 횟수·재귀 깊이 중 어느 것이든 스택을 무제한으로 쓰면 오버플로입니다. 힙의 `OutOfMemoryException`은 그래도 잡을 수 있지만, 스택 오버플로는 잡을 수 없습니다.
+
+## Lab 95 — `unsafe` 포인터 쓰기가 버퍼를 넘겨 옆 메모리를 덮어씀
+```
+중단점 p[i] = incoming[i], i == 4:  scores는 4칸(0~3)인데 p[4]에 씀
+조사식 block[4] (가드):             쓰기 직후 0xC0FFEE → 50 으로 바뀜
+진짜 원인:  포인터 p[i]는 경계 검사를 하지 않는다. p[4]는 버퍼 바로 뒤(가드 칸)를 덮어쓴다.
+           같은 자리를 안전한 인덱서 scores[4]로 쓰면 IndexOutOfRangeException이 나서 바로 드러난다.
+```
+**수정:** 포인터로 쓸 때는 버퍼 용량으로 루프를 제한합니다: `for (int i = 0; i < incoming.Length && i < scores.Length; i++)`. 또는 포인터를 쓰지 말고 안전한 `Span` 인덱서를 쓰고, 넘치는 입력은 자르거나 거절하는 정책을 명시합니다.
+**교훈:** `unsafe` 포인터, `Marshal`, `Unsafe.Add`로 메모리를 다룰 때는 경계 검사가 사라집니다. 한 칸만 넘겨도 예외가 아니라 **조용한 손상**이 되고, 그 피해는 전혀 다른 곳에서 나타나 추적이 어렵습니다. 성능을 위해 `unsafe`가 꼭 필요한 게 아니라면 `Span<T>`/`stackalloc`의 안전한 인덱서를 쓰세요.
+
+### 참고: 네이티브 힙 손상 (랩 없음)
+- `Marshal.AllocHGlobal` + `Marshal.Copy`로 네이티브 힙을 넘겨 쓰면 CLR 힙이나 다른 할당을 망가뜨릴 수 있습니다. 다만 그 결과(크래시인지, 조용한 손상인지, 어디가 깨지는지)가 런타임과 힙 상태에 따라 달라 **결정적이지 않아** 랩으로 넣지 않았습니다.
+- `AllocHGlobal` 후 `FreeHGlobal`을 빼먹으면 네이티브 메모리 누수입니다. 이는 5부(리소스·메모리)의 누수 랩과 주제가 겹칩니다.
+
+> 랩 93, 95는 임시 번호입니다. 최종 재배치 때 6부 끝 번호로 옮깁니다.
+
 ---
 
 # 7부: 멈춤 - 무한루프와 데드락
@@ -1281,3 +1320,82 @@ LINQ to XML이면 `XNamespace q = "urn:bughunt:quests";` 그리고 `root.Element
 - **XXE(외부 엔터티)**: .NET Core 이후 `XmlDocument`, `XDocument`, `XmlReader.Create`, `XmlSerializer`는 기본으로 외부 엔터티를 해석하지 않습니다(`XmlResolver`가 null, `DtdProcessing.Prohibit`). 신뢰할 수 없는 XML을 받을 때 `XmlReaderSettings { DtdProcessing = DtdProcessing.Parse, XmlResolver = new XmlUrlResolver() }`처럼 **기본값을 풀지 마세요**. .NET Framework 4.5.2 이전에서 옮겨 온 코드는 확인이 필요합니다.
 - **엔터티 확장(Billion laughs)**: DTD를 허용해야 한다면 `MaxCharactersFromEntities`로 제한합니다.
 - **형식 이름으로 객체 만들기**: `BinaryFormatter`(.NET 9에서 제거), Newtonsoft.Json의 `TypeNameHandling.All`, `XmlSerializer`에 바깥에서 받은 형식을 넘기는 코드는 원격 코드 실행으로 이어질 수 있습니다. 랩 80의 `JsonDerivedType`처럼 **허용 목록**을 쓰세요.
+
+---
+
+# 새 부(임시 번호): C# 언어 함정
+
+## Lab 86 — `string.GetHashCode`를 저장했다가 다음 실행에서 비교
+```
+조사식 "화염구".GetHashCode():   실행할 때마다 다른 값 (예: 1182412346 → -503617214)
+savedHashes:                     지난 세션 값(이 랩에서는 고정된 안정 해시로 대신함)
+진짜 원인:  .NET Core 이후 문자열 해시는 프로세스마다 무작위 시드를 쓴다(해시 충돌 공격 방지).
+           해시는 같은 프로세스 안의 Dictionary/HashSet을 위한 값이지, 저장하거나 보내는 식별자가 아니다.
+```
+**수정:** 해시가 아니라 **스킬 이름(또는 고정 Id)** 자체를 저장하고 비교합니다. 해시가 꼭 필요하면 FNV-1a, `XxHash64`(`System.IO.Hashing`), SHA-256 같은 **정의가 고정된 해시**를 직접 씁니다. 이 랩에서는 세이브 쪽이 안정 해시(`OldSessionHash`)로 저장돼 있으므로 비교도 `OldSessionHash(s)`로 하면 통과합니다.
+**교훈:** `GetHashCode`의 계약은 "같은 프로세스에서, 같은 값이면 같은 해시"뿐입니다. 프로세스, 머신, .NET 버전을 넘어가는 순간 의미가 없습니다. `HashCode.Combine`도 같은 이유로 실행마다 다릅니다.
+
+## Lab 87 — `a + b ?? 0`은 `(a + b) ?? 0`
+```
+조사식 baseDamage + comboBonus:           null   (형식 int?)
+조사식 (baseDamage + comboBonus) ?? 0:     0
+조사식 baseDamage + (comboBonus ?? 0):     80
+진짜 원인:  ??는 +보다 우선순위가 낮다. int + int? 는 "리프트 연산자"로 int? 가 되고,
+           한쪽이 null이면 결과도 null이다. 그 null에 ?? 0 이 붙어 기본 피해까지 0이 된다.
+```
+**수정:** `baseDamage + (comboBonus ?? 0)`, 또는 `comboBonus.GetValueOrDefault()`.
+**교훈:** `??`, `?:`, `=>`처럼 우선순위가 낮은 연산자를 산술식 안에 쓸 때는 항상 괄호를 칩니다. nullable끼리의 `+ - * /`, `< >`는 null이 있으면 각각 null, `false`가 됩니다(`<`와 `>=`가 둘 다 `false`일 수 있음).
+
+## Lab 88 — 범위 밖 enum 값이 `_ =>`로 기본 등급이 됨
+```
+등급 코드 9 → (Rarity)9 → 콘솔에 "9"
+조사식 Enum.IsDefined((Rarity)9):  false
+조사식 Weight((Rarity)9):           100 (Common과 같은 값)
+진짜 원인:  enum은 이름 붙은 정수일 뿐이라 어떤 정수든 캐스트된다(예외 없음).
+           switch의 _ => 100 이 "모르는 값"까지 Common 취급한다.
+```
+**수정:** 모르는 값에는 가중치를 주지 않습니다(`_ => 0`). 또는 받을 때 `Enum.IsDefined`로 걸러 건너뛰거나 `_ => throw new ArgumentOutOfRangeException(...)`.
+**교훈:** 바깥에서 들어온 정수(패킷, 세이브, 설정)를 enum으로 바꿀 때는 범위 검사가 필요합니다. 비슷한 함정: `default(Rarity)`는 첫 멤버(0)라서 "지정 안 함"이 조용히 `Common`이 되므로, 0에는 `None`/`Unknown`을 두는 것이 안전합니다. `[Flags]` enum에서 `x.HasFlag(None)`은 항상 `true`입니다.
+
+## Lab 89 — 값으로 넘긴 struct 커서는 바깥에서 진행되지 않음
+```
+TakeTurn 안 cursor._index:  매번 -1 → 0
+Run 의 cursor._index:       계속 -1
+진짜 원인:  TurnCursor는 struct라 TakeTurn(TurnCursor cursor)가 호출마다 복사본을 받는다.
+           MoveNext는 복사본만 진행시키고 버려진다.
+```
+**수정:** `static string TakeTurn(ref TurnCursor cursor)`와 `TakeTurn(ref cursor)`, 또는 `TurnCursor`를 `class`로.
+**교훈:** 상태를 가진 struct(열거자, 커서, 빌더)는 대입·매개변수·`readonly` 필드·`foreach` 반복 변수에서 복사됩니다. `List<T>.Enumerator`를 변수에 받아 다른 메서드로 넘기거나, `readonly` 필드에 둔 struct의 메서드를 부르는 경우(방어적 복사)도 같은 증상입니다.
+
+## Lab 90 — 같은 문자열 리터럴에 lock 해서 서로 다른 시스템이 교착
+```
+병렬 스택:  스레드 A  AutoSave.Save → ManualResetEventSlim.Wait  (잠금을 쥔 채)
+           스레드 B  Achievements.Tally → Monitor.Enter          (잠금을 기다림)
+조사식 object.ReferenceEquals(save._lock, achievements._lock):  true
+진짜 원인:  두 클래스가 각자 "bughunt-save-lock" 문자열을 잠금 객체로 썼다. 문자열 리터럴은
+           인터닝되어 프로세스 전체에서 같은 객체이므로 두 잠금은 같은 모니터다.
+```
+**수정:** 각 클래스에 `private readonly object _lock = new();` (C# 13 이상이면 `System.Threading.Lock`).
+**교훈:** 잠금 대상은 **그 목적만을 위해 만든 private 객체**여야 합니다. 문자열, `typeof(X)`, `this`, 박싱된 값, 바깥에 노출된 객체는 모르는 코드와 모니터를 공유할 수 있습니다. 또 "잠금을 쥔 채로 다른 작업을 기다리기"는 그 자체로 교착의 씨앗이므로 잠금 범위를 짧게 유지합니다.
+
+## Lab 91 — `for` 변수를 캡처한 `Task.Run`
+```
+적중 시 로그 {i} (downloaded.Add(i)):  5, 5, 5, 5, 5
+gate.Set() 줄에서 i:                   for를 다 돈 뒤라 이미 5(= pieces)
+진짜 원인:  for의 i는 루프 전체에 하나뿐인 변수이고, 람다는 그 변수를 참조로 캡처한다.
+           작업은 gate 때문에 루프가 끝난 뒤에 돌므로 모두 마지막 값(범위 밖)을 본다.
+```
+**수정:** 반복마다 복사본을 만듭니다(`int piece = i;` 후 `piece` 캡처). 또는 `foreach (int piece in Enumerable.Range(0, pieces))`, `Parallel.For`.
+**교훈:** C# 5부터 `foreach`의 반복 변수는 반복마다 새로 만들어지지만, `for`의 변수는 아닙니다. 이 랩의 `gate`는 "작업이 늦게 시작하는" 상황을 결정적으로 만든 것이며, 실제로는 스레드 풀 상태에 따라 가끔만 틀립니다. 같은 뿌리의 다른 함정으로 `list.ForEach(async x => ...)`가 있습니다. `ForEach`는 `Action<T>`만 받으므로 람다가 `async void`가 되어 기다릴 수 없고 예외도 잡히지 않습니다(4부 비동기 예외 처리 참고).
+
+## Lab 92 — 돈을 `double`로 더하고 `Math.Round`의 기본 반올림을 씀
+```
+조사식 sum (Total의 return):   0.30000000000000004
+조사식 Math.Round(2.5m):        2
+조사식 Math.Round(3.5m):        4
+조사식 Math.Round(2.5m, MidpointRounding.AwayFromZero):  3
+진짜 원인:  double은 0.1, 0.2를 정확히 담지 못해 합에 오차가 쌓인다.
+           Math.Round의 기본은 MidpointRounding.ToEven(은행가 반올림)이라 2.5 → 2, 0.5 → 0.
+```
+**수정:** 합계를 `decimal`로 더합니다(`decimal sum = 0; sum += p;`). 세금은 `Math.Round(tax, MidpointRounding.AwayFromZero)`처럼 규칙을 명시합니다.
+**교훈:** 돈, 수량, 점수처럼 10진수로 정확해야 하는 값은 `decimal` 또는 정수(원·센트 단위)로 다룹니다. 반올림 규칙은 도메인 결정이므로 항상 인자로 적습니다. `double` 합계를 `Math.Round(sum, 2)`로 감추는 수정은 이 랩의 숨은 케이스는 통과할 수 있지만, 값이 커지거나 연산이 길어지면 다시 어긋납니다. (참고: `(decimal)someDouble`은 유효숫자 15자리로 반올림해 변환하므로 오차를 가려 버립니다. 이 랩이 합계를 `double`로 비교하는 이유입니다.)
