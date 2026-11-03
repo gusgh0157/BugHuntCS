@@ -56,9 +56,17 @@ static class Program
         new("동시 거래",        "두 사람이 서로 골드를 보내면 둘 다 멈춘다",         Lab38.Run, Hidden: 2),
         new("패치 슬롯",        "몇 개 실패하더니 다운로드가 통째로 멈춘다",         Lab39.Run, Hidden: 3),
         new("로딩 대기",        "Release 출시판에서만 로딩 화면이 끝나지 않는다",   Lab40.Run, Hidden: 1, Release: true),
+        // 7부: 컨테이너와 컬렉션
+        new("퀘스트 정산",      "퀘스트를 다 깨기 전에 정산하면 죽는다",            Lab41.Run, Hidden: 3),
+        new("광역 공격",        "광역 공격을 맞아도 파티 HP가 그대로다",            Lab42.Run, Hidden: 3),
+        new("길드 창고",        "길드 태그를 바꾸자 창고가 사라졌다",               Lab43.Run, Hidden: 3),
+        new("처치 기록",        "처치 기록 수가 매번 모자라고 가끔 예외가 난다",     Lab44.Run, Hidden: 2),
+        new("시즌 리더보드",    "점수가 같으면 먼저 달성한 사람이 밀려난다",         Lab45.Run, Hidden: 3),
+        new("드롭 테이블",      "고장 난 파일을 건너뛰게 했는데 다른 곳에서 죽는다", Lab46.Run, Hidden: 3),
+        new("레이드 보상",      "레이드에 없던 사람이 보상을 받는다",               Lab47.Run, Hidden: 3),
     ];
 
-    const int Part2Start = 8, Part3Start = 19, Part4Start = 26, Part5Start = 29, Part6Start = 35;
+    const int Part2Start = 8, Part3Start = 19, Part4Start = 26, Part5Start = 29, Part6Start = 35, Part7Start = 41;
 
     static string BuildName =>
 #if DEBUG
@@ -79,6 +87,7 @@ static class Program
             else if (n == Part4Start) Console.WriteLine("\n[4부] 리소스와 메모리 (선택) - 진단 도구, 메모리 스냅샷");
             else if (n == Part5Start) Console.WriteLine("\n[5부] unsafe와 네이티브 메모리 (선택) - 메모리 창, 조사식의 포인터 식");
             else if (n == Part6Start) Console.WriteLine("\n[6부] 멈춤: 무한루프와 데드락 - 모두 중단, 병렬 스택, 스레드 창, dotnet-stack");
+            else if (n == Part7Start) Console.WriteLine("\n[7부] 컨테이너와 컬렉션 - 예외 도우미, 조사식, 개체 ID, 병렬 스택");
             Console.WriteLine($"  {n,2}. {Labs[i].Title}  - {Labs[i].Symptom}");
         }
         Console.WriteLine("  (명령줄 인자로 번호를 넘겨도 된다: BugHunt.exe 3)");
@@ -147,5 +156,5 @@ static class Program
     }
 
     static int PartOf(int n) =>
-        n >= Part6Start ? 6 : n >= Part5Start ? 5 : n >= Part4Start ? 4 : n >= Part3Start ? 3 : n >= Part2Start ? 2 : 1;
+        n >= Part7Start ? 7 : n >= Part6Start ? 6 : n >= Part5Start ? 5 : n >= Part4Start ? 4 : n >= Part3Start ? 3 : n >= Part2Start ? 2 : 1;
 }

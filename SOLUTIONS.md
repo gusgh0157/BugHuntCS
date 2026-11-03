@@ -630,3 +630,102 @@ Release:   응답 없음. 멈춘 순간 loader.Done == True, 읽은 에셋 20개
 - 바쁜 대기를 없앤다: `ManualResetEventSlim`을 `Set`/`Wait`하거나, 로딩을 `Task`로 만들어 기다린다. CPU를 태우지 않는다.
 
 **교훈:** "Debug에서는 되는데 Release에서만 멈춘다"면 **최적화가 바꿀 수 있는 가정**(다른 스레드와 공유하는 메모리)을 의심한다. 다른 스레드가 바꾸는 값은 `volatile`/`Volatile`/`Interlocked`/`lock` 중 하나를 거쳐서 읽고 쓴다.
+
+---
+
+# 7부: 컨테이너와 컬렉션
+
+## Lab 41 — Length와 Count를 섞어 쓴 범위 밖 인덱스
+```
+예외:        ArgumentOutOfRangeException: Index was out of range. Must be non-negative and less than the size of the collection. (Parameter 'index')
+멈춘 곳:     Settle의 clearSeconds[i]   (i == 3)
+조사식:      stages.Length == 4, clearSeconds.Count == 3
+진짜 원인:  루프는 퀘스트 전체 단계 수(stages.Length)만큼 도는데, 읽는 것은 지금까지 깬 단계의 목록(clearSeconds)
+```
+**수정:** `for (int i = 0; i < clearSeconds.Count; i++)`. 루프는 **실제로 읽는 컬렉션**의 크기로 돈다.
+**교훈:** 배열은 `IndexOutOfRangeException`, `List`는 `ArgumentOutOfRangeException`을 낸다. 메시지에 인덱스 값은 없으니 지역 창에서 `i`와 크기를 직접 비교한다. 이런 버그는 "다 깬 퀘스트"처럼 두 크기가 우연히 같은 데이터로만 시험하면 숨는다. 경계(0개, 일부, 전부)를 시험하자. (`<=`로 한 칸 넘어가는 off-by-one도 같은 모습이다.)
+
+## Lab 42 — `List<struct>` 인덱서가 돌려준 복사본을 고침
+```
+TakeDamage 안:   Hp 100 → 70   (줄어든다)
+AreaAttack로 나와서 party[i].Hp:   100   (그대로)
+진짜 원인:  List<T>의 인덱서는 get 메서드라서 struct의 "복사본"을 돌려준다. TakeDamage는 그 임시 복사본을 고치고 버린다.
+           party[i].Hp -= damage 는 컴파일러가 CS1612로 막지만, 메서드 호출은 막지 않는다.
+```
+**수정 (택1):**
+- 꺼내서 고치고 다시 넣는다.
+  ```csharp
+  Member member = party[i];
+  member.TakeDamage(damage);
+  party[i] = member;
+  ```
+- `CollectionsMarshal.AsSpan(party)[i].TakeDamage(damage);` — `Span`의 인덱서는 **칸 자체(ref)**를 돌려준다. (그 사이에 List에 넣거나 빼면 안 된다)
+- 바뀌는 데이터라면 `class`로 만든다. 또는 `readonly struct`로 만들어 바꾸는 메서드 자체를 없앤다.
+
+**교훈:** 배열의 `arr[i]`는 칸 자체(ref)지만 `List`, `Dictionary`의 인덱서와 속성은 **값을 돌려주는 메서드**다. 바뀌는 struct는 복사될 때마다 버그의 씨앗이 된다 (랩 10의 `readonly` 필드 방어적 복사와 같은 뿌리).
+
+## Lab 43 — Dictionary 키로 쓰는 동안 해시가 바뀜 (가변 키)
+```
+TryGetValue:   false
+조사식 storage:  키 목록에 이름이 바뀐 길드가 그대로 보인다
+storage.Keys.Contains(g):   true   (하나씩 Equals로 비교)
+storage.ContainsKey(g):     false  (해시로 칸을 찾음)
+GetHashCode 중단점:  넣을 때와 찾을 때 값이 다름
+진짜 원인:  GetHashCode가 Tag로 계산되는데, 키로 넣은 뒤에 Tag를 바꿈. 객체는 옛 해시의 칸에 남아 있다.
+```
+**수정:** 같은 길드인지는 **바뀌지 않는 값**으로 판단한다.
+```csharp
+public override bool Equals(object? obj) => obj is Guild g && g.Id == Id;
+public override int GetHashCode() => Id.GetHashCode();
+```
+태그를 키로 써야 한다면, 바꿀 때 딕셔너리에서 `Remove`하고 바꾼 뒤 다시 넣는다.
+**교훈:** 해시 기반 컬렉션(`Dictionary`, `HashSet`)의 키는 넣은 뒤에 **해시에 쓰이는 값이 바뀌면 안 된다.** 랩 17(Equals와 GetHashCode가 서로 어긋남)과 짝이다. `record`는 모든 속성으로 해시를 만들기 때문에, 속성을 바꿀 수 있는 record를 키로 쓰면 이 버그가 된다.
+
+## Lab 44 — Dictionary를 여러 스레드에서 동시에 고침
+```
+실행할 때마다:   기록 수가 199,8xx처럼 모자라거나, IndexOutOfRangeException / InvalidOperationException
+                ("Operations that change non-concurrent collections must have exclusive access...")
+병렬 스택:      여러 전투 스레드가 동시에 Dictionary.TryInsert, Resize 안에 있음
+진짜 원인:  Dictionary는 한 번에 한 스레드만 고친다는 가정으로 만들어졌다. 내부 배열을 늘리는(Resize) 도중에 다른 스레드가 넣으면
+           항목이 사라지거나 내부 연결이 꼬인다. 키가 겹치지 않아도 같다.
+```
+**수정 (택1):**
+- `ConcurrentDictionary<int, int>`
+- 고치는 곳을 `lock`으로 감싼다
+- 전투 스레드마다 따로 모았다가 끝난 뒤 한 스레드에서 합친다 (가장 빠르다)
+
+**교훈:** .NET Framework의 `Dictionary`는 이렇게 꼬이면 **무한루프**(CPU 100%로 멈춤)에 빠지기도 했다. 지금의 .NET은 꼬임을 일부 감지해 예외를 내지만, 항목이 조용히 사라지는 것은 막지 못한다. 결과가 실행마다 다르면 랩 23처럼 경쟁 조건부터 의심한다.
+
+## Lab 45 — 불안정 정렬 (List.Sort)
+```
+점수 순서:      맞다 (3000, 3000, ..., 2000, ...)
+같은 점수끼리:  P04 P20 P08 ... 처럼 들어온 순서가 아님
+16개 이하로 줄이면:  맞게 나온다 (작은 구간은 삽입 정렬이라 우연히 안정)
+진짜 원인:  List.Sort는 불안정 정렬(introsort). 비교자가 0을 돌려준 원소들의 원래 순서를 지키지 않는다.
+```
+**수정 (택1):**
+- 안정 정렬인 LINQ를 쓴다: `board.OrderByDescending(e => e.Score)`
+- 같을 때의 규칙을 비교자에 넣는다: 달성 시각이나 들어온 순서를 두 번째 키로 비교
+
+**교훈:** "같으면 먼저 온 사람"처럼 같은 값의 순서에 의미가 있으면, 그 규칙을 **명시**한다. 비교자는 일관되어야 한다. `(a, b) => a.Score > b.Score ? -1 : 1`(같을 때 0을 안 줌)이나 `a.Score - b.Score`(넘침, 랩 13)처럼 어긋난 비교자는 결과가 실행·크기마다 흔들리거나 `InvalidOperationException: IComparer.Compare() method returns inconsistent results`를 낸다.
+
+## Lab 46 — yield 메서드의 예외는 열거할 때 난다
+```
+예외:        FormatException: 드롭 테이블 줄이 이상하다: "sword=?"
+호출 스택:   <ParseDropTable>d__1.MoveNext() ← Enumerable.Sum ← Lab46.Run   (LoadDropTable은 없다)
+콘솔:        "고장 난 드롭 테이블, 기본 테이블 사용"이 한 번도 안 찍힘
+진짜 원인:  yield return이 있는 메서드는 부르는 순간 본문을 하나도 실행하지 않는다. LoadDropTable의 try는 "열거할 객체"만 받아서 바로 끝나고,
+           실제 파싱(과 예외)은 나중에 Sum이 열거할 때 일어난다.
+```
+**수정:** 잡고 싶은 곳에서 끝까지 열거한다: `return ParseDropTable(text).ToList();`
+**교훈:** 지연 실행되는 것은 LINQ(랩 9, 47)만이 아니다. `yield` 메서드의 **예외, 로그, 파일 열기 같은 부수 효과**는 모두 "열거하는 순간, 열거하는 곳"에서 일어난다. 인자 검사처럼 즉시 실패해야 하는 일은 `yield` 없는 바깥 메서드에서 먼저 하고, 열거는 안쪽 지역 함수에 맡긴다.
+
+## Lab 47 — ToList() 없이 남긴 "스냅샷"
+```
+Enter의 _roster:      WhereListIterator (조사식에서 "결과 보기"를 눌러야 내용이 나온다)
+m => m.Online 중단점:  Enter에서도, RewardRecipients에서도 걸림
+진짜 원인:  _roster는 입장할 때의 명단이 아니라 "접속 중인 사람"이라는 조건이다. 보상 줄 때 열거하면 그때의 길드를 다시 걸러서,
+           나간 사람은 빠지고 나중에 들어온 사람(Newbie 포함)이 들어간다.
+```
+**수정:** 그 순간의 명단을 찍어 둔다: `_roster = guild.Where(m => m.Online).ToList();`
+**교훈:** `Where`, `Select`, `Dictionary.Keys`/`Values`, `List.AsReadOnly()`는 원본을 비추는 **창문**이다. 원본이 바뀌면 보이는 것도 바뀐다. 그 순간의 사진이 필요하면 `ToList()`/`ToArray()`로 복사한다. 단 복사되는 것은 목록뿐이고 `Member` 객체는 여전히 공유된다 (얕은 복사, 랩 18).
