@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "BugHunt": {
+      "commandName": "Project",
+      "commandLineArgs": ""
+    }
+  }
+}
