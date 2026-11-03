@@ -382,3 +382,134 @@ public void Exit()
 ```
 (실무에서는 비관리 핸들을 직접 종료자로 다루기보다 `SafeHandle`을 쓴다.)
 **교훈:** "정해진 순간"에 돌려줘야 하는 자원은 **Dispose**로. 종료자는 잊었을 때를 위한 안전망일 뿐이고, 언제 불릴지(불리기는 할지) 보장되지 않는다. `GC.Collect()`로 억지로 돌리는 것도 해결책이 아니다.
+
+---
+
+# 5부: unsafe와 네이티브 메모리
+
+## Lab 29 — 메서드가 끝난 stackalloc 메모리를 가리키는 포인터
+```
+FindPath의 return 줄:          path[0] == 3, path[1] == 4   ← 여기까지는 맞다
+DrawMinimapBackground 다음:    path[0] == -1 또는 쓰레기 값
+(long)path 와 &pixels[0]:      같은 스택 영역(몇십 바이트 차이)
+진짜 원인:  stackalloc 메모리는 FindPath의 스택 프레임 안에 있다. FindPath가 돌아가면 그 자리는 다음 호출이 다시 쓴다.
+           Span<int>로 돌려주려다 CS8352로 막히자 포인터로 바꿔서 컴파일러의 검사를 피했다.
+```
+**수정:** 오래 살아야 하는 쪽(호출자)이 버퍼를 만들어 `Span`으로 넘긴다.
+```csharp
+static int FindPath(int startTile, int goalTile, Span<int> path)
+{
+    int step = startTile < goalTile ? 1 : -1;
+    int length = 0;
+    for (int tile = startTile; tile != goalTile + step; tile += step)
+        path[length++] = tile;
+    return length;
+}
+
+Span<int> path = stackalloc int[MaxPathLength];
+int length = FindPath(start, goal, path);
+```
+(크기가 크거나 정해지지 않았다면 `int[]`나 `ArrayPool`을 쓴다.)
+**교훈:** 컴파일러가 `Span`을 막는 것은 **수명 검사**다. 포인터, `Unsafe.AsRef`, `MemoryMarshal.CreateSpan`으로 그 검사를 우회하면 C++의 "지역 변수 주소 반환"과 똑같은 버그가 된다. 값을 망가뜨리는 것은 읽는 순간이 아니라 **그 사이의 다른 호출**이라서, 중단점을 거는 위치에 따라 멀쩡해 보이기도 한다.
+
+## Lab 30 — fixed 블록 밖으로 빼낸 포인터를 GC 압축 뒤에 사용
+```
+Attach 줄의 (long)p:              처음 주소
+LoadLevel 뒤 Samples의 주소:       다른 주소   ← 배열이 옮겨졌다
+MixFrame의 (long)_buffer:          처음 주소 그대로
+진짜 원인:  fixed는 "블록 안에서만" 배열을 고정한다. 블록이 끝난 뒤 GC.Collect(compacting)가 배열을 옮겼고,
+           오디오 장치는 옛 주소(이제 비어 있는 곳)를 계속 읽는다.
+```
+**수정 (택1):**
+- 처음부터 옮겨지지 않는 힙(POH)에 만든다: `public short[] Samples { get; } = GC.AllocateArray<short>(32, pinned: true);`
+- `GCHandle.Alloc(Samples, GCHandleType.Pinned)`로 고정하고, 장치에서 떼어 낼 때 `Free` (랩 31 참고)
+- 네이티브가 오래 쓸 버퍼는 아예 `NativeMemory.Alloc`으로 GC 밖에 만들고 `NativeMemory.Free`로 돌려준다
+
+**교훈:** 관리 참조는 GC가 같이 고쳐 주지만 **포인터는 GC가 모르는 숫자**다. 네이티브 쪽이 "주소를 기억해 두는" API라면 `fixed`로는 안 된다. 실제로는 GC가 언제 압축하느냐에 따라 오랫동안 멀쩡하다가 터지는 버그인데, 이 랩은 `GC.Collect(..., compacting: true)`로 그 순간을 고정해 두었다.
+
+## Lab 31 — 예외 경로에서 GCHandle.Free 누락
+```
+살아 남은 버퍼 수:     2  == 손상된 패킷 수
+throw 줄에서 F10:      handle.Free()로 가지 않고 catch로 빠짐
+메모리 스냅샷 루트 경로: Byte[] ← 고정 핸들(Pinned Handle)
+GC.GetGCMemoryInfo().PinnedObjectsCount:  손상된 패킷 수만큼 늘어 있음
+진짜 원인:  체크섬이 틀리면 throw로 빠져나가면서 handle.Free()를 건너뜀
+```
+**수정:** 고정은 네이티브 호출 동안만 하고, `finally`에서 반드시 푼다.
+```csharp
+GCHandle handle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
+try
+{
+    NativeNet.Receive(handle.AddrOfPinnedObject(), buffer.Length, packetId, corrupt);
+}
+finally
+{
+    handle.Free();
+}
+```
+짧게만 고정한다면 `fixed (byte* p = buffer) { ... }`가 더 간단하다 (블록을 어떻게 빠져나가든 풀린다).
+**교훈:** `GCHandle`은 GC 바깥의 강한 참조라서, `Free`를 잊으면 **GC가 있어도 누수**다. Pinned 핸들은 게다가 힙 압축도 방해한다. 얻었으면 `finally`에서 돌려준다. `lock`, 세마포(랩 39)와 같은 규칙이다.
+
+## Lab 32 — 네이티브에 넘긴 콜백 대리자가 GC에 수거됨
+```
+콘솔(디버거 없이):  Process terminated.
+                    A callback was made on a garbage collected delegate of type 'BugHunt!BugHunt.Lab32+BeatCallback::Invoke'.
+F5:                 PlayBeat의 _onBeat(beat) 줄에서 멈춤
+진짜 원인:  GetFunctionPointerForDelegate(OnBeat)에 넘긴 대리자는 그 자리에서 만들어진 임시 객체다.
+           네이티브 쪽은 함수 포인터(숫자)만 가지고 있으므로 GC는 대리자를 쓰레기로 보고, LoadSong의 GC.Collect가 수거한다.
+           대리자와 함께 네이티브 진입점(thunk)도 막혀서, 다음 박자에 런타임이 프로세스를 끝낸다.
+```
+**수정 (택1):**
+- 네이티브가 콜백을 들고 있는 동안 대리자를 필드에 붙잡아 둔다.
+  ```csharp
+  BeatCallback? _beatCallback;   // 네이티브가 들고 있는 동안 살아 있게
+
+  public void Start()
+  {
+      _beatCallback = OnBeat;
+      NativeAudio.SetBeatCallback(Marshal.GetFunctionPointerForDelegate(_beatCallback));
+  }
+  ```
+- 대리자를 아예 쓰지 않는다: `[UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])] static int OnBeat(int beat)`를 만들고 `&OnBeat`를 넘긴다. (static이라 게임 객체는 따로 찾아야 한다. `GCHandle.ToIntPtr`로 만든 "사용자 데이터" 포인터를 같이 넘기는 방식이 흔하다.)
+
+`GC.KeepAlive(callback)`은 **그 줄까지만** 살려 두므로, 나중에 불리는 콜백에는 소용이 없다.
+**교훈:** .NET Framework에서 MDA `CallbackOnCollectedDelegate`로 유명했던 버그다. 지금의 .NET은 수거된 대리자의 진입점을 막아 두기 때문에, 엉뚱한 곳으로 뛰지 않고 **이유를 적고 즉시 끝난다.** 그 메시지의 형식 이름이 범인이다.
+
+## Lab 33 — ArrayPool에 반납한 배열을 Memory로 계속 사용
+```
+history.Add 중단점마다 history[0]:  "[Kael] 안녕" → 다음 메시지로 덮어써진 값 → ...   ← 매번 바뀐다
+개체 ID:   FormatMessage의 buffer가 매번 같은 $1
+진짜 원인:  Return(buffer) 뒤에도 buffer.AsMemory(...)를 돌려줘서 기록에 남김.
+           같은 스레드에서 다시 Rent하면 방금 돌려준 그 배열이 나오고, 새 메시지가 옛 기록 위에 덮어써진다.
+           ReadOnlyMemory/Span은 배열의 "창문"일 뿐 복사본이 아니다.
+```
+**수정:** 오래 둘 데이터는 반납하기 전에 복사한다.
+```csharp
+string message = new(buffer, 0, length);
+ArrayPool<char>.Shared.Return(buffer);
+return message.AsMemory();
+```
+(더 간단히는 `string.Concat`으로 string을 바로 만든다. 풀은 **그 메서드 안에서만** 쓰는 임시 버퍼에 쓴다.)
+**교훈:** `Return`은 "이제 다른 사람이 써도 된다"는 약속이다. 반납한 배열을 가리키는 `Span`, `Memory`, 슬라이스가 남아 있으면 해제 후 사용(use-after-free)과 같다. 크래시는 안 나고 **남의 데이터가 보일 뿐**이라 더 찾기 어렵다.
+
+## Lab 34 — 구조체 레이아웃의 패딩
+```
+header:   Type 7, Length 엄청 큰 수(또는 음수), Seq 엉뚱한 값
+Unsafe.SizeOf<PacketHeader>():   12   (1 + 4 + 2 = 7이 아님)
+Marshal.SizeOf<PacketHeader>():  12
+메모리 창(&header):  Type 다음에 빈 3바이트, Seq 뒤에 빈 2바이트
+진짜 원인:  Sequential 레이아웃은 int를 4바이트 경계에 맞추려고 Type 뒤에 3바이트를 끼워 넣는다.
+           그래서 Length를 1번이 아니라 4번 바이트부터 읽고, 본문도 7이 아니라 12번 바이트부터 자른다.
+```
+**수정 (택1):**
+- `[StructLayout(LayoutKind.Sequential, Pack = 1)]` — 빈틈 없이 붙인다. 크기 7.
+- 구조체를 쓰지 않고 위치를 직접 정해서 읽는다 (엔디언도 명시되어 더 안전):
+  ```csharp
+  byte type = packet[0];
+  int length = BinaryPrimitives.ReadInt32LittleEndian(packet[1..]);
+  ushort seq = BinaryPrimitives.ReadUInt16LittleEndian(packet[5..]);
+  string text = Encoding.UTF8.GetString(packet.Slice(7, length));
+  ```
+
+**교훈:** 바이트 형식이 정해진 데이터(네트워크, 파일, 네이티브 구조체)를 구조체로 그대로 읽을 때는 **크기와 오프셋을 먼저 확인**한다. `Marshal.SizeOf`(마샬링 크기)와 `Unsafe.SizeOf`/`sizeof`(메모리 크기)는 다를 수도 있다. 예를 들어 `bool` 필드는 메모리에서는 1바이트지만 마샬링하면 4바이트(Win32 `BOOL`)다.
+

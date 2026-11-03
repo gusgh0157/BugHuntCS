@@ -3,7 +3,8 @@ using System.Text;
 
 namespace BugHunt;
 
-record LabEntry(string Title, string Symptom, Action Run);
+// Hidden: 채점기가 돌릴 숨은 케이스(무작위 시드) 수. Release: Release 빌드에서도 판정해야 하는 랩
+record LabEntry(string Title, string Symptom, Action Run, int Hidden = 0, bool Release = false);
 
 static class Program
 {
@@ -41,9 +42,16 @@ static class Program
         new("리플레이 저장",    "저장한 리플레이 파일이 비어 있다",               Lab26.Run),
         new("전투 기록 창",     "닫은 창들이 메모리에서 사라지지 않는다",          Lab27.Run),
         new("텍스처 캐시",      "레벨을 나갔는데 텍스처 메모리가 그대로다",        Lab28.Run),
+        // 5부: unsafe와 네이티브 메모리
+        new("미니맵 경로",      "경로를 구했는데 미니맵에는 엉뚱한 타일이 찍힌다",  Lab29.Run, Hidden: 3, Release: true),
+        new("효과음 믹서",      "레벨을 넘어가면 효과음 볼륨이 엉망이 된다",       Lab30.Run, Hidden: 3, Release: true),
+        new("패킷 수신",        "손상된 패킷을 버렸는데 메모리가 안 줄어든다",      Lab31.Run, Hidden: 3),
+        new("박자 콜백",        "곡을 고르면 게임이 통째로 사라진다",              Lab32.Run, Hidden: 2, Release: true),
+        new("채팅 기록",        "채팅 기록이 전부 마지막 메시지로 바뀐다",          Lab33.Run, Hidden: 3),
+        new("패킷 헤더",        "서버가 보낸 채팅이 하나도 안 보인다",              Lab34.Run, Hidden: 3),
     ];
 
-    const int Part2Start = 8, Part3Start = 19, Part4Start = 26;
+    const int Part2Start = 8, Part3Start = 19, Part4Start = 26, Part5Start = 29;
 
     static string BuildName =>
 #if DEBUG
@@ -62,6 +70,7 @@ static class Program
             else if (n == Part2Start) Console.WriteLine("\n[2부] 흐름 추적 - 크래시 없음. 중단점을 걸고 F10/F11로 따라가세요");
             else if (n == Part3Start) Console.WriteLine("\n[3부] 비동기와 동시성 - 병렬 스택/작업 창");
             else if (n == Part4Start) Console.WriteLine("\n[4부] 리소스와 메모리 (선택) - 진단 도구, 메모리 스냅샷");
+            else if (n == Part5Start) Console.WriteLine("\n[5부] unsafe와 네이티브 메모리 (선택) - 메모리 창, 조사식의 포인터 식");
             Console.WriteLine($"  {n,2}. {Labs[i].Title}  - {Labs[i].Symptom}");
         }
         Console.WriteLine("  (명령줄 인자로 번호를 넘겨도 된다: BugHunt.exe 3)");
@@ -74,6 +83,14 @@ static class Program
 
         if (args.Length > 0 && args[0] == "grade")
             return Grade(args.Length > 1 ? args[1] : null);
+
+        // 숨은 케이스 재현: BugHunt.exe 36 --seed 1234
+        int seedAt = Array.IndexOf(args, "--seed");
+        if (seedAt >= 0 && seedAt + 1 < args.Length && int.TryParse(args[seedAt + 1], out int seed))
+        {
+            Seed = seed;
+            args = [.. args[..seedAt], .. args[(seedAt + 2)..]];
+        }
 
         string? input;
         if (args.Length > 0)
@@ -94,7 +111,8 @@ static class Program
         }
 
         LabEntry lab = Labs[choice - 1];
-        Console.WriteLine($"\n--- Lab {choice}: {lab.Title} [{BuildName}] ---");
+        string hiddenCase = Seed != 0 ? $" (숨은 케이스 seed {Seed})" : "";
+        Console.WriteLine($"\n--- Lab {choice}: {lab.Title} [{BuildName}]{hiddenCase} ---");
         lab.Run();
         Console.WriteLine("--- 종료 ---");
         return FailCount == 0 && PassCount > 0 ? 0 : 1;

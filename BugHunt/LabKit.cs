@@ -20,6 +20,19 @@ public static class LabKit
     // 채점기(BugHunt.exe grade)가 실행한 프로세스인가
     public static bool IsGrading => Environment.GetEnvironmentVariable("BUGHUNT_GRADER") == "1";
 
+    // 숨은 테스트 케이스. 0이면 화면에 보이는 기본 입력, 0이 아니면 그 값을 시드로 입력을 무작위로 만든다.
+    // 채점기가 BUGHUNT_SEED로 넘기고, 직접 재현할 때는 BugHunt.exe 36 --seed 1234 처럼 쓴다.
+    public static int Seed { get; internal set; } =
+        int.TryParse(Environment.GetEnvironmentVariable("BUGHUNT_SEED"), out int seed) ? seed : 0;
+
+    static Random? _rng;
+    static Random Rng => _rng ??= new Random(Seed);
+
+    // 기본 케이스에서는 visible, 숨은 케이스에서는 min~max(포함) 중 하나
+    public static int Pick(int visible, int min, int max) => Seed == 0 ? visible : Rng.Next(min, max + 1);
+
+    public static T Pick<T>(T visible, params T[] pool) => Seed == 0 ? visible : pool[Rng.Next(pool.Length)];
+
     // 사람이 실행할 때만 잠깐 멈춰서, 그동안 진단 도구(스냅샷, dotnet-dump 등)를 쓸 수 있게 한다.
     public static void PauseForTools(string message)
     {
