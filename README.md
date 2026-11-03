@@ -9,6 +9,17 @@
 
 > 코드를 눈으로 훑어 정답을 찾지 마세요. 1부는 **실행해서 죽게 만들고, 디버거가 멈춘 곳에서부터**, 2~4부는 **직접 멈춘 곳에서부터 값을 확인하며** 추적하세요.
 
+## BugHunt 시리즈
+
+같은 방식(일부러 심은 버그를 디버거로 추적)으로 만든 네 가지 판입니다.
+
+| 판 | 다루는 버그 | 저장소 |
+|---|---|---|
+| C++ 콘솔 | 호출 스택, 메모리 오류, 크래시 없는 흐름 추적 (랩 28개) | [BugHunt](https://github.com/gusgh0157/BugHunt) |
+| C# 콘솔 | 예외와 스택 트레이스, 흐름 추적, 비동기/동시성, 리소스와 메모리 (랩 28개) | [BugHuntCS](https://github.com/gusgh0157/BugHuntCS) **(지금 보는 저장소)** |
+| 언리얼 엔진 | 크래시, 흐름 추적, 멀티플레이, 사운드, 이미지, 애니메이션 (랩 21개) | [BugHuntUE](https://github.com/gusgh0157/BugHuntUE) |
+| 유니티 | 크래시/예외, 흐름 추적, 사운드, 이미지, 애니메이션 (랩 23개) | [BugHuntUnity](https://github.com/gusgh0157/BugHuntUnity) |
+
 ## 준비
 
 필요한 것: **.NET 10 SDK**, **Visual Studio 2026** (또는 .NET 10을 지원하는 Visual Studio, ".NET 데스크톱 개발" 워크로드)
