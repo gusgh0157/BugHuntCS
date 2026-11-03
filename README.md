@@ -13,7 +13,7 @@
 
 필요한 것: **.NET 10 SDK**, **Visual Studio 2026** (또는 .NET 10을 지원하는 Visual Studio, ".NET 데스크톱 개발" 워크로드)
 
-1. `BugHunt.slnx`를 Visual Studio로 엽니다.
+1. `BugHunt.sln`을 Visual Studio로 엽니다. (VS 2022 17.13 이상이면 `BugHunt.slnx`를 열어도 됩니다. Rider, VS Code 등 다른 IDE는 `.sln`을 쓰세요.)
 2. 위쪽 도구 모음에서 구성을 **Debug**로 둡니다.
 3. **F5**(디버깅 시작)로 실행 → 메뉴에서 랩 번호 입력.
    - 매번 같은 랩을 돌리려면: `BugHunt/Properties/launchSettings.json`의 `"commandLineArgs": ""`에 번호를 넣습니다 (예: `"1"`). 또는 솔루션 탐색기에서 BugHunt 우클릭 → 속성 → 디버그 → **디버그 시작 프로필 UI 열기** → **명령줄 인수**.
