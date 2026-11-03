@@ -15,4 +15,10 @@
     랩 하나가 죽거나 멈춰도 채점기는 살아남는다.
   -->
 
+  <!-- 출력 언어(한국어/일본어)와 번역 표는 BugHunt와 같은 파일을 쓴다. -->
+  <ItemGroup>
+    <Compile Include="../BugHunt/Strings.cs" Link="Strings.cs" />
+    <Compile Include="../BugHunt/Strings.Table.cs" Link="Strings.Table.cs" />
+  </ItemGroup>
+
 </Project>

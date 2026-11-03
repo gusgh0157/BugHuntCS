@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using BugHunt;
 
 namespace BugHunt.Grader;
 
@@ -14,7 +15,7 @@ static class Program
     const string ReportVersion = "1";
     const int ChallengePart = 0;   // 챌린지 랩의 part 번호(번호 붙은 부가 아님). id는 C-n = 100+n, B-n = 200+n
 
-    static string PartName(int part) => part == ChallengePart ? "챌린지" : $"{part}부";
+    static string PartName(int part) => part == ChallengePart ? Text.T("챌린지") : Text.F("{0}부", part);
 
     record LabInfo(int Id, string Title, int Part, int Hidden, bool Release);
 
@@ -40,6 +41,16 @@ static class Program
     {
         Console.OutputEncoding = Encoding.UTF8;
 
+        // 출력 언어: --lang ja|ko > BUGHUNT_LANG > 화면 언어 > 한국어. 랩 프로세스에도 같은 언어를 넘긴다
+        string[]? rest = Text.TakeLangArg(args);
+        if (rest == null)
+        {
+            Console.WriteLine("--lang 뒤에는 ko 또는 ja / --lang の後には ko か ja を指定してください");
+            return 2;
+        }
+        args = rest;
+        Text.InstallConsole();
+
         Options options;
         try
         {
@@ -55,7 +66,7 @@ static class Program
         string? root = FindRepoRoot();
         if (root == null)
         {
-            Console.WriteLine("BugHunt.slnx가 있는 폴더를 찾지 못했습니다. 저장소 안에서 실행하세요.");
+            Console.WriteLine(Text.T("BugHunt.slnx가 있는 폴더를 찾지 못했습니다. 저장소 안에서 실행하세요."));
             return 2;
         }
 
@@ -72,8 +83,8 @@ static class Program
             labs = [.. labs.Where(l => options.Only.Contains(l.Id))];
 
         int baseSeed = options.Seed ?? Random.Shared.Next(1, 1_000_000);
-        Console.WriteLine($"\n=== BugHunt 채점 (랩 {labs.Count}개, 숨은 케이스 기준 시드 {baseSeed}) ===\n");
-        Console.WriteLine($"  {"랩",3}  {"부",2}  {"결과",-8}{"시간",8}  제목");
+        Console.WriteLine("\n" + Text.F("=== BugHunt 채점 (랩 {0}개, 숨은 케이스 기준 시드 {1}) ===", labs.Count, baseSeed) + "\n");
+        Console.WriteLine($"  {Text.T("랩"),3}  {Text.T("부"),2}  {Text.T("결과"),-8}{Text.T("시간"),8}  {Text.T("제목")}");
 
         var results = new List<LabResult>();
         foreach (LabInfo lab in labs)
@@ -81,7 +92,8 @@ static class Program
             LabResult result = GradeLab(root, lab, options, baseSeed);
             results.Add(result);
             string detail = result.Detail.Length > 0 ? $"\n{"",26}└ {result.Detail}" : "";
-            Console.WriteLine($"  {lab.Id,3}  {(lab.Part == ChallengePart ? "C" : lab.Part.ToString()),2}  {result.Result,-8}{result.Ms,6}ms  {lab.Title}{detail}");
+            // 제목과 상세는 이미 고른 언어다. 상세에 섞인 랩 데이터(한국어 값)를 빠진 번역으로 세지 않게 바로 쓴다
+            Text.WriteLineRaw($"  {lab.Id,3}  {(lab.Part == ChallengePart ? "C" : lab.Part.ToString()),2}  {result.Result,-8}{result.Ms,6}ms  {lab.Title}{detail}");
         }
 
         int passed = results.Count(r => r.Result == "PASS");
@@ -91,15 +103,52 @@ static class Program
         foreach (IGrouping<int, LabResult> part in results.GroupBy(r => r.Part))
             Console.WriteLine($"  {PartName(part.Key)}: {part.Count(r => r.Result == "PASS")} / {part.Count(r => r.Result != "SKIP")}");
         string counts = string.Join(", ", results.GroupBy(r => r.Result).OrderBy(g => g.Key).Select(g => $"{g.Key} {g.Count()}"));
-        Console.WriteLine($"\n  총점: {passed} / {graded}" + (graded > 0 ? $" ({passed * 100 / graded}%)" : "") + $"   [{counts}]");
+        Console.WriteLine("\n  " + Text.F("총점: {0} / {1}", passed, graded) + (graded > 0 ? $" ({passed * 100 / graded}%)" : "") + $"   [{counts}]");
 
         string outPath = options.Out ?? Path.Combine(root, "grade-report.json");
         WriteReport(outPath, new Report(Edition, ReportVersion, results.Count, passed, results));
-        Console.WriteLine($"  보고서: {outPath}");
+        Console.WriteLine("  " + Text.F("보고서: {0}", outPath));
         if (passed < graded)
-            Console.WriteLine($"  숨은 케이스를 그대로 다시 돌리려면: --seed {baseSeed}");
+            Console.WriteLine("  " + Text.F("숨은 케이스를 그대로 다시 돌리려면: --seed {0}", baseSeed));
+
+        // 일본어로 채점하면 번역이 빠진 문구를 모아 보여 준다 (판정과는 별개. 종료 코드 3)
+        if (Text.IsJa)
+        {
+            CheckLang(listExe);
+            Console.WriteLine("  " + Text.F("번역이 빠진 문구: {0}개", MissingJa.Count));
+            foreach (string m in MissingJa.Order(StringComparer.Ordinal).Take(30))
+                Text.WriteLineRaw($"    {m}");
+            if (MissingJa.Count > 0)
+                return 3;
+        }
 
         return passed == graded ? 0 : 1;
+    }
+
+    // 랩 프로세스가 표준 오류에 남긴 "번역 없음" 표시 (일본어로 채점할 때만 생긴다)
+    static readonly HashSet<string> MissingJa = new(StringComparer.Ordinal);
+
+    static void CollectMissing(string stderr)
+    {
+        string mark = Text.MissingMark.Trim();
+        foreach (string line in stderr.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+            if (line.StartsWith(mark))
+                lock (MissingJa)
+                    MissingJa.Add(line[mark.Length..].Trim());
+    }
+
+    // 메뉴·랩 제목·증상과 번역 표 자체 검사 (BugHunt --check-lang)
+    static void CheckLang(string dll)
+    {
+        using Process p = Process.Start(LabProcess(dll, "--check-lang"))!;
+        p.StandardInput.Close();
+        Task<string> err = p.StandardError.ReadToEndAsync();
+        string output = p.StandardOutput.ReadToEnd();
+        p.WaitForExit();
+        CollectMissing(err.Result);
+        foreach (string line in output.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).Where(l => !l.StartsWith("check-lang:")))
+            lock (MissingJa)
+                MissingJa.Add(line);
     }
 
     static void PrintUsage()
@@ -115,6 +164,7 @@ static class Program
               --no-build    빌드를 건너뛰고 이미 빌드된 BugHunt를 채점
               --timeout MS  실행 한 번의 제한 시간 (기본 20000)
               --out 경로    보고서 위치 (기본: 저장소 루트의 grade-report.json)
+              --lang L      출력 언어 ko 또는 ja (기본: BUGHUNT_LANG, 없으면 화면 언어)
             """);
     }
 
@@ -190,7 +240,7 @@ static class Program
 
     static bool Build(string root, string config)
     {
-        Console.Write($"BugHunt 빌드 중 ({config})... ");
+        Text.WriteRaw(Text.F("BugHunt 빌드 중 ({0})...", config) + " ");
         var psi = new ProcessStartInfo("dotnet")
         {
             RedirectStandardOutput = true,
@@ -208,11 +258,11 @@ static class Program
         p.WaitForExit();
         if (p.ExitCode == 0)
         {
-            Console.WriteLine("완료");
+            Text.WriteLineRaw(Text.T("완료"));
             return true;
         }
 
-        Console.WriteLine("실패\n");
+        Text.WriteLineRaw(Text.T("실패") + Environment.NewLine);
         string[] lines = (stdout.Result + stderr.Result).Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         foreach (string line in lines.Where(l => l.Contains(": error ") || l.Contains(": warning ")).Distinct().Take(20))
             Console.WriteLine($"  {line}");
@@ -244,6 +294,7 @@ static class Program
         psi.StandardErrorEncoding = Encoding.UTF8;
         psi.UseShellExecute = false;
         psi.Environment["BUGHUNT_GRADER"] = "1";
+        psi.Environment[Text.EnvName] = Text.Lang;
         return psi;
     }
 
@@ -260,7 +311,7 @@ static class Program
         string output = p.StandardOutput.ReadToEnd();
         p.WaitForExit();
         return JsonSerializer.Deserialize<List<LabInfo>>(output, Json)
-            ?? throw new InvalidOperationException("BugHunt --list 결과를 읽지 못했습니다.");
+            ?? throw new InvalidOperationException(Text.T("BugHunt --list 결과를 읽지 못했습니다."));
     }
 
     static LabResult GradeLab(string root, LabInfo lab, Options options, int baseSeed)
@@ -281,7 +332,7 @@ static class Program
         {
             string? dll = FindLabExe(root, c.Config);
             if (dll == null)
-                return new LabResult(lab.Id, lab.Title, lab.Part, "SKIP", totalMs, $"{c.Config} 빌드가 없음 (--no-build 없이 실행하세요)");
+                return new LabResult(lab.Id, lab.Title, lab.Part, "SKIP", totalMs, Text.F("{0} 빌드가 없음 (--no-build 없이 실행하세요)", c.Config));
 
             (string result, string detail, long ms) = RunOnce(dll, lab.Id, c.Seed, options.TimeoutMs);
             totalMs += ms;
@@ -297,11 +348,11 @@ static class Program
             if (configs.Length > 1 || options.Config != null)
                 where.Add(c.Config);
             if (c.Seed != 0)
-                where.Add($"숨은 케이스 seed {c.Seed}");
+                where.Add(Text.F("숨은 케이스 seed {0}", c.Seed));
             string prefix = where.Count > 0 ? $"[{string.Join(", ", where)}] " : "";
             // 기본 케이스는 통과했는데 숨은 케이스에서 실패: 보이는 증상만 막고 원인은 그대로 둔 수정일 가능성이 크다
             if (c.Seed != 0)
-                prefix = "증상은 사라졌지만 원인이 남아 있음 " + prefix;
+                prefix = Text.T("증상은 사라졌지만 원인이 남아 있음") + " " + prefix;
             return new LabResult(lab.Id, lab.Title, lab.Part, result, totalMs, prefix + detail);
         }
         return new LabResult(lab.Id, lab.Title, lab.Part, "PASS", totalMs, "");
@@ -330,14 +381,18 @@ static class Program
         {
             p.Kill(entireProcessTree: true);
             p.WaitForExit();
-            return ("TIMEOUT", $"{timeoutMs} ms 안에 끝나지 않아 강제 종료", watch.ElapsedMilliseconds);
+            CollectMissing(stderr.Result);
+            return ("TIMEOUT", Text.F("{0} ms 안에 끝나지 않아 강제 종료", timeoutMs), watch.ElapsedMilliseconds);
         }
         p.WaitForExit();
         long elapsed = watch.ElapsedMilliseconds;
 
         string output = stdout.Result;
+        CollectMissing(stderr.Result);
         string[] lines = output.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-        string? hang = lines.FirstOrDefault(l => l.StartsWith("[FAIL] 응답 없음"));
+        // 응답 없음 표시는 랩의 출력 언어로 나온다
+        string hangKo = "[FAIL] 응답 없음", hangJa = Text.JaOf(hangKo) ?? hangKo;
+        string? hang = lines.FirstOrDefault(l => l.StartsWith(hangKo) || l.StartsWith(hangJa));
         string? firstFail = lines.FirstOrDefault(l => l.StartsWith("[FAIL]"));
         string? skip = lines.FirstOrDefault(l => l.StartsWith("[SKIP]"));
 
@@ -349,12 +404,12 @@ static class Program
                 return ("PASS", "", elapsed);
             if (skip != null && firstFail == null)
                 return ("SKIP", skip["[SKIP] ".Length..], elapsed);
-            return ("FAIL", firstFail?["[FAIL] ".Length..] ?? "판정 출력이 없음", elapsed);
+            return ("FAIL", firstFail?["[FAIL] ".Length..] ?? Text.T("판정 출력이 없음"), elapsed);
         }
 
         // 처리되지 않은 예외, 스택 오버플로, FailFast, 접근 위반 등
         string[] err = stderr.Result.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-        string reason = string.Join(" ", err.Where(l => !l.StartsWith("at ") && !l.StartsWith("---")).Take(2));
+        string reason = string.Join(" ", err.Where(l => !l.StartsWith("at ") && !l.StartsWith("---") && !l.StartsWith(Text.MissingMark.Trim())).Take(2));
         return ("CRASH", $"0x{p.ExitCode:X8} {reason}".TrimEnd(), elapsed);
     }
 

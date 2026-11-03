@@ -14,7 +14,7 @@ public static class LabKit
     {
         bool ok = EqualityComparer<T>.Default.Equals(expected, actual);
         if (ok) PassCount++; else FailCount++;
-        Console.WriteLine($"  {(ok ? "[PASS]" : "[FAIL]")} {what}  (기대: {Show(expected)}, 실제: {Show(actual)})");
+        Text.WriteLineRaw("  " + (ok ? "[PASS] " : "[FAIL] ") + Text.F("{0}  (기대: {1}, 실제: {2})", Text.T(what), Show(expected), Show(actual)));
         return ok;
     }
 
@@ -23,7 +23,7 @@ public static class LabKit
     {
         bool ok = actual <= limit;
         if (ok) PassCount++; else FailCount++;
-        Console.WriteLine($"  {(ok ? "[PASS]" : "[FAIL]")} {what}  (기대: {limit} 이하, 실제: {actual})");
+        Text.WriteLineRaw("  " + (ok ? "[PASS] " : "[FAIL] ") + Text.F("{0}  (기대: {1} 이하, 실제: {2})", Text.T(what), limit, actual));
         return ok;
     }
 
@@ -65,27 +65,27 @@ public static class LabKit
 
         if (Debugger.IsAttached && !IsGrading)
         {
-            Console.WriteLine($"  >> {what}: {timeoutMs} ms가 지나도 안 끝난다. 지금 디버그 → 모두 중단(Ctrl+Alt+Break)을 눌러 보세요.");
+            Text.WriteLineRaw("  >> " + Text.F("{0}: {1} ms가 지나도 안 끝난다. 지금 디버그 → 모두 중단(Ctrl+Alt+Break)을 눌러 보세요.", Text.T(what), timeoutMs));
             worker.Join();
             return true;
         }
 
         FailCount++;
-        Console.WriteLine($"  [FAIL] 응답 없음 ({timeoutMs} ms 초과): {what}");
-        PauseForTools($"멈춘 스레드는 아직 그대로입니다. 다른 터미널에서 dotnet-stack report -p {Environment.ProcessId} 로 스택을 보거나, VS에서 디버그 → 프로세스에 연결 → 모두 중단 해 보세요.");
+        Text.WriteLineRaw("  " + Text.F("[FAIL] 응답 없음 ({0} ms 초과): {1}", timeoutMs, Text.T(what)));
+        PauseForTools(Text.F("멈춘 스레드는 아직 그대로입니다. 다른 터미널에서 dotnet-stack report -p {0} 로 스택을 보거나, VS에서 디버그 → 프로세스에 연결 → 모두 중단 해 보세요.", Environment.ProcessId));
         return false;
     }
 
     // 이 환경에서는 판정할 수 없는 랩. 채점기는 SKIP으로 센다.
-    public static void Skip(string reason) => Console.WriteLine($"  [SKIP] {reason}");
+    public static void Skip(string reason) => Text.WriteLineRaw("  [SKIP] " + Text.T(reason));
 
     // 사람이 실행할 때만 잠깐 멈춰서, 그동안 진단 도구(스냅샷, dotnet-dump 등)를 쓸 수 있게 한다.
     public static void PauseForTools(string message)
     {
         if (IsGrading || Console.IsInputRedirected)
             return;
-        Console.WriteLine($"  >> {message}");
-        Console.Write($"  >> (PID {Environment.ProcessId}) 계속하려면 Enter: ");
+        Text.WriteLineRaw("  >> " + Text.T(message));
+        Text.WriteRaw("  >> " + Text.F("(PID {0}) 계속하려면 Enter:", Environment.ProcessId) + " ");
         Console.ReadLine();
     }
 

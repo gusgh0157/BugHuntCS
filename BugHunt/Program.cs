@@ -124,7 +124,7 @@ static class Program
     {
         // --list 와 채점 보고서의 id. 정수를 유지하려고 C-n은 100+n, B-n은 200+n
         public int Id => (Code[0] == 'C' ? 100 : 200) + int.Parse(Code[2..]);
-        public string Title => $"챌린지 {Code}";
+        public string Title => Text.F("챌린지 {0}", Code);
     }
 
     static readonly ChallengeEntry[] Challenges =
@@ -171,11 +171,11 @@ static class Program
             else if (n == Part10Start) Console.WriteLine("\n[10부] unsafe와 네이티브 메모리 (선택) - 메모리 창, 조사식의 포인터 식");
             else if (n == Part11Start) Console.WriteLine("\n[11부] 멈춤: 무한루프와 데드락 - 모두 중단, 병렬 스택, 스레드 창, dotnet-stack");
             else if (n == Part12Start) Console.WriteLine("\n[12부] 성능 - 틀리지는 않는데 느리다. 성능 프로파일러, dotnet-counters, dotnet-trace");
-            Console.WriteLine($"  {n,2}. {Labs[i].Title}  - {Labs[i].Symptom}");
+            Text.WriteLineRaw($"  {n,2}. {Text.T(Labs[i].Title)}  - {Text.T(Labs[i].Symptom)}");
         }
         Console.WriteLine("\n[챌린지] 힌트 없음. 1~12부를 먼저 끝내세요. C: 여러 파일을 거치는 깊은 추적, B: 범주를 알려 주지 않는 블라인드");
         foreach (ChallengeEntry c in Challenges)
-            Console.WriteLine($"  {c.Code}. {c.Symptom}");
+            Text.WriteLineRaw($"  {c.Code}. {Text.T(c.Symptom)}");
         Console.WriteLine("  (명령줄 인자로 번호를 넘겨도 된다: BugHunt.exe 3, BugHunt.exe C-1)");
         Console.WriteLine("  (채점: 저장소 폴더에서 grade.bat  또는  grade.bat 24-30,  grade.bat C)");
     }
@@ -183,6 +183,18 @@ static class Program
     static int Main(string[] args)
     {
         Console.OutputEncoding = Encoding.UTF8;
+
+        // 출력 언어: --lang ja|ko > BUGHUNT_LANG > 화면 언어(CurrentUICulture) > 한국어
+        string[]? rest = Text.TakeLangArg(args);
+        if (rest == null)
+        {
+            Console.WriteLine("--lang 뒤에는 ko 또는 ja / --lang の後には ko か ja を指定してください");
+            return 2;
+        }
+        args = rest;
+        if (args.Length > 0 && args[0] == "--check-lang")
+            return CheckLang();
+        Text.InstallConsole();
 
         if (args.Length > 0 && args[0] == "--list")
             return ListLabs();
@@ -208,7 +220,8 @@ static class Program
         else
         {
             PrintMenu();
-            Console.Write("\n실행할 랩 번호: ");
+            Console.WriteLine();
+            Text.WriteRaw(Text.T("실행할 랩 번호:") + " ");
             input = Console.ReadLine();
         }
 
@@ -223,7 +236,7 @@ static class Program
         }
         else if (int.TryParse(input, out int choice) && choice >= 1 && choice <= Labs.Length)
         {
-            heading = $"Lab {choice}: {Labs[choice - 1].Title}";
+            heading = $"Lab {choice}: {Text.T(Labs[choice - 1].Title)}";
             run = Labs[choice - 1].Run;
         }
         else
@@ -232,7 +245,7 @@ static class Program
             return 2;
         }
 
-        string hiddenCase = Seed != 0 ? $" (숨은 케이스 seed {Seed})" : "";
+        string hiddenCase = Seed != 0 ? " " + Text.F("(숨은 케이스 seed {0})", Seed) : "";
         Console.WriteLine($"\n--- {heading} [{BuildName}]{hiddenCase} ---");
         run();
         Console.WriteLine("--- 종료 ---");
@@ -245,13 +258,32 @@ static class Program
         var labs = Labs.Select((lab, i) => new
         {
             Id = i + 1,
-            lab.Title,
+            Title = Text.T(lab.Title),
             Part = PartOf(i + 1),
             lab.Hidden,
             lab.Release,
         }).Concat(Challenges.Select(c => new { c.Id, c.Title, Part = ChallengePart, c.Hidden, c.Release }));
         Console.WriteLine(JsonSerializer.Serialize(labs, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
         return 0;
+    }
+
+    // 번역 검사: 표 자체(빈 번역, 자리 표시 불일치)와 메뉴·랩 제목·증상에 빠진 일본어가 없는지.
+    // 랩을 실행할 때 나오는 문구는 채점기 --lang ja 가 랩마다 모아서 보고한다.
+    static int CheckLang()
+    {
+        TextWriter original = Console.Out;
+        Text.SetLang("ja");
+        List<string> problems = Text.ValidateTable();
+        // 메뉴를 일본어로 한 번 그려 보면 빠진 문구가 표준 오류에 남는다
+        Console.SetOut(new StringWriter());
+        Text.InstallConsole();
+        PrintMenu();
+        Console.SetOut(original);
+        foreach (string p in problems)
+            Console.WriteLine(p);
+        int missing = Text.MissingCount;
+        Console.WriteLine($"check-lang: 표 문제 {problems.Count}개, 메뉴에서 빠진 번역 {missing}개 (빠진 문구는 표준 오류)");
+        return problems.Count == 0 && missing == 0 ? 0 : 1;
     }
 
     static int PartOf(int n) =>
