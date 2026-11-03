@@ -80,6 +80,34 @@ static class Program
         new("길드원 번호",    "새 길드원에게 보낸 환영 인사가 다른 사람에게 간다",   Lab59.Run, Hidden: 3),
         new("물약 단축키",    "물약이 다 떨어졌는데 계속 마실 수 있다",              Lab60.Run, Hidden: 3),
         new("아이콘 캐시",    "아이콘 캐시를 켰는데 디스크 읽기가 그대로다",         Lab61.Run, Hidden: 3),
+        // 임시 번호(Lab90~): 보조 브랜치의 새 부. 최종 재배치 때 자리와 번호를 정한다. 메뉴 번호는 62부터 차례로
+        // 새 부: 인터페이스와 상속 (Lab90~97 = 메뉴 62~69)
+        new("스킬 피해",        "불 스킬을 써도 화상 보너스가 안 붙는다",             Lab90.Run, Hidden: 3),
+        new("드롭 개수",        "보스를 잡아도 아이템이 하나만 떨어진다",             Lab91.Run, Hidden: 3),
+        new("퀘스트 보상",      "이벤트 배율이 정산에서는 빠진다",                    Lab92.Run, Hidden: 3),
+        new("버프 지속 시간",   "턴을 넘겨도 버프가 사라지지 않는다",                 Lab93.Run, Hidden: 3),
+        new("유닛 소환",        "기사가 갑옷 보정 없는 체력으로 소환된다",            Lab94.Run, Hidden: 3),
+        new("즐겨찾기",         "가방에는 있다는 아이템이 즐겨찾기에서는 없다",       Lab95.Run, Hidden: 3),
+        new("처치 보상",        "보스를 잡았는데 일반 적만큼만 준다",                 Lab96.Run, Hidden: 3),
+        new("시작 가방",        "물약을 넣는 순간 ArrayTypeMismatchException",        Lab97.Run, Hidden: 3),
+        // 새 부: 파일 입출력 (Lab98~105 = 메뉴 70~77)
+        new("세이브 폴더",      "폴더를 한 번 열고 나면 세이브가 없다고 한다",         Lab98.Run, Hidden: 3),
+        new("전투 기록 파일",   "저장한 전투 기록의 마지막 몇 줄이 빠져 있다",         Lab99.Run, Hidden: 3),
+        new("채팅 신고",        "신고하면 채팅 로그를 '사용 중'이라 못 읽는다",        Lab100.Run, Hidden: 3),
+        new("프로필 가져오기",  "가져온 프로필의 세이브만 백업에서 빠진다",            Lab101.Run, Hidden: 3),
+        new("NPC 대사 모드",    "모드에 따라 첫 대사가 없거나 한글이 깨진다",          Lab102.Run, Hidden: 3),
+        new("차단 목록",        "메모장으로 고친 뒤 아무도 차단되지 않는다",            Lab103.Run, Hidden: 3),
+        new("안전한 저장",      "저장이 실패하자 지난번 세이브까지 망가졌다",          Lab104.Run, Hidden: 3),
+        new("클라우드 동기화",  "서버에는 늘 한 번 전의 설정이 올라간다",              Lab105.Run, Hidden: 3),
+        // 새 부: 직렬화 JSON/XML (Lab106~113 = 메뉴 78~85)
+        new("길드 공지",        "예외도 없는데 공지가 전부 빈 칸이다",                 Lab106.Run, Hidden: 3),
+        new("캐릭터 세이브",    "불러오면 골드는 0, 레벨은 1이 된다",                  Lab107.Run, Hidden: 3),
+        new("우편 보상",        "첨부한 보상이 전부 '알 수 없는 보상'이 된다",         Lab108.Run, Hidden: 3),
+        new("파티 스냅샷",      "복원 뒤 리더가 맞아도 파티 창 체력은 그대로다",       Lab109.Run, Hidden: 3),
+        new("보상 패킷",        "이상한 패킷을 거절하지 않고 x0 보상이 들어온다",      Lab110.Run, Hidden: 3),
+        new("옵션 XML",         "그래픽 옵션을 추가하자 저장하는 순간 죽는다",         Lab111.Run, Hidden: 3),
+        new("퀘스트 XML",       "XML에 스키마를 붙인 뒤로 보상이 전부 0G다",            Lab112.Run, Hidden: 3),
+        new("길드 초대장",      "어떤 길드의 초대장은 보내도 도착하지 않는다",         Lab113.Run, Hidden: 3),
     ];
 
     // 챌린지: 힌트 없음. 기본 랩 번호와 따로 센다. C-n = 깊은 추적, B-n = 블라인드
@@ -105,9 +133,9 @@ static class Program
         new("B-8", "출시판에서만 텍스처 미리보기가 가끔 깨진다",            ChallengeB8.Run, Hidden: 3, Release: true),
     ];
 
-    const int ChallengePart = 9;   // --list 의 part 값. 채점기는 "챌린지"로 표시한다
+    const int ChallengePart = 0;   // --list 의 part 값. 번호 붙은 부가 아니라는 뜻. 채점기는 "챌린지"로 표시한다
 
-    const int Part2Start = 8, Part3Start = 19, Part4Start = 26, Part5Start = 36, Part6Start = 39, Part7Start = 45, Part8Start = 51, OperatorsStart = 58;
+    const int Part2Start = 8, Part3Start = 19, Part4Start = 26, Part5Start = 36, Part6Start = 39, Part7Start = 45, Part8Start = 51, OperatorsStart = 58, InheritanceStart = 62, FileIoStart = 70, SerializationStart = 78;
 
     static string BuildName =>
 #if DEBUG
@@ -131,6 +159,9 @@ static class Program
             else if (n == Part7Start) Console.WriteLine("\n[7부] 멈춤: 무한루프와 데드락 - 모두 중단, 병렬 스택, 스레드 창, dotnet-stack");
             else if (n == Part8Start) Console.WriteLine("\n[8부] 성능 - 틀리지는 않는데 느리다. 성능 프로파일러, dotnet-counters, dotnet-trace");
             else if (n == OperatorsStart) Console.WriteLine("\n[2부 추가] 연산자와 평가 순서 - 조사식, 조건부 중단점 (임시 번호. 다음 재배치 때 2부 끝으로 옮깁니다)");
+            else if (n == InheritanceStart) Console.WriteLine("\n[새 부, 임시] 인터페이스와 상속 - 조사식의 실제 형식, 가상 호출 따라가기");
+            else if (n == FileIoStart) Console.WriteLine("\n[새 부, 임시] 파일 입출력 - 경로, 공유 모드, 인코딩, 반쯤 쓴 파일");
+            else if (n == SerializationStart) Console.WriteLine("\n[새 부, 임시] 직렬화 (JSON/XML) - 저장한 것과 불러온 것을 나란히 비교하세요");
             Console.WriteLine($"  {n,2}. {Labs[i].Title}  - {Labs[i].Symptom}");
         }
         Console.WriteLine("\n[챌린지] 힌트 없음. 1~8부를 먼저 끝내세요. C: 여러 파일을 거치는 깊은 추적, B: 범주를 알려 주지 않는 블라인드");
@@ -215,5 +246,5 @@ static class Program
     }
 
     static int PartOf(int n) =>
-        n >= OperatorsStart ? 2 : n >= Part8Start ? 8 : n >= Part7Start ? 7 : n >= Part6Start ? 6 : n >= Part5Start ? 5 : n >= Part4Start ? 4 : n >= Part3Start ? 3 : n >= Part2Start ? 2 : 1;
+        n >= SerializationStart ? 11 : n >= FileIoStart ? 10 : n >= InheritanceStart ? 9 : n >= OperatorsStart ? 2 : n >= Part8Start ? 8 : n >= Part7Start ? 7 : n >= Part6Start ? 6 : n >= Part5Start ? 5 : n >= Part4Start ? 4 : n >= Part3Start ? 3 : n >= Part2Start ? 2 : 1;
 }

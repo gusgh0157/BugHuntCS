@@ -12,7 +12,7 @@ static class Program
 {
     const string Edition = "cs";
     const string ReportVersion = "1";
-    const int ChallengePart = 9;   // 챌린지 랩의 part 번호. id는 C-n = 100+n, B-n = 200+n
+    const int ChallengePart = 0;   // 챌린지 랩의 part 번호(번호 붙은 부가 아님). id는 C-n = 100+n, B-n = 200+n
 
     static string PartName(int part) => part == ChallengePart ? "챌린지" : $"{part}부";
 
