@@ -12,6 +12,9 @@ static class Program
 {
     const string Edition = "cs";
     const string ReportVersion = "1";
+    const int ChallengePart = 9;   // 챌린지 랩의 part 번호. id는 C-n = 100+n, B-n = 200+n
+
+    static string PartName(int part) => part == ChallengePart ? "챌린지" : $"{part}부";
 
     record LabInfo(int Id, string Title, int Part, int Hidden, bool Release);
 
@@ -78,7 +81,7 @@ static class Program
             LabResult result = GradeLab(root, lab, options, baseSeed);
             results.Add(result);
             string detail = result.Detail.Length > 0 ? $"\n{"",26}└ {result.Detail}" : "";
-            Console.WriteLine($"  {lab.Id,3}  {lab.Part,2}  {result.Result,-8}{result.Ms,6}ms  {lab.Title}{detail}");
+            Console.WriteLine($"  {lab.Id,3}  {(lab.Part == ChallengePart ? "C" : lab.Part.ToString()),2}  {result.Result,-8}{result.Ms,6}ms  {lab.Title}{detail}");
         }
 
         int passed = results.Count(r => r.Result == "PASS");
@@ -86,7 +89,7 @@ static class Program
         int graded = results.Count - skipped;
         Console.WriteLine();
         foreach (IGrouping<int, LabResult> part in results.GroupBy(r => r.Part))
-            Console.WriteLine($"  {part.Key}부: {part.Count(r => r.Result == "PASS")} / {part.Count(r => r.Result != "SKIP")}");
+            Console.WriteLine($"  {PartName(part.Key)}: {part.Count(r => r.Result == "PASS")} / {part.Count(r => r.Result != "SKIP")}");
         string counts = string.Join(", ", results.GroupBy(r => r.Result).OrderBy(g => g.Key).Select(g => $"{g.Key} {g.Count()}"));
         Console.WriteLine($"\n  총점: {passed} / {graded}" + (graded > 0 ? $" ({passed * 100 / graded}%)" : "") + $"   [{counts}]");
 
@@ -105,7 +108,7 @@ static class Program
             사용법: grade.bat [랩] [옵션]
                     dotnet run --project BugHunt.Grader -- [랩] [옵션]
 
-              랩            채점할 랩 번호. 예: 19  19-25  1,5,36-41   (없으면 전부)
+              랩            채점할 랩 번호. 예: 19  19-25  1,5,36-41  C  B  C-1,B-3   (없으면 전부. C = 깊은 추적 챌린지, B = 블라인드 챌린지)
               --config C    Debug 또는 Release만 채점 (기본: 전부 Debug, Release 표시된 랩은 Release도)
               --seed N      숨은 케이스 시드를 고정 (실패를 그대로 재현할 때)
               --no-hidden   숨은 케이스 없이 기본 케이스만
@@ -147,6 +150,16 @@ static class Program
                     o.Only ??= [];
                     foreach (string part in a.Split(',', StringSplitOptions.RemoveEmptyEntries))
                     {
+                        // 챌린지: C, B (전부) 또는 C-2, B-5
+                        if (part.Length >= 1 && (char.ToUpperInvariant(part[0]) is 'C' or 'B') && (part.Length == 1 || part[1] == '-'))
+                        {
+                            int baseId = char.ToUpperInvariant(part[0]) == 'C' ? 100 : 200;
+                            if (part.Length == 1)
+                                for (int n = 1; n < 100; n++) o.Only.Add(baseId + n);
+                            else if (int.TryParse(part[2..], out int k)) o.Only.Add(baseId + k);
+                            else throw new FormatException($"알 수 없는 인자: {a}");
+                            continue;
+                        }
                         string[] range = part.Split('-');
                         if (!int.TryParse(range[0], out int from) || !int.TryParse(range[^1], out int to) || range.Length > 2)
                             throw new FormatException($"알 수 없는 인자: {a}");
@@ -284,6 +297,9 @@ static class Program
             if (c.Seed != 0)
                 where.Add($"숨은 케이스 seed {c.Seed}");
             string prefix = where.Count > 0 ? $"[{string.Join(", ", where)}] " : "";
+            // 기본 케이스는 통과했는데 숨은 케이스에서 실패: 보이는 증상만 막고 원인은 그대로 둔 수정일 가능성이 크다
+            if (c.Seed != 0)
+                prefix = "증상은 사라졌지만 원인이 남아 있음 " + prefix;
             return new LabResult(lab.Id, lab.Title, lab.Part, result, totalMs, prefix + detail);
         }
         return new LabResult(lab.Id, lab.Title, lab.Part, "PASS", totalMs, "");

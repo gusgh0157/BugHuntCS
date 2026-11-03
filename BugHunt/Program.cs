@@ -74,6 +74,31 @@ static class Program
         new("주사위 명령",      "이상한 명령을 도배하면 서버가 느려진다",             Lab54.Run, Hidden: 2),
     ];
 
+    // 챌린지: 힌트 없음. 기본 랩 번호와 따로 센다. C-n = 깊은 추적, B-n = 블라인드
+    record ChallengeEntry(string Code, string Symptom, Action Run, int Hidden, bool Release = false)
+    {
+        // --list 와 채점 보고서의 id. 정수를 유지하려고 C-n은 100+n, B-n은 200+n
+        public int Id => (Code[0] == 'C' ? 100 : 200) + int.Parse(Code[2..]);
+        public string Title => $"챌린지 {Code}";
+    }
+
+    static readonly ChallengeEntry[] Challenges =
+    [
+        new("C-1", "레이드 보상이 가방에 여러 번 들어온다",                 ChallengeC1.Run, Hidden: 4),
+        new("C-2", "로그인하자마자 잡은 몬스터가 엉뚱한 업적에 올라간다",   ChallengeC2.Run, Hidden: 4),
+        new("C-3", "친구 랭킹을 본 뒤에 주간 보상 우편이 엉뚱하게 나간다",  ChallengeC3.Run, Hidden: 4),
+        new("B-1", "지역을 불러오다가 멈춘다",                              ChallengeB1.Run, Hidden: 2),
+        new("B-2", "터키 서버에서만 일부 채팅 명령이 안 먹는다",            ChallengeB2.Run, Hidden: 3),
+        new("B-3", "맵이 커질수록 길찾기가 급격히 느려진다",                ChallengeB3.Run, Hidden: 2),
+        new("B-4", "전투가 끝나고 부대를 채우면 죽는다",                    ChallengeB4.Run, Hidden: 3),
+        new("B-5", "자동 저장이 처음 몇 번만 되고 멈춘다",                  ChallengeB5.Run, Hidden: 2),
+        new("B-6", "하드 모드인데 시작 골드가 이상하다",                    ChallengeB6.Run, Hidden: 2),
+        new("B-7", "보상 우편이 '발송 완료' 뒤에 도착한다",                 ChallengeB7.Run, Hidden: 2),
+        new("B-8", "출시판에서만 텍스처 미리보기가 가끔 깨진다",            ChallengeB8.Run, Hidden: 3, Release: true),
+    ];
+
+    const int ChallengePart = 9;   // --list 의 part 값. 채점기는 "챌린지"로 표시한다
+
     const int Part2Start = 8, Part3Start = 19, Part4Start = 26, Part5Start = 33, Part6Start = 36, Part7Start = 42, Part8Start = 48;
 
     static string BuildName =>
@@ -99,8 +124,11 @@ static class Program
             else if (n == Part8Start) Console.WriteLine("\n[8부] 성능 - 틀리지는 않는데 느리다. 성능 프로파일러, dotnet-counters, dotnet-trace");
             Console.WriteLine($"  {n,2}. {Labs[i].Title}  - {Labs[i].Symptom}");
         }
-        Console.WriteLine("  (명령줄 인자로 번호를 넘겨도 된다: BugHunt.exe 3)");
-        Console.WriteLine("  (채점: 저장소 폴더에서 grade.bat  또는  grade.bat 19-25)");
+        Console.WriteLine("\n[챌린지] 힌트 없음. 1~8부를 먼저 끝내세요. C: 여러 파일을 거치는 깊은 추적, B: 범주를 알려 주지 않는 블라인드");
+        foreach (ChallengeEntry c in Challenges)
+            Console.WriteLine($"  {c.Code}. {c.Symptom}");
+        Console.WriteLine("  (명령줄 인자로 번호를 넘겨도 된다: BugHunt.exe 3, BugHunt.exe C-1)");
+        Console.WriteLine("  (채점: 저장소 폴더에서 grade.bat  또는  grade.bat 19-25,  grade.bat C)");
     }
 
     static int Main(string[] args)
@@ -115,7 +143,7 @@ static class Program
             return 2;
         }
 
-        // 숨은 케이스 재현: BugHunt.exe 36 --seed 1234
+        // 숨은 케이스 재현: BugHunt.exe 43 --seed 1234
         int seedAt = Array.IndexOf(args, "--seed");
         if (seedAt >= 0 && seedAt + 1 < args.Length && int.TryParse(args[seedAt + 1], out int seed))
         {
@@ -135,16 +163,29 @@ static class Program
             input = Console.ReadLine();
         }
 
-        if (!int.TryParse(input, out int choice) || choice < 1 || choice > Labs.Length)
+        input = input?.Trim().ToUpperInvariant();
+        ChallengeEntry? challenge = Challenges.FirstOrDefault(c => c.Code == input || c.Id.ToString() == input);
+        string heading;
+        Action run;
+        if (challenge != null)
         {
-            Console.WriteLine($"1 ~ {Labs.Length} 사이의 번호를 입력하세요.");
+            heading = challenge.Title;
+            run = challenge.Run;
+        }
+        else if (int.TryParse(input, out int choice) && choice >= 1 && choice <= Labs.Length)
+        {
+            heading = $"Lab {choice}: {Labs[choice - 1].Title}";
+            run = Labs[choice - 1].Run;
+        }
+        else
+        {
+            Console.WriteLine($"1 ~ {Labs.Length} 사이의 번호나 챌린지 코드(C-1, B-1 ...)를 입력하세요.");
             return 2;
         }
 
-        LabEntry lab = Labs[choice - 1];
         string hiddenCase = Seed != 0 ? $" (숨은 케이스 seed {Seed})" : "";
-        Console.WriteLine($"\n--- Lab {choice}: {lab.Title} [{BuildName}]{hiddenCase} ---");
-        lab.Run();
+        Console.WriteLine($"\n--- {heading} [{BuildName}]{hiddenCase} ---");
+        run();
         Console.WriteLine("--- 종료 ---");
         return FailCount == 0 && PassCount > 0 ? 0 : 1;
     }
@@ -159,7 +200,7 @@ static class Program
             Part = PartOf(i + 1),
             lab.Hidden,
             lab.Release,
-        });
+        }).Concat(Challenges.Select(c => new { c.Id, c.Title, Part = ChallengePart, c.Hidden, c.Release }));
         Console.WriteLine(JsonSerializer.Serialize(labs, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
         return 0;
     }
