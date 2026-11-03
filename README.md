@@ -6,8 +6,13 @@
 - **2부: 흐름 추적 (랩 8~18)**: 프로그램은 **멀쩡히 끝나는데 결과가 틀리는** 버그들. 직접 중단점을 걸고 값을 확인하며 따라갑니다.
 - **3부: 비동기와 동시성 (랩 19~25)**: `async`/`await`, `Task`, 스레드. 병렬 스택 창과 작업 창을 씁니다.
 - **4부: 리소스와 메모리 (랩 26~28, 선택)**: `Dispose`, GC, 종료자. 메모리 스냅샷과 진단 도구를 씁니다.
+- **5부: unsafe와 네이티브 메모리 (랩 29~34, 선택)**: 포인터, `stackalloc`, `fixed`, `GCHandle`, 네이티브 콜백, `ArrayPool`, 구조체 레이아웃. 메모리 창으로 주소와 바이트를 봅니다.
+- **6부: 멈춤 - 무한루프와 데드락 (랩 35~40)**: 죽지도 않고 끝나지도 않는 버그. **모두 중단**, 병렬 스택, 스레드 창, `dotnet-stack`/`dotnet-dump`로 멈춘 순간을 봅니다.
+- **7부: 컨테이너와 컬렉션 (랩 41~47)**: 범위 밖 인덱스, `List<struct>` 복사본, 가변 키, 동시 수정, 불안정 정렬, `yield`와 지연 실행.
 
-> 코드를 눈으로 훑어 정답을 찾지 마세요. 1부는 **실행해서 죽게 만들고, 디버거가 멈춘 곳에서부터**, 2~4부는 **직접 멈춘 곳에서부터 값을 확인하며** 추적하세요.
+어떤 버그를 어느 랩에서 다루는지는 [버그 범주별 커버리지](#버그-범주별-커버리지) 표에 모아 두었습니다. 아직 랩이 없는 대표 케이스도 "미포함"으로 적어 두었습니다.
+
+> 코드를 눈으로 훑어 정답을 찾지 마세요. 1부는 **실행해서 죽게 만들고, 디버거가 멈춘 곳에서부터**, 2~7부는 **직접 멈춘 곳에서부터 값을 확인하며** 추적하세요.
 
 ## BugHunt 시리즈
 
@@ -16,7 +21,7 @@
 | 판 | 다루는 버그 | 저장소 |
 |---|---|---|
 | C++ 콘솔 | 호출 스택, 메모리 오류, 크래시 없는 흐름 추적 (랩 28개) | [BugHunt](https://github.com/gusgh0157/BugHunt) |
-| C# 콘솔 | 예외와 스택 트레이스, 흐름 추적, 비동기/동시성, 리소스와 메모리 (랩 28개) | [BugHuntCS](https://github.com/gusgh0157/BugHuntCS) **(지금 보는 저장소)** |
+| C# 콘솔 | 예외와 스택 트레이스, 흐름 추적, 비동기/동시성, 리소스와 메모리, unsafe/네이티브 메모리, 무한루프/데드락, 컨테이너 (랩 47개, 채점기) | [BugHuntCS](https://github.com/gusgh0157/BugHuntCS) **(지금 보는 저장소)** |
 | 언리얼 엔진 | 크래시, 흐름 추적, 멀티플레이, 사운드, 이미지, 애니메이션 (랩 21개) | [BugHuntUE](https://github.com/gusgh0157/BugHuntUE) |
 | 유니티 | 크래시/예외, 흐름 추적, 사운드, 이미지, 애니메이션 (랩 23개) | [BugHuntUnity](https://github.com/gusgh0157/BugHuntUnity) |
 
@@ -25,6 +30,7 @@
 필요한 것: **.NET 10 SDK**, **Visual Studio 2026** (또는 .NET 10을 지원하는 Visual Studio, ".NET 데스크톱 개발" 워크로드)
 
 1. `BugHunt.sln`을 Visual Studio로 엽니다. (VS 2022 17.13 이상이면 `BugHunt.slnx`를 열어도 됩니다. Rider, VS Code 등 다른 IDE는 `.sln`을 쓰세요.)
+   솔루션에는 채점기 프로젝트 `BugHunt.Grader`도 들어 있습니다. F5로 실행할 **시작 프로젝트는 `BugHunt`**입니다 (솔루션 탐색기에서 굵게 보이는 프로젝트).
 2. 위쪽 도구 모음에서 구성을 **Debug**로 둡니다.
 3. **F5**(디버깅 시작)로 실행 → 메뉴에서 랩 번호 입력.
    - 매번 같은 랩을 돌리려면: `BugHunt/Properties/launchSettings.json`의 `"commandLineArgs": ""`에 번호를 넣습니다 (예: `"1"`). 또는 솔루션 탐색기에서 BugHunt 우클릭 → 속성 → 디버그 → **디버그 시작 프로필 UI 열기** → **명령줄 인수**.
@@ -38,17 +44,83 @@ dotnet run --project BugHunt -- 3
 
 ### 채점기
 
-각 랩을 **별도 프로세스로** 실행해서 판정합니다. 크래시(스택 오버플로 포함)와 멈춤(데드락)도 판정할 수 있습니다.
+고친 뒤에는 채점기로 확인합니다. 저장소 폴더(이 README가 있는 곳)에서:
 
 ```bash
-dotnet run --project BugHunt -- grade
+grade.bat
 ```
 
 ```bash
-dotnet run --project BugHunt -- grade 8-18
+dotnet run --project BugHunt.Grader
 ```
 
-`PASS`는 종료 코드 0, `[FAIL]` 없음, `[PASS]` 1개 이상, 30초 안에 끝남을 뜻합니다. 처음에는 전부 `FAIL`이나 `CRASH`가 나오는 것이 정상입니다.
+둘은 같은 것입니다. 일부만 채점하려면 랩 번호를 붙입니다 (`grade.bat 29-40`, `grade.bat 1,5,29-34`).
+
+채점기(`BugHunt.Grader` 프로젝트)가 하는 일:
+
+1. `BugHunt`를 **Debug와 Release로 새로 빌드**합니다. 빌드가 실패하면(경고도 오류입니다) 채점하지 않습니다.
+2. 랩마다 `BugHunt.exe <번호>`를 **새 프로세스로** 띄웁니다. 그래서 한 랩이 죽거나(스택 오버플로, FailFast 포함) 멈춰도 다른 랩 채점에 영향이 없습니다.
+3. 화면에 보이는 기본 입력으로 한 번, 그리고 **숨은 케이스**(무작위 시드로 만든 다른 입력)로 몇 번 더 돌립니다. 기대값을 코드에 박아 넣어 `[PASS]`만 맞춘 수정은 여기서 걸립니다. 숨은 케이스는 5~7부 랩에 있습니다 (1~4부는 기본 케이스만).
+4. JIT 최적화에 따라 결과가 달라질 수 있는 랩(29, 30, 32, 40)은 **Release로도** 돌립니다. 모든 실행이 통과해야 `PASS`입니다.
+5. 콘솔에 표와 총점을, 저장소 루트에 `grade-report.json`을 남깁니다.
+
+| 결과 | 뜻 |
+|---|---|
+| `PASS` | 모든 실행이 종료 코드 0, `[FAIL]` 없음, `[PASS]` 1개 이상 |
+| `FAIL` | `[FAIL]`이 나왔거나 판정 출력이 없음 |
+| `TIMEOUT` | 멈춤. 랩의 감시 타이머가 `[FAIL] 응답 없음`을 냈거나, 실행 한 번이 20초를 넘겨 채점기가 강제로 끝냄 |
+| `CRASH` | 처리되지 않은 예외, 스택 오버플로, FailFast 등으로 프로세스가 죽음. 상세에 종료 코드가 나옵니다 |
+| `SKIP` | 이 환경에서는 판정할 수 없음 (랩이 `[SKIP]`을 출력). 총점의 분모에서 빠집니다 |
+
+처음에는 전부 `FAIL`, `CRASH`, `TIMEOUT`이 나오는 것이 정상입니다.
+
+옵션:
+
+| 옵션 | 뜻 |
+|---|---|
+| `--config Debug` / `--config Release` | 그 구성 하나로만 채점 |
+| `--seed N` | 숨은 케이스 시드를 고정. 채점 결과 맨 아래에 나온 값을 넣으면 같은 입력으로 다시 채점합니다 |
+| `--no-hidden` | 기본 케이스만 |
+| `--no-build` | 빌드를 건너뜀 (이미 빌드된 것을 채점) |
+| `--timeout MS` | 실행 한 번의 제한 시간 (기본 20000) |
+| `--out 경로` | 보고서 위치 |
+
+숨은 케이스 하나를 디버거로 다시 보려면, 실패 상세의 `seed` 값을 명령 인수에 같이 넣습니다: `"commandLineArgs": "36 --seed 123456"`.
+
+#### grade-report.json 형식
+
+BugHunt 네 판(C++, C#, 언리얼, 유니티)이 같은 형식을 씁니다.
+
+```json
+{
+  "edition": "cs",
+  "version": "1",
+  "total": 47,
+  "passed": 12,
+  "labs": [
+    { "id": 1, "title": "친구 프로필", "part": 1, "result": "PASS", "ms": 85, "detail": "" },
+    { "id": 32, "title": "박자 콜백", "part": 5, "result": "CRASH", "ms": 152,
+      "detail": "[Debug] 0x80131623 Process terminated. A callback was made on a garbage collected delegate ..." },
+    { "id": 38, "title": "동시 거래", "part": 6, "result": "TIMEOUT", "ms": 2075,
+      "detail": "응답 없음 (2000 ms 초과): 동시 거래" }
+  ]
+}
+```
+
+| 필드 | 형식 | 뜻 |
+|---|---|---|
+| `edition` | 문자열 | 판 이름. 이 저장소는 `"cs"` |
+| `version` | 문자열 | 보고서 **형식**의 버전 (`"1"`) |
+| `total` | 정수 | 채점한 랩 수 (SKIP 포함) |
+| `passed` | 정수 | `PASS` 수 |
+| `labs[].id` | 정수 | 랩 번호 |
+| `labs[].title` | 문자열 | 랩 이름 |
+| `labs[].part` | 정수 | 부 번호 (1~7) |
+| `labs[].result` | 문자열 | `PASS`, `FAIL`, `TIMEOUT`, `CRASH`, `SKIP` 중 하나 |
+| `labs[].ms` | 정수 | 걸린 시간 (그 랩의 모든 실행을 합친 밀리초) |
+| `labs[].detail` | 문자열 | 실패 이유 한 줄. `PASS`면 빈 문자열. 숨은 케이스나 Release에서 실패했으면 앞에 `[Release, 숨은 케이스 seed N]`처럼 붙음 |
+
+파일은 UTF-8(BOM 없음)이고 채점기의 종료 코드는 만점이면 0, 아니면 1, 빌드 실패 등으로 채점을 못 하면 2입니다. CI에서 쓸 수 있습니다.
 
 ### 경고 정책
 
@@ -184,7 +256,7 @@ Unhandled exception. System.NullReferenceException: Object reference not set to 
 4. **"처음 달라진 곳"을 고친다.** 그 뒤의 틀린 값들은 대부분 그 결과일 뿐이다.
 
 ```
-기록표 (2~4부용)
+기록표 (2~7부용)
 틀린 결과:              
 멈춘 위치:              
 기대값 → 실제값:         
@@ -409,6 +481,258 @@ MethodTable: 00007ff870f51690
 
 ---
 
+# 5부: unsafe와 네이티브 메모리 (선택)
+
+C#에도 포인터가 있습니다. `unsafe`, `stackalloc`, `fixed`, `GCHandle`, 함수 포인터, `Span`과 `ArrayPool`을 쓰면 C++처럼 메모리를 직접 다룰 수 있고, 그만큼 **C++과 같은 버그**도 생깁니다. 다른 점은 그 메모리 밑에서 **GC가 객체를 옮기고 수거한다**는 것입니다.
+
+> 이 프로젝트는 `BugHunt.csproj`에서 `AllowUnsafeBlocks`를 켜 두었습니다.
+
+## 5부에서 쓰는 도구
+
+| 도구 | 하는 법 | 언제 |
+|---|---|---|
+| 조사식의 포인터 식 | `(long)path`, `path[0]`, `*p`, `&pixels[0]`, `sizeof(int)` | 포인터가 가리키는 주소와 값 |
+| 메모리 창 | 디버그 → 창 → 메모리 → **메모리 1** (Ctrl+Alt+M, 1), 주소 칸에 `path`나 `&header` | 주소의 바이트가 **언제** 바뀌는지, 구조체 필드 사이의 빈 바이트 |
+| 즉시 창 | Ctrl+Alt+I, `Unsafe.SizeOf<PacketHeader>()`, `Marshal.SizeOf<PacketHeader>()` | 크기와 오프셋 계산 |
+| 개체 ID | 변수 우클릭 → **개체 ID 만들기** | 풀에서 빌린 배열이 **같은 배열**인지 (랩 33) |
+| 메모리 스냅샷 루트 경로 | 4부와 같음 | 무엇이 객체를 붙잡고 있나 (랩 31: 고정 핸들) |
+| 디버거 없이 실행한 콘솔 | Ctrl+F5 | 런타임이 프로세스를 끝내며 남기는 한 줄 (랩 32) |
+
+## 따라 해 보기: 랩 29 (미니맵 경로)
+
+1. 명령 인수에 `29`를 넣고 **F5**. `[FAIL] 경로`. 경로 타일 수는 맞는데 값이 쓰레기입니다.
+2. `FindPath`의 `return path;` 줄에 **F9**, 다시 F5. 조사식에 `path[0]`, `path[1]`, `(long)path`를 넣습니다. 값은 3, 4로 **맞습니다**.
+3. **디버그 → 창 → 메모리 → 메모리 1**을 열고 주소 칸에 `path`를 넣습니다. 03 00 00 00 04 00 00 00 ... 이 보입니다.
+4. **Shift+F11**로 `Run`에 나옵니다. 조사식의 `path`는 이제 "범위 밖"일 수 있으니 `Run`의 지역 변수 `path`를 봅니다. 아직 3, 4입니다.
+5. `DrawMinimapBackground();`를 **F10**으로 넘깁니다. 메모리 창의 바이트가 빨갛게(바뀐 값) 변합니다. → *처음 어긋난 줄*
+6. 이 함수는 버그가 없다고 적혀 있습니다. 그런데 왜 `FindPath`가 만든 경로를 지웠을까요? `FindPath`의 주석(CS8352)을 다시 읽어 보세요.
+
+## 5부 랩 목록
+
+| # | 이름 | 증상 | 새로 배우는 것 | 난이도 |
+|---|---|---|---|---|
+| 29 | 미니맵 경로 | 경로를 구했는데 미니맵에는 엉뚱한 타일이 찍힌다 | **끝난 메서드의 stackalloc 메모리**, Span 수명 검사를 포인터로 우회, 메모리 창 | ★★ |
+| 30 | 효과음 믹서 | 레벨을 넘어가면 효과음 볼륨이 엉망이 된다 | **`fixed` 밖의 포인터 + GC 압축**, `GC.AllocateArray(pinned: true)` | ★★★ |
+| 31 | 패킷 수신 | 손상된 패킷을 버렸는데 메모리가 안 줄어든다 | **`GCHandle.Free` 누락**, 고정 핸들 루트, `PinnedObjectsCount` | ★★ |
+| 32 | 박자 콜백 | 곡을 고르면 게임이 통째로 사라진다 | **수거된 콜백 대리자**, `GetFunctionPointerForDelegate`, FailFast 메시지 읽기 | ★★ |
+| 33 | 채팅 기록 | 채팅 기록이 전부 마지막 메시지로 바뀐다 | **`ArrayPool` 반납 후 사용**, `Memory`/`Span`은 복사가 아니다, 개체 ID | ★★ |
+| 34 | 패킷 헤더 | 서버가 보낸 채팅이 하나도 안 보인다 | **구조체 패딩과 `Pack`**, `Unsafe.SizeOf` vs `Marshal.SizeOf`, `BinaryPrimitives` | ★★ |
+
+> 랩 30과 32는 "언젠가 GC가 돌면" 터지는 버그입니다. 실습에서는 코드 안의 `GC.Collect()`가 그 순간을 고정해 두어서 **매번 같은 결과**가 나옵니다. 실제 게임에서는 몇 시간에 한 번, 다른 기계에서만 나타나는 종류입니다.
+
+---
+
+# 6부: 멈춤 - 무한루프와 데드락
+
+크래시도 예외도 없이 **그냥 멈추는** 버그입니다. 콘솔에는 아무것도 안 나오고, 디버거도 스스로 멈추지 않습니다. 이때 할 일은 하나입니다. **멈춘 순간의 모든 스레드를 본다.**
+
+> 6부 랩은 정말 영원히 멈추지는 않습니다. 각 랩은 `LabKit.FinishesWithin`(감시 타이머) 아래에서 돌아서, **2초**가 지나면 `[FAIL] 응답 없음 (2000 ms 초과)`을 출력하고 끝납니다.
+> - 디버거로(F5) 실행하면 실패로 끝내지 않고 계속 기다립니다. 메시지가 나오면 그때 **모두 중단**을 누르세요.
+> - 디버거 없이 실행하면 `계속하려면 Enter`에서 기다립니다. 그동안 멈춘 스레드는 그대로 남아 있으므로 `dotnet-stack`이나 `dotnet-dump`로 들여다보거나, VS에서 **디버그 → 프로세스에 연결**할 수 있습니다.
+
+## 6부에서 쓰는 도구
+
+| 도구 | 하는 법 | 언제 |
+|---|---|---|
+| 모두 중단 | 디버그 → **모두 중단** (Ctrl+Alt+Break) | 멈춘 순간에 들어가기. 6부의 첫 단계 |
+| 스레드 창 | **Ctrl+Alt+H** | `랩 본문 (...)`, `거래: Kael → Mira`, `로딩 스레드`처럼 이름 붙은 스레드를 찾아 더블클릭 |
+| 병렬 스택 | Ctrl+Shift+D, S | 데드락: 서로 다른 스레드가 모두 `Monitor.Enter`에서 기다림 (랩 38) |
+| 작업 창 | Ctrl+Shift+D, K | 비동기 데드락: "대기 중"인 작업들이 무엇을 기다리나 (랩 39) |
+| 같은 곳에서 여러 번 중단 | F5 → 모두 중단을 몇 번 반복 | 무한루프: 매번 같은 루프 안이면서 **어떤 값은 변하고 어떤 값은 안 변하는지** (랩 35, 36) |
+| 디스어셈블리 | Ctrl+Alt+D | Release 최적화가 루프를 어떻게 바꿨나 (랩 40) |
+| 프로세스에 연결 | 디버그 → 프로세스에 연결 (Ctrl+Alt+P) → `BugHunt.exe` | 디버거 없이 시작했다가 멈춘 프로그램에 붙기 |
+| dotnet-stack | `dotnet-stack report -p <PID>` | VS 없이 모든 스레드의 관리 스택을 한 번에 |
+| dotnet-dump | `dotnet-dump collect -p <PID>` → `analyze` → `clrstack -all`, `syncblk`, `threads` | 덤프로 남겨서 나중에, 다른 PC에서. `syncblk`는 **누가 어떤 lock을 쥐었는지** 보여 줌 |
+
+```bash
+dotnet tool install --global dotnet-stack
+```
+
+## 멈춤 추적 4단계 (6부 공통)
+
+1. **멈춘 순간에 들어간다.** 모두 중단, 또는 프로세스에 연결, 또는 dotnet-stack/dump.
+2. **누가 일하고 누가 기다리나?** 스레드 창과 병렬 스택에서 내 코드가 맨 위 근처에 있는 스레드를 찾는다. CPU를 쓰면서 도는 중(무한루프)인지, `Wait`/`Monitor.Enter`/`WaitAsync`에서 기다리는 중(데드락)인지 구분한다.
+3. **도는 중이라면:** 모두 중단을 여러 번 해서 루프 변수가 어떻게 변하는지 본다. 종료 조건이 왜 영원히 참인지 찾는다.
+4. **기다리는 중이라면:** 각 스레드가 **이미 쥔 것**과 **기다리는 것**을 적는다. 고리가 보이면 데드락이다. 아무도 쥐고 있지 않은데 기다린다면, 돌려주기(`Release`, `Exit`, `Set`)를 빠뜨린 경로를 찾는다.
+
+## 따라 해 보기: 랩 38 (동시 거래)
+
+1. 명령 인수에 `38`을 넣고 **F5**. 2초 뒤 `>> 동시 거래: 2000 ms가 지나도 안 끝난다`가 나옵니다.
+2. **디버그 → 모두 중단** (Ctrl+Alt+Break).
+3. **스레드 창**(Ctrl+Alt+H). `거래: Kael → Mira`, `거래: Mira → Kael` 두 스레드가 보입니다.
+4. **병렬 스택**(Ctrl+Shift+D, S). 두 스레드 모두 맨 위가 `Monitor.Enter`(또는 `Monitor.ReliableEnter`), 그 아래가 `Lab38.Transfer`입니다. → *둘 다 기다리는 중*
+5. 각 스레드의 `Transfer` 프레임을 더블클릭하고 지역 창에서 `from`, `to`를 봅니다. 노란 화살표가 가리키는 `lock (to.Sync)`는 누구의 잠금인가요? 그 바깥 `lock (from.Sync)`는요?
+6. 표로 적어 보세요. Kael → Mira 스레드: 쥔 것 ___, 기다리는 것 ___. Mira → Kael 스레드: 쥔 것 ___, 기다리는 것 ___.
+7. 고친 뒤 F5로 `[PASS]`를 확인합니다.
+
+### 명령줄로 해 보기 (dotnet-dump)
+
+랩 38을 Ctrl+F5(또는 `BugHunt.exe 38`)로 실행하면 `[FAIL] 응답 없음` 다음 `계속하려면 Enter`에서 기다립니다. 그때 **다른 터미널**에서:
+
+```bash
+dotnet-dump collect -p <PID> -o lab38.dmp
+```
+
+```bash
+dotnet-dump analyze lab38.dmp
+```
+
+`analyze` 프롬프트(`>`)에서 아래처럼 봅니다. 출력은 이 PC에서 실제로 나온 값이고(dotnet-dump 10.0.750501), 주소와 번호는 실행마다 다릅니다.
+
+**누가 어떤 잠금을 쥐었나** (`syncblk`):
+
+```
+> syncblk
+Index         SyncBlock MonitorHeld Recursion Owning Thread Info          SyncBlock Owner
+    1 000001C1F0120C58            3         1 000001C1F014B710 9350   8   000001a21649fc38 System.Object
+    2 000001C1F0120CB0            3         1 000001C1F014BA40 8b74   9   000001a21649fc78 System.Object
+```
+
+잠금 객체(`System.Object`, 플레이어의 `Sync`)가 두 개이고, 각각 다른 스레드(디버거 번호 8과 9, OS 스레드 `9350`, `8b74`)가 쥐고 있습니다. `MonitorHeld`가 3이면 "주인 1 + 기다리는 스레드 1"입니다. 즉 **두 잠금 모두 누군가 기다리고 있습니다.**
+
+**그 스레드들은 어디서 기다리나** (`clrstack -all`, 필요한 부분만):
+
+```
+> clrstack -all
+OS Thread Id: 0x9350
+    System.Threading.Monitor.Enter_Slowpath(System.Object)
+    System.Threading.Monitor.Enter(System.Object, Boolean ByRef)
+    BugHunt.Lab38.Transfer(Player, Player, Int32) [...\Lab38_Trade.cs @ 22]
+    BugHunt.Lab38+<>c__DisplayClass3_1.<Run>b__1() [...\Lab38_Trade.cs @ 41]
+OS Thread Id: 0x8b74
+    System.Threading.Monitor.Enter_Slowpath(System.Object)
+    System.Threading.Monitor.Enter(System.Object, Boolean ByRef)
+    BugHunt.Lab38.Transfer(Player, Player, Int32) [...\Lab38_Trade.cs @ 22]
+    BugHunt.Lab38+<>c__DisplayClass3_1.<Run>b__2() [...\Lab38_Trade.cs @ 42]
+OS Thread Id: 0x8eb8
+    System.Threading.Thread.Join()
+    BugHunt.Lab38+<>c__DisplayClass3_0.<Run>b__0() [...\Lab38_Trade.cs @ 46]     ← 랩 본문: 거래 스레드를 기다림
+OS Thread Id: 0x8dc
+    System.Threading.Thread.Join(Int32)
+    BugHunt.LabKit.FinishesWithin(...) [...\LabKit.cs @ 44]                     ← 메인: 감시 타이머
+```
+
+두 거래 스레드가 **같은 줄(22번 줄, 안쪽 `lock (to.Sync)`)**에서 `Monitor.Enter`로 기다리고, `syncblk`에서는 바로 그 두 스레드가 잠금을 하나씩 쥐고 있습니다. 41번 줄(`b__1`)은 Kael → Mira, 42번 줄(`b__2`)은 Mira → Kael 거래입니다. "각자 하나씩 쥐고, 상대 것을 기다린다." 이것이 교착 상태의 모양입니다.
+
+`dotnet-stack report -p <PID>`를 쓰면 덤프 없이 살아 있는 프로세스의 스택을 바로 볼 수 있습니다 (`syncblk` 같은 잠금 정보는 없습니다).
+
+
+## 6부 랩 목록
+
+| # | 이름 | 증상 | 새로 배우는 것 | 난이도 |
+|---|---|---|---|---|
+| 35 | 보스 등장 연출 | 보스가 나오면 카메라 줌이 끝나지 않는다 | **실수 누적 + `!=` 종료 조건**, 모두 중단으로 루프 안 보기 | ★ |
+| 36 | 인벤토리 저장 | 확장 가방을 산 플레이어만 저장하다 멈춘다 | **`byte` 루프 변수의 넘침**, 모두 중단을 여러 번 | ★ |
+| 37 | 길드 동맹 | 동맹 가입 뒤 맹주 찾기가 끝나지 않는다 | **부모 사슬의 고리**, 개체 ID로 같은 노드 다시 찾기 | ★★ |
+| 38 | 동시 거래 | 두 사람이 서로 골드를 보내면 둘 다 멈춘다 | **lock 순서 데드락**, 병렬 스택, 스레드 창, `syncblk` | ★★ |
+| 39 | 패치 슬롯 | 몇 개 실패하더니 다운로드가 통째로 멈춘다 | **`SemaphoreSlim.Release` 누락**, 작업 창, `CurrentCount` | ★★ |
+| 40 | 로딩 대기 | Release 출시판에서만 로딩 화면이 끝나지 않는다 | **`volatile` 없는 바쁜 대기**, Debug와 Release의 차이, 디스어셈블리 | ★★★ |
+
+> 랩 40은 **Release**에서만 멈춥니다. 위쪽 도구 모음의 구성을 Release로 바꾸고 F5 하세요. Debug에서 `[PASS]`가 나오는 것 자체가 단서입니다. 채점기는 이 랩을 Debug와 Release 둘 다로 돌립니다.
+> 3부의 랩 20(`.Result` 데드락)은 비동기 데드락, 6부의 랩 38은 잠금(lock) 데드락입니다. 병렬 스택에서 두 모습을 비교해 보세요.
+
+---
+
+# 7부: 컨테이너와 컬렉션
+
+`List`, `Dictionary`, 배열, LINQ는 매일 쓰는 만큼 버그도 많이 숨어 있습니다. 1·2부에도 컨테이너 버그가 있었습니다 (랩 2 키 비교자, 3 열거 중 수정, 9 지연 실행, 17 Equals/GetHashCode, 18 얕은 복사, 5부의 33 `ArrayPool`과 `Memory` 슬라이스). 7부는 그 나머지 대표 함정을 모았습니다. 죽는 랩(41, 46), 결과만 틀리는 랩, 여러 스레드가 얽힌 랩(44)이 섞여 있어서, 1~6부에서 익힌 도구를 골라 써야 합니다.
+
+## 7부에서 쓰는 도구
+
+| 도구 | 하는 법 | 언제 |
+|---|---|---|
+| 예외 도우미 + 지역 창 | 멈춘 곳의 인덱스 변수와 `Count`/`Length`를 나란히 | 범위 밖 인덱스 (랩 41) |
+| 조사식의 컬렉션 펼치기 | `storage`를 펼치면 키/값 목록, `[Raw View]`에서 내부 `_buckets`, `_entries` | 딕셔너리에 **들어 있는데 못 찾는** 경우 (랩 43) |
+| 조사식에 메서드 호출 | `storage.ContainsKey(g)` vs `storage.Keys.Contains(g)`, `g.GetHashCode()` | 해시로 찾기와 하나씩 비교하기의 차이 |
+| 개체 ID / 값 형식 | struct에는 개체 ID를 만들 수 없음. 그 자체가 단서 | 복사본을 고치는 경우 (랩 42) |
+| "결과 보기" | `IEnumerable` 변수를 펼쳤을 때 나오는 항목 | 그것이 **목록인지 질의인지** 구분 (랩 46, 47). 누를 때마다 다시 열거된다는 점 주의 (랩 9) |
+| 예외 설정 (first chance) | Ctrl+Alt+E | 여러 스레드 중 처음 예외가 난 순간 (랩 44) |
+
+## 따라 해 보기: 랩 43 (길드 창고)
+
+1. 명령 인수에 `43`을 넣고 **F5**. `[FAIL] 태그를 바꾼 길드의 창고를 찾음`.
+2. `bool found = storage.TryGetValue(...)` 줄에 **F9**, 다시 F5.
+3. 조사식(Ctrl+Alt+W, 1)에 `storage`를 넣고 펼칩니다. 이름이 바뀐 길드(`DWN2`)가 **키 목록에 그대로 있습니다.** 그런데 왜 못 찾을까요?
+4. 조사식에 두 줄을 더 넣습니다: `storage.ContainsKey(guilds[renamed])`, `storage.Keys.Contains(guilds[renamed])`. 하나는 false, 하나는 true입니다. 두 방법은 무엇이 다를까요?
+5. `Guild.GetHashCode`에 중단점을 걸고 처음부터 다시 실행합니다. 딕셔너리에 **넣을 때** 몇이 나오는지 적고, `TryGetValue`에서 **찾을 때** 몇이 나오는지 비교합니다. → *처음 어긋난 줄*
+6. 키로 쓰는 동안 바뀌면 안 되는 값은 무엇이었을까요? 랩 17의 해답도 함께 보세요.
+
+## 7부 랩 목록
+
+| # | 이름 | 증상 | 새로 배우는 것 | 난이도 |
+|---|---|---|---|---|
+| 41 | 퀘스트 정산 | 퀘스트를 다 깨기 전에 정산하면 죽는다 | **범위 밖 인덱스**, `Length`와 `Count`, 경계 시험 | ★ |
+| 42 | 광역 공격 | 광역 공격을 맞아도 파티 HP가 그대로다 | **`List<struct>` 인덱서는 복사본**, CS1612, `CollectionsMarshal.AsSpan` | ★★ |
+| 43 | 길드 창고 | 길드 태그를 바꾸자 창고가 사라졌다 | **가변 키**: 넣은 뒤 해시가 바뀐 키, `ContainsKey` vs `Keys.Contains` | ★★ |
+| 44 | 처치 기록 | 처치 기록 수가 매번 모자라고 가끔 예외가 난다 | **스레드 안전하지 않은 컬렉션의 동시 수정**, `ConcurrentDictionary` | ★★ |
+| 45 | 시즌 리더보드 | 점수가 같으면 먼저 달성한 사람이 밀려난다 | **불안정 정렬(`List.Sort`)과 안정 정렬(`OrderBy`)**, 비교자 일관성 | ★★ |
+| 46 | 드롭 테이블 | 고장 난 파일을 건너뛰게 했는데 다른 곳에서 죽는다 | **`yield` 메서드는 열거할 때 실행된다**, 예외 위치, 호출 스택의 `MoveNext` | ★★ |
+| 47 | 레이드 보상 | 레이드에 없던 사람이 보상을 받는다 | **질의는 스냅샷이 아니다**, `ToList()`로 찍어 두기 | ★ |
+
+---
+
+# 버그 범주별 커버리지
+
+어떤 종류의 버그를 어느 랩에서 다루는지 한눈에 봅니다. **미포함**은 그 범주의 대표 케이스지만 이 저장소에 아직 랩이 없는 것입니다 (빈 곳을 숨기지 않으려고 적어 둡니다). 해답 안에서 말로만 짚은 것은 "해답에서 언급"으로 표시했습니다.
+
+| 범주 | 대표 케이스 | 랩 |
+|---|---|---|
+| **null·참조** | null 역참조, `!`로 눌러 둔 nullable 경고 | 1 |
+| | 박싱 해제 형식 불일치 (`(int)(object)7L`) | 4 |
+| | 박싱된 값의 `==`는 참조 비교 | 11 |
+| | struct 복사: `readonly` 필드의 방어적 복사 / `List<struct>` 인덱서 | 10 / 42 |
+| | 얕은 복사 (`record with`로 List 공유) | 18 |
+| | 람다의 루프 변수 캡처 | 8 |
+| | `as` 결과 null 확인 누락, 정적 생성자 예외(`TypeInitializationException`) | 미포함 |
+| **예외 처리** | 스택 트레이스 읽기, `throw ex` vs `throw` | 7 |
+| | 스택 오버플로 (잡을 수 없는 예외) | 5 |
+| | `AggregateException`과 내부 예외 | 6 |
+| | `async void` 예외 / `Task.WhenAll`은 첫 예외만 | 19 / 22 |
+| | `yield` 메서드의 예외는 열거할 때 | 46 |
+| | `finally`/`using` 없이 예외 경로에서 정리 누락 | 31, 39 (26은 Dispose 자체 누락) |
+| **컨테이너** | 키 비교자 (대소문자만 다른 키) | 2 |
+| | 열거 중 컬렉션 수정 | 3 |
+| | 범위 밖 인덱스, `Length`/`Count` 혼동, off-by-one | 41 |
+| | `Equals`/`GetHashCode` 불일치 / 가변 키 | 17 / 43 |
+| | LINQ 지연 실행: 다시 열거하면 부수 효과 반복 / 스냅샷이 아님 | 9 / 47 |
+| | `Span`/`Memory` 슬라이스가 원본을 공유, `ArrayPool` 반납 후 사용 | 33 |
+| | 여러 스레드의 동시 수정 | 44 |
+| | 불안정 정렬, 비교자 일관성 | 45 |
+| | `Dictionary` 열거 순서에 기대기, 배열 공변성(`ArrayTypeMismatchException`), `IReadOnlyList`를 캐스팅해서 수정 | 미포함 |
+| **흐름·순서** | 반환값을 버림 (`string.Replace`) | 14 |
+| | await 누락 (fire-and-forget) | 21 |
+| | `CancellationToken` 전달 누락 | 25 |
+| | 고리가 생긴 부모 사슬 | 37 |
+| | 이벤트 처리기 실행 순서, 정적 필드 초기화 순서 | 미포함 |
+| **수치·문화권·시간** | float `==` 비교 / float 누적과 `!=` 종료 조건 | 12 / 35 |
+| | 정수 넘침 (`int` 곱셈) / `byte` 루프 변수 넘침 | 13 / 36 |
+| | 문화권에 따른 숫자 파싱 (`CultureInfo`) | 15 |
+| | `DateTime.Kind`, UTC와 현지 시각 | 16 |
+| | 정수 나눗셈 절사, `Math.Round`의 은행가 반올림, 돈 계산에 `double` 대신 `decimal` | 미포함 |
+| | 문자열 비교의 문화권 (터키어 I 등) | 미포함 |
+| **비동기·동시성** | `.Result` 데드락 (SynchronizationContext) | 20 |
+| | 경쟁 조건 (lock 없는 `+=`) | 23 |
+| | `ConfigureAwait(false)` 뒤 스레드 | 24 |
+| | 스레드 풀 고갈 (sync-over-async), `AsyncLocal` 흐름 | 미포함 |
+| **멈춤** | 무한루프: 실수 종료 조건 / 정수 넘침 / 그래프 고리 | 35 / 36 / 37 |
+| | lock 순서 데드락 | 38 |
+| | 비동기 데드락 | 20 |
+| | 세마포 반납 누락 | 39 |
+| | `volatile` 없는 바쁜 대기 (Release에서만) | 40 |
+| | `Monitor.Wait`/`Pulse` 신호 유실 | 미포함 (랩 39 해답에서 언급) |
+| **리소스·메모리** | `Dispose` 누락 (버퍼 플러시) | 26 |
+| | static 이벤트가 붙잡는 누수 | 27 |
+| | 종료자에 자원 반납을 맡김 | 28 |
+| | `GCHandle` 누수 | 31 |
+| | `System.Threading.Timer`가 GC에 수거되어 멈춤, LOH 단편화, 끝없이 커지는 캐시 | 미포함 |
+| **unsafe·네이티브** | 끝난 메서드의 `stackalloc` 메모리 | 29 |
+| | `fixed` 밖의 포인터와 GC 압축 | 30 |
+| | 네이티브 콜백 대리자 수거 | 32 |
+| | 구조체 레이아웃·패딩, `Marshal.SizeOf` vs `sizeof` | 34 |
+| | P/Invoke 문자열 마샬링(`CharSet`), `SafeHandle` 대신 `IntPtr` | 미포함 (`SafeHandle`은 랩 28 해답에서 언급) |
+
+---
+
 ## 분석기와 컴파일러 경고
 
 몇몇 랩의 버그는 컴파일러나 분석기가 **미리 알려 줄 수 있었던** 것입니다. 기본으로 켜진 것과, 직접 켜야 하는 것이 있습니다.
@@ -459,31 +783,43 @@ dotnet_diagnostic.CA2000.severity = warning
 
 ## 알아두면 좋은 종료 코드
 
-채점기가 `CRASH (0x...)`로 보여 주는 값입니다.
+채점기가 `CRASH` 상세 맨 앞에 보여 주는 값입니다.
 
 | 값 | 의미 |
 |---|---|
 | `0xE0434352` | 처리되지 않은 .NET 예외 |
 | `0xC00000FD` | Stack overflow |
 | `0xC0000005` | Access violation. .NET에서는 null 역참조가 이렇게 끝나기도 합니다 |
+| `0x80131623` | FailFast. 런타임이 더 진행하면 위험하다고 보고 즉시 끝냄. 이유는 표준 오류의 `Process terminated.` 다음 줄 (랩 32) |
 
 ## 자동 검증 결과
 
-`grade`(채점기)로 확인한 것 (Windows 11, .NET SDK 10.0.401):
+채점기(`grade.bat`)로 확인한 것 (Windows 11, .NET SDK 10.0.401):
+
+**랩 1~28** (처음 만들 때, 옛 `BugHunt.exe grade`로)
 
 - 버그 상태: 28개 모두 `FAIL` 또는 `CRASH` (Debug 3회, Release 1회)
 - 정답 수정을 모두 적용: 28개 모두 `PASS` (Debug 3회, Release 1회)
 - 정답 수정을 **하나씩만** 적용: 그 랩 하나만 `PASS`로 바뀜 (28가지 모두)
-- 되돌린 뒤: 다시 28개 모두 `FAIL`/`CRASH`
 - 랩 23(경쟁 조건)은 버그 상태 단독 실행 30회 모두 `FAIL`, 수정 후 10회 모두 `PASS`
 - 랩 20은 두 가지 수정(끝까지 async, `ConfigureAwait(false)`) 모두 `PASS`
+
+**랩 29~47과 새 채점기**
+
+- 버그 상태 전체 채점: 0 / 47 (`CRASH` 10, `FAIL` 31, `TIMEOUT` 6)
+- 정답 수정을 모두 적용: 47 / 47. 숨은 케이스 시드를 바꿔 가며 기본 채점(Debug, Release 표시 랩은 Release도)을 랩 29~40은 5회, 41~47은 2회. `--config Release`는 각각 2회, 1회
+- 정답 수정을 하나씩만 적용: 그 랩 하나만 `PASS`로 바뀜 (29~47 모두)
+- 되돌린 뒤: 다시 0 / 47
+- 랩 29~47 각각을 버그 상태로 Debug와 Release에서 20번씩(기본 케이스 10번 + 숨은 케이스 10가지) 단독 실행: 결과가 매번 같음. 크래시가 나는 랩(32, 41, 46)은 매번 같은 `CRASH`, 멈추는 랩은 매번 `TIMEOUT`. 숨은 케이스 중 버그 상태에서도 우연히 통과하는 입력이 랩 35에 하나 있었습니다(누적값이 목표를 정확히 밟는 경우). 기본 케이스는 항상 실패합니다
+- 랩 40은 버그 상태에서 Debug는 `PASS`, Release는 `TIMEOUT` (의도한 차이). 채점기는 Release로도 돌리므로 `TIMEOUT`
+- 기대값을 박아 넣은 "수정"(랩 35에서 10프레임을 그냥 그리게 함)은 기본 케이스는 통과하지만 숨은 케이스에서 `FAIL`
 - 각 부별 커밋이 혼자서도 경고 0개로 빌드됨
 
-경쟁 조건(랩 23)과 타이밍(랩 19~25)은 PC 부하에 따라 결과가 달라질 수 있습니다. 버그 상태에서 `PASS`가 나오면 몇 번 더 실행해 보세요.
+경쟁 조건(랩 23, 44)과 타이밍(랩 19~25, 38)은 PC 부하에 따라 결과가 달라질 수 있습니다. 버그 상태에서 `PASS`가 나오면 몇 번 더 실행해 보세요.
 
-확인하지 못한 것: VS의 각 창(예외 도우미 문구, 병렬 스택 모양, 메모리 스냅샷 화면)은 사람이 직접 띄워 보지 않았습니다. 버전에 따라 메뉴 이름이나 모양이 조금 다를 수 있습니다.
+확인하지 못한 것: VS의 각 창(예외 도우미 문구, 병렬 스택 모양, 메모리 창, 메모리 스냅샷 화면)은 사람이 직접 띄워 보지 않았습니다. 버전에 따라 메뉴 이름이나 모양이 조금 다를 수 있습니다. `dotnet-stack`은 이 PC에 설치되어 있지 않아 실행해 보지 않았습니다.
 
-dotnet-counters와 dotnet-dump(둘 다 10.0.750501)로 랩 27 절차를 실제로 해 봤습니다. 버그 상태에서는 `CombatLogWindow` 50개, `gcroot` 사슬이 `GameEvents.DamageDealt`로 이어지고, 고친 뒤에는 0개, LOH 0바이트였습니다. 랩 26과 28은 명령줄 도구로 해 보지 않았습니다.
+dotnet-counters와 dotnet-dump(둘 다 10.0.750501)로 랩 27 절차를 실제로 해 봤습니다. 버그 상태에서는 `CombatLogWindow` 50개, `gcroot` 사슬이 `GameEvents.DamageDealt`로 이어지고, 고친 뒤에는 0개, LOH 0바이트였습니다. 랩 38의 `syncblk`/`clrstack -all` 출력도 실제로 뜬 덤프에서 가져왔습니다. 랩 26, 28과 5부는 명령줄 도구로 해 보지 않았습니다.
 
 ## 다시 풀고 싶을 때
 
