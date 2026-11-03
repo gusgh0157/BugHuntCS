@@ -75,6 +75,16 @@ static class Program
         new("이름 검사",        "채팅이 몰리면 서버 CPU가 치솟는다",                  Lab55.Run, Hidden: 2),
         new("디버그 로그",      "로그를 꺼 뒀는데도 이동 처리 때 GC가 돈다",          Lab56.Run, Hidden: 2),
         new("주사위 명령",      "이상한 명령을 도배하면 서버가 느려진다",             Lab57.Run, Hidden: 2),
+        // 임시 번호(Lab90~): 새 부. 원래 세션이 재배치 때 자리와 번호를 정한다. 메뉴 번호는 58부터 차례로
+        // 새 부: 인터페이스와 상속 (Lab90~97 = 메뉴 58~65)
+        new("스킬 피해",        "불 스킬을 써도 화상 보너스가 안 붙는다",             Lab90.Run, Hidden: 3),
+        new("드롭 개수",        "보스를 잡아도 아이템이 하나만 떨어진다",             Lab91.Run, Hidden: 3),
+        new("퀘스트 보상",      "이벤트 배율이 정산에서는 빠진다",                    Lab92.Run, Hidden: 3),
+        new("버프 지속 시간",   "턴을 넘겨도 버프가 사라지지 않는다",                 Lab93.Run, Hidden: 3),
+        new("유닛 소환",        "기사가 갑옷 보정 없는 체력으로 소환된다",            Lab94.Run, Hidden: 3),
+        new("즐겨찾기",         "가방에는 있다는 아이템이 즐겨찾기에서는 없다",       Lab95.Run, Hidden: 3),
+        new("처치 보상",        "보스를 잡았는데 일반 적만큼만 준다",                 Lab96.Run, Hidden: 3),
+        new("시작 가방",        "물약을 넣는 순간 ArrayTypeMismatchException",        Lab97.Run, Hidden: 3),
     ];
 
     // 챌린지: 힌트 없음. 기본 랩 번호와 따로 센다. C-n = 깊은 추적, B-n = 블라인드
