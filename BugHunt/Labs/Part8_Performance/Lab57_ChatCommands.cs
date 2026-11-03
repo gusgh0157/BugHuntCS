@@ -51,7 +51,7 @@ public static class Lab57
 // ============================================================================
 
 #region 힌트 1 (먼저 직접 추적해 보고 펼치세요)
-// dotnet-counters monitor -n BugHunt --counters System.Runtime 에서 dotnet.exceptions.count(예외 수)를 보세요.
+// dotnet-counters monitor -n BugHunt --counters System.Runtime 에서 dotnet.exceptions(예외 수, .NET 9 이상)를 보세요.
 // VS 라면 예외 설정(Ctrl+Alt+E)에서 FormatException 을 체크하고 실행해 보세요. 몇 번이나 멈추나요?
 #endregion
 

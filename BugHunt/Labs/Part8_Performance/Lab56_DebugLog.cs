@@ -69,6 +69,6 @@ public static class Lab56
 
 #region 힌트 3
 // 로그를 끄는 검사가 함수 안에 있으면, 인자를 준비하는 비용은 이미 치른 뒤입니다. 부르는 쪽에서 if (Log.DebugEnabled) 로 감싸거나,
-// 제네릭 오버로드(Debug<T1, T2>(...))나 [Conditional("DEBUG")] 로 호출 자체를 없애세요.
+// 제네릭 오버로드(Debug<T1, T2>(...))로 배열과 박싱을 없애세요. ([Conditional("DEBUG")] 는 Release 에서만 호출을 지우므로 Debug 로 채점하는 이 랩은 통과하지 못합니다.)
 // 큰 struct 를 값으로 여러 번 넘기는 복사도 비슷하게 "안 보이는 비용"입니다(in, ref readonly 매개변수).
 #endregion

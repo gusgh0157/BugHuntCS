@@ -30,7 +30,7 @@
 
 **수정:** 역직렬화할 수 있게 연다: `public Guid Id { get; init; } = Guid.NewGuid();` (또는 `[JsonInclude]`, 생성자 매개변수)
 
-**교훈:** 직렬화 왕복(`Deserialize(Serialize(x))`)이 원래 값을 돌려주는지 시험을 하나 두세요. System.Text.Json은 private setter, 읽기 전용 속성, 필드를 기본으로 **조용히** 건너뜁니다. `JsonUnmappedMemberHandling.Disallow`나 `RespectRequiredConstructorParameters`처럼 엄격하게 만드는 옵션도 있습니다. 증상이 나타난 곳(가방)과 원인(역직렬화) 사이에 ack, 재전송, 중복 검사가 끼어 있으면, 증상 근처를 막는 수정은 다른 정상 동작(정당한 중복, 진짜 재전송)을 망가뜨립니다.
+**교훈:** 직렬화 왕복(`Deserialize(Serialize(x))`)이 원래 값을 돌려주는지 시험을 하나 두세요. System.Text.Json은 private setter, 읽기 전용 속성, 필드를 기본으로 **조용히** 건너뜁니다. 고칠 때는 `[JsonInclude]`를 붙이거나 `init` 접근자로 바꿉니다. (`JsonUnmappedMemberHandling.Disallow`는 JSON에만 있고 형식에 없는 멤버를 막는 옵션이라, 형식에 있는데 건너뛰는 `private set`은 잡지 못합니다.) 증상이 나타난 곳(가방)과 원인(역직렬화) 사이에 ack, 재전송, 중복 검사가 끼어 있으면, 증상 근처를 막는 수정은 다른 정상 동작(정당한 중복, 진짜 재전송)을 망가뜨립니다.
 
 **범주:** 직렬화 왕복 + 캐시·중복 검사 (2부 흐름 추적, 4부 이벤트 흐름에 가까움)
 

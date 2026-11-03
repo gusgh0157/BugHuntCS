@@ -922,8 +922,9 @@ CPU 사용량:  RegexParser, RegexWriter 등 패턴 해석 코드가 핫 경로�
 **수정 (택1):**
 - 부르는 쪽에서 감싼다: `if (Log.DebugEnabled) Log.Debug(...);`
 - 제네릭 오버로드 `Debug<T1, T2, T3, T4>(string format, T1 a, ...)`를 만들어 배열과 박싱을 없앤다
-- 출시판에서 호출 자체를 지운다: `[Conditional("DEBUG")]` (인자 계산까지 사라진다)
 - 보간 문자열 처리기(`[InterpolatedStringHandler]`)로 꺼져 있으면 아무것도 만들지 않게 한다 (`ILogger`가 쓰는 방식)
+
+참고: `[Conditional("DEBUG")]`는 **Release 빌드에서** 호출과 인자 계산을 통째로 지운다. Debug 빌드에서는 `DEBUG`가 정의되어 있어 호출과 `params` 배열·박싱이 그대로 남으므로, Debug로 채점하는 이 랩은 통과하지 못한다. 출시판의 비용을 없애는 별도 수단으로 기억해 두자.
 
 **교훈:** 인자는 함수가 실행되기 전에 계산된다. `params`, 박싱, 보간 문자열(`$"..."`), 인자 안의 메서드 호출은 모두 "꺼진 기능"에서도 비용을 낸다. 비슷하게 안 보이는 비용으로 큰 struct를 값으로 넘기는 복사가 있다 (`in`, `ref readonly` 매개변수).
 
