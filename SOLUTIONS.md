@@ -217,6 +217,51 @@ ReferenceEquals(basePreset.Skills, custom.Skills)  true  (List는 주소만 복�
 **수정:** 바꿀 컬렉션은 함께 복사한다. `basePreset with { Name = name, Skills = [.. basePreset.Skills] }`. 근본적으로는 레코드에 `List<T>` 대신 `IReadOnlyList<T>`나 `ImmutableList<T>`를 두어, 복사본을 바꾸려면 새 컬렉션을 만들 수밖에 없게 한다.
 **교훈:** `with`는 "새 레코드 + 속성 값 그대로 복사"다. 참조 형식 속성은 **공유**된다.
 
+> 아래 랩 58~61은 2부 끝에 들어갈 연산자 랩입니다. 지금은 임시 번호이고, 다음 번호 재배치 때 2부 끝 번호로 옮깁니다.
+
+## Lab 58 — `x = x++;`는 x를 그대로 둔다
+```
+OnHit 첫 줄 전후:   _combo 0 → 0, 0 → 0 ...   Best 0
+진짜 원인:  _combo = _combo++;  (1) 값 0을 읽고 (2) _combo를 1로 올린 뒤 (3) 식의 값 0을 다시 대입
+```
+**수정:** `_combo++;` (또는 `_combo += 1;`, `++_combo;`)만 쓴다. 대입하지 않는다.
+**교훈:** C#은 피연산자를 **왼쪽에서 오른쪽으로** 평가하고 후위 `++`의 값은 "올리기 전 값"이라고 정해 두었다. 그래서 `x = x++;`는 언제나 x를 그대로 둔다. C++처럼 컴파일러마다 달라지는 미지정 동작이 아니라, 정해진 대로 틀린 코드다.
+
+## Lab 59 — 후위 `++`가 올리기 전 값을 돌려줌
+```
+불러온 명단:  1 Kael, 2 Mira, 5 Doran      _lastId = 5 ("지금까지 쓴 가장 큰 번호")
+Recruit("Lia"):  NextId() → 5 (돌려준 뒤 _lastId = 6)   ← Doran과 겹침
+Whisper(5) → 목록에서 먼저 찾은 Doran에게 감
+진짜 원인:  NextId() => _lastId++;  후위 ++ 는 올리기 전 값을 돌려준다
+```
+**수정:** `int NextId() => ++_lastId;` (또는 `_lastId += 1; return _lastId;`). 생성자에서 `_lastId = Max + 1`로 바꾸려면 변수의 뜻도 "다음에 쓸 번호"로 바꾸고 이름도 맞춘다.
+**가짜 수정:** 귓속말을 `Last(m => m.Id == id)`로 찾게 하면 환영 인사는 맞게 가지만 번호는 여전히 겹친다. 기본 케이스의 번호(6, 7)를 박아 넣으면 숨은 케이스(다른 번호, 다른 인원)에서 틀린다.
+**교훈:** 후위 `x++`의 값은 올리기 전, 전위 `++x`의 값은 올린 뒤다. `if (hits++ == 3)`도 같은 함정으로, 네 번째가 아니라 다섯 번째 타격에서야 참이 된다. 값을 쓰는 곳에서는 증감을 따로 한 줄로 빼면 헷갈릴 일이 없다.
+
+## Lab 60 — 조건 안의 `--`와 byte 넘침
+```
+TryDrink (Potions == 0):  if (Potions-- == 0)  → 비교는 참, 그런데 감소도 일어남: 0 - 1 = 255 (byte)
+다음 누름부터:  255, 254, ... 마심   ← 물약이 252개 생겼다
+진짜 원인:  검사와 감소를 한 식에 섞음. byte 는 unchecked 라 0 아래로 내려가면 조용히 255
+```
+**수정:**
+```csharp
+if (Potions == 0)
+    return false;
+Potions--;
+return true;
+```
+**교훈:** 조건식 안에 `++`/`--`를 넣으면 조건이 참이든 거짓이든 값이 바뀐다. 검사와 변경은 나눈다. 정수 넘침은 기본이 unchecked라 조용히 한 바퀴 돈다. 넘치면 안 되는 계산은 `checked(...)`로 감싸거나 프로젝트에 `CheckForOverflowUnderflow`를 켜서 `OverflowException`으로 드러나게 한다 (랩 13의 int 곱셈과 같은 규칙).
+
+## Lab 61 — `||` 대신 `|`: 단락 평가가 사라짐
+```
+LoadFromDisk 중단점:  캐시에 이미 있는 "potion" 인데도 멈춤 (7칸에 7번)
+Get:  if (_cache.TryGetValue(id, out icon) | LoadFromDisk(id, out icon))
+진짜 원인:  bool 에 쓴 | 는 컴파일되지만 양쪽을 언제나 계산한다. 캐시에 있어도 디스크를 읽는다
+```
+**수정:** `if (_cache.TryGetValue(id, out string? icon) || LoadFromDisk(id, out icon))`.
+**교훈:** `||`/`&&`는 왼쪽만으로 답이 정해지면 오른쪽을 계산하지 않는다(단락 평가). `|`/`&`는 `bool`에도 쓸 수 있지만 양쪽을 다 계산한다. 오른쪽에 부작용(디스크 읽기, 카운터, 로그)이 있으면 매번 일어나고, `if (target == null | target.Hp <= 0)`처럼 왼쪽이 오른쪽을 지켜 주는 식이면 `NullReferenceException`이 난다. 정수 플래그에 `&&` 대신 `&`를 쓰는 C++식 실수는 C#에서는 `int`가 `bool`로 바뀌지 않아 컴파일러가 막아 준다.
+
 ---
 
 # 3부: 컨테이너와 컬렉션

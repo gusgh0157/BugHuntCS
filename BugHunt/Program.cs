@@ -75,6 +75,11 @@ static class Program
         new("이름 검사",        "채팅이 몰리면 서버 CPU가 치솟는다",                  Lab55.Run, Hidden: 2),
         new("디버그 로그",      "로그를 꺼 뒀는데도 이동 처리 때 GC가 돈다",          Lab56.Run, Hidden: 2),
         new("주사위 명령",      "이상한 명령을 도배하면 서버가 느려진다",             Lab57.Run, Hidden: 2),
+        // 2부 추가: 연산자와 평가 순서 (임시 번호 58~61. 번호를 다시 매길 때 2부 끝으로 옮긴다)
+        new("콤보",           "몇 번을 맞춰도 콤보가 0이다",                         Lab58.Run, Hidden: 3),
+        new("길드원 번호",    "새 길드원에게 보낸 환영 인사가 다른 사람에게 간다",   Lab59.Run, Hidden: 3),
+        new("물약 단축키",    "물약이 다 떨어졌는데 계속 마실 수 있다",              Lab60.Run, Hidden: 3),
+        new("아이콘 캐시",    "아이콘 캐시를 켰는데 디스크 읽기가 그대로다",         Lab61.Run, Hidden: 3),
     ];
 
     // 챌린지: 힌트 없음. 기본 랩 번호와 따로 센다. C-n = 깊은 추적, B-n = 블라인드
@@ -102,7 +107,7 @@ static class Program
 
     const int ChallengePart = 9;   // --list 의 part 값. 채점기는 "챌린지"로 표시한다
 
-    const int Part2Start = 8, Part3Start = 19, Part4Start = 26, Part5Start = 36, Part6Start = 39, Part7Start = 45, Part8Start = 51;
+    const int Part2Start = 8, Part3Start = 19, Part4Start = 26, Part5Start = 36, Part6Start = 39, Part7Start = 45, Part8Start = 51, OperatorsStart = 58;
 
     static string BuildName =>
 #if DEBUG
@@ -125,6 +130,7 @@ static class Program
             else if (n == Part6Start) Console.WriteLine("\n[6부] unsafe와 네이티브 메모리 (선택) - 메모리 창, 조사식의 포인터 식");
             else if (n == Part7Start) Console.WriteLine("\n[7부] 멈춤: 무한루프와 데드락 - 모두 중단, 병렬 스택, 스레드 창, dotnet-stack");
             else if (n == Part8Start) Console.WriteLine("\n[8부] 성능 - 틀리지는 않는데 느리다. 성능 프로파일러, dotnet-counters, dotnet-trace");
+            else if (n == OperatorsStart) Console.WriteLine("\n[2부 추가] 연산자와 평가 순서 - 조사식, 조건부 중단점 (임시 번호. 다음 재배치 때 2부 끝으로 옮깁니다)");
             Console.WriteLine($"  {n,2}. {Labs[i].Title}  - {Labs[i].Symptom}");
         }
         Console.WriteLine("\n[챌린지] 힌트 없음. 1~8부를 먼저 끝내세요. C: 여러 파일을 거치는 깊은 추적, B: 범주를 알려 주지 않는 블라인드");
@@ -209,5 +215,5 @@ static class Program
     }
 
     static int PartOf(int n) =>
-        n >= Part8Start ? 8 : n >= Part7Start ? 7 : n >= Part6Start ? 6 : n >= Part5Start ? 5 : n >= Part4Start ? 4 : n >= Part3Start ? 3 : n >= Part2Start ? 2 : 1;
+        n >= OperatorsStart ? 2 : n >= Part8Start ? 8 : n >= Part7Start ? 7 : n >= Part6Start ? 6 : n >= Part5Start ? 5 : n >= Part4Start ? 4 : n >= Part3Start ? 3 : n >= Part2Start ? 2 : 1;
 }
