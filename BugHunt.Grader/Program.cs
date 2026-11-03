@@ -108,7 +108,7 @@ static class Program
             사용법: grade.bat [랩] [옵션]
                     dotnet run --project BugHunt.Grader -- [랩] [옵션]
 
-              랩            채점할 랩 번호. 예: 19  19-25  1,5,36-41  C  B  C-1,B-3   (없으면 전부. C = 깊은 추적 챌린지, B = 블라인드 챌린지)
+              랩            채점할 랩 번호. 예: 19  19-25  1,5,39-44  C  B  C-1,B-3   (없으면 전부. C = 깊은 추적 챌린지, B = 블라인드 챌린지)
               --config C    Debug 또는 Release만 채점 (기본: 전부 Debug, Release 표시된 랩은 Release도)
               --seed N      숨은 케이스 시드를 고정 (실패를 그대로 재현할 때)
               --no-hidden   숨은 케이스 없이 기본 케이스만

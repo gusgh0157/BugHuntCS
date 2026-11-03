@@ -1,7 +1,7 @@
 namespace BugHunt;
 
 // 채팅 명령 "/roll 숫자"를 처리한다. 숫자가 아니면 기본값 100. 결과는 맞는데, 장난으로 이상한 명령을 도배하면 서버가 느려진다.
-public static class Lab54
+public static class Lab57
 {
     static int ParseRollMax(string command)
     {

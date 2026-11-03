@@ -429,7 +429,7 @@ FindMatchAsync 프레임의 token:   IsCancellationRequested true
 
 # 5부: 리소스와 메모리
 
-## Lab 33 — Dispose하지 않은 StreamWriter
+## Lab 36 — Dispose하지 않은 StreamWriter
 ```
 SaveReplay 마지막 줄:
     new FileInfo(path).Length    0
@@ -440,17 +440,17 @@ SaveReplay 마지막 줄:
 **수정:** `using var writer = new StreamWriter(path);` (또는 `using (...) { }` 블록, 또는 `File.WriteAllLines(path, frames)`).
 **교훈:** `IDisposable`을 구현한 객체는 **반드시 Dispose**한다. GC는 메모리를 회수할 뿐, 버퍼를 플러시하거나 파일을 닫아 주는 시점은 보장하지 않는다. .NET은 종료할 때 종료자도 돌리지 않는다.
 
-## Lab 34 — static 이벤트가 닫은 창을 붙잡음
+## Lab 37 — static 이벤트가 닫은 창을 붙잡음
 ```
 메모리 스냅샷:  CombatLogWindow 50개, 각각 256KB 텍스처 캐시
-루트 경로:     CombatLogWindow ← Action<string,int> (대리자의 Target) ← Lab34.GameEvents.DamageDealt (static 필드)
+루트 경로:     CombatLogWindow ← Action<string,int> (대리자의 Target) ← Lab37.GameEvents.DamageDealt (static 필드)
 진짜 원인:     Open에서 += 로 구독하고 Close에서 -= 로 해지하지 않음.
               이벤트(대리자)가 구독자를 참조하고, static 필드는 프로그램이 끝날 때까지 GC 루트
 ```
 **수정:** `Close()`에 `GameEvents.DamageDealt -= OnDamageDealt;`. 창의 수명이 명확하다면 `IDisposable`로 만들어 `Dispose`에서 해지한다.
 **교훈:** "참조를 다 버렸는데 메모리가 안 줄어든다"면 **누가 아직 붙잡고 있는지**를 찾는다. 메모리 스냅샷의 루트 경로나 `dotnet-dump`의 `gcroot`가 그 사슬을 보여 준다. 오래 사는 객체(static, 싱글턴)의 이벤트에 짧게 사는 객체가 구독하는 구조가 가장 흔한 누수다.
 
-## Lab 35 — 종료자에 자원 반납을 맡김
+## Lab 38 — 종료자에 자원 반납을 맡김
 ```
 ~Texture() 중단점:   Exit() 동안 안 걸림. 프로그램이 끝날 때까지도 안 걸림
 GC.CollectionCount(0)  0   ← GC가 한 번도 안 돌았음
@@ -486,7 +486,7 @@ public void Exit()
 
 # 6부: unsafe와 네이티브 메모리
 
-## Lab 36 — 메서드가 끝난 stackalloc 메모리를 가리키는 포인터
+## Lab 39 — 메서드가 끝난 stackalloc 메모리를 가리키는 포인터
 ```
 FindPath의 return 줄:          path[0] == 3, path[1] == 4   ← 여기까지는 맞다
 DrawMinimapBackground 다음:    path[0] == -1 또는 쓰레기 값
@@ -511,7 +511,7 @@ int length = FindPath(start, goal, path);
 (크기가 크거나 정해지지 않았다면 `int[]`나 `ArrayPool`을 쓴다.)
 **교훈:** 컴파일러가 `Span`을 막는 것은 **수명 검사**다. 포인터, `Unsafe.AsRef`, `MemoryMarshal.CreateSpan`으로 그 검사를 우회하면 C++의 "지역 변수 주소 반환"과 똑같은 버그가 된다. 값을 망가뜨리는 것은 읽는 순간이 아니라 **그 사이의 다른 호출**이라서, 중단점을 거는 위치에 따라 멀쩡해 보이기도 한다.
 
-## Lab 37 — fixed 블록 밖으로 빼낸 포인터를 GC 압축 뒤에 사용
+## Lab 40 — fixed 블록 밖으로 빼낸 포인터를 GC 압축 뒤에 사용
 ```
 Attach 줄의 (long)p:              처음 주소
 LoadLevel 뒤 Samples의 주소:       다른 주소   ← 배열이 옮겨졌다
@@ -521,12 +521,12 @@ MixFrame의 (long)_buffer:          처음 주소 그대로
 ```
 **수정 (택1):**
 - 처음부터 옮겨지지 않는 힙(POH)에 만든다: `public short[] Samples { get; } = GC.AllocateArray<short>(32, pinned: true);`
-- `GCHandle.Alloc(Samples, GCHandleType.Pinned)`로 고정하고, 장치에서 떼어 낼 때 `Free` (랩 38 참고)
+- `GCHandle.Alloc(Samples, GCHandleType.Pinned)`로 고정하고, 장치에서 떼어 낼 때 `Free` (랩 41 참고)
 - 네이티브가 오래 쓸 버퍼는 아예 `NativeMemory.Alloc`으로 GC 밖에 만들고 `NativeMemory.Free`로 돌려준다
 
 **교훈:** 관리 참조는 GC가 같이 고쳐 주지만 **포인터는 GC가 모르는 숫자**다. 네이티브 쪽이 "주소를 기억해 두는" API라면 `fixed`로는 안 된다. 실제로는 GC가 언제 압축하느냐에 따라 오랫동안 멀쩡하다가 터지는 버그인데, 이 랩은 `GC.Collect(..., compacting: true)`로 그 순간을 고정해 두었다.
 
-## Lab 38 — 예외 경로에서 GCHandle.Free 누락
+## Lab 41 — 예외 경로에서 GCHandle.Free 누락
 ```
 살아 남은 버퍼 수:     2  == 손상된 패킷 수
 throw 줄에서 F10:      handle.Free()로 가지 않고 catch로 빠짐
@@ -547,12 +547,12 @@ finally
 }
 ```
 짧게만 고정한다면 `fixed (byte* p = buffer) { ... }`가 더 간단하다 (블록을 어떻게 빠져나가든 풀린다).
-**교훈:** `GCHandle`은 GC 바깥의 강한 참조라서, `Free`를 잊으면 **GC가 있어도 누수**다. Pinned 핸들은 게다가 힙 압축도 방해한다. 얻었으면 `finally`에서 돌려준다. `lock`, 세마포(랩 46)와 같은 규칙이다.
+**교훈:** `GCHandle`은 GC 바깥의 강한 참조라서, `Free`를 잊으면 **GC가 있어도 누수**다. Pinned 핸들은 게다가 힙 압축도 방해한다. 얻었으면 `finally`에서 돌려준다. `lock`, 세마포(랩 49)와 같은 규칙이다.
 
-## Lab 39 — 네이티브에 넘긴 콜백 대리자가 GC에 수거됨
+## Lab 42 — 네이티브에 넘긴 콜백 대리자가 GC에 수거됨
 ```
 콘솔(디버거 없이):  Process terminated.
-                    A callback was made on a garbage collected delegate of type 'BugHunt!BugHunt.Lab39+BeatCallback::Invoke'.
+                    A callback was made on a garbage collected delegate of type 'BugHunt!BugHunt.Lab42+BeatCallback::Invoke'.
 F5:                 PlayBeat의 _onBeat(beat) 줄에서 멈춤
 진짜 원인:  GetFunctionPointerForDelegate(OnBeat)에 넘긴 대리자는 그 자리에서 만들어진 임시 객체다.
            네이티브 쪽은 함수 포인터(숫자)만 가지고 있으므로 GC는 대리자를 쓰레기로 보고, LoadSong의 GC.Collect가 수거한다.
@@ -574,7 +574,7 @@ F5:                 PlayBeat의 _onBeat(beat) 줄에서 멈춤
 `GC.KeepAlive(callback)`은 **그 줄까지만** 살려 두므로, 나중에 불리는 콜백에는 소용이 없다.
 **교훈:** .NET Framework에서 MDA `CallbackOnCollectedDelegate`로 유명했던 버그다. 지금의 .NET은 수거된 대리자의 진입점을 막아 두기 때문에, 엉뚱한 곳으로 뛰지 않고 **이유를 적고 즉시 끝난다.** 그 메시지의 형식 이름이 범인이다.
 
-## Lab 40 — ArrayPool에 반납한 배열을 Memory로 계속 사용
+## Lab 43 — ArrayPool에 반납한 배열을 Memory로 계속 사용
 ```
 history.Add 중단점마다 history[0]:  "[Kael] 안녕" → 다음 메시지로 덮어써진 값 → ...   ← 매번 바뀐다
 개체 ID:   FormatMessage의 buffer가 매번 같은 $1
@@ -591,7 +591,7 @@ return message.AsMemory();
 (더 간단히는 `string.Concat`으로 string을 바로 만든다. 풀은 **그 메서드 안에서만** 쓰는 임시 버퍼에 쓴다.)
 **교훈:** `Return`은 "이제 다른 사람이 써도 된다"는 약속이다. 반납한 배열을 가리키는 `Span`, `Memory`, 슬라이스가 남아 있으면 해제 후 사용(use-after-free)과 같다. 크래시는 안 나고 **남의 데이터가 보일 뿐**이라 더 찾기 어렵다.
 
-## Lab 41 — 구조체 레이아웃의 패딩
+## Lab 44 — 구조체 레이아웃의 패딩
 ```
 header:   Type 7, Length 엄청 큰 수(또는 음수), Seq 엉뚱한 값
 Unsafe.SizeOf<PacketHeader>():   12   (1 + 4 + 2 = 7이 아님)
@@ -617,7 +617,7 @@ Marshal.SizeOf<PacketHeader>():  12
 
 # 7부: 멈춤 - 무한루프와 데드락
 
-## Lab 42 — 실수 누적과 `!=` 종료 조건
+## Lab 45 — 실수 누적과 `!=` 종료 조건
 ```
 모두 중단 → 랩 본문 스레드:  ZoomTo의 for 줄
 zoom:    목표(2.0)를 한참 지난 값 (계속 커지다가, 어느 크기부터는 0.1을 더해도 안 바뀜)
@@ -638,7 +638,7 @@ camera.Zoom = target;
 `zoom < target`으로만 바꾸면 멈추지는 않지만, 누적 오차 때문에 프레임이 하나 더 그려질 수 있다 (`1.9999998 < 2.0`).
 **교훈:** 랩 12와 같은 원인(실수 동등 비교)이 **종료 조건**에 들어가면 "틀린 값"이 아니라 "안 끝남"이 된다. 실수는 범위(`<`)로 비교하거나, 반복 자체는 정수로 센다.
 
-## Lab 43 — byte 루프 변수의 넘침
+## Lab 46 — byte 루프 변수의 넘침
 ```
 모두 중단 여러 번:  written은 계속 커지는데 slot은 항상 0~255
 조건부 중단점 slot == 255 → F10:  slot == 0
@@ -647,7 +647,7 @@ camera.Zoom = target;
 **수정:** `for (int slot = 0; slot < items.Count; slot++)`. 세이브 형식이 정말 슬롯 번호를 1바이트로만 쓸 수 있다면, 저장하기 전에 개수를 검사해서 형식을 올리거나 오류를 낸다.
 **교훈:** 루프 변수는 **비교 대상과 같은 형식**으로. 같은 함정: `for (uint i = n - 1; i >= 0; i--)` (uint는 0 아래로 가지 않는다). `checked` 블록이나 "산술 오버플로 검사" 옵션을 켜면 255 다음에서 `OverflowException`으로 바로 보인다.
 
-## Lab 44 — 고리가 생긴 부모 사슬
+## Lab 47 — 고리가 생긴 부모 사슬
 ```
 가입 신청:  "승인"
 모두 중단 → Leader()의 g:  Dawn → Ember → Frost → Gale → Dawn → ...   (개체 ID가 다시 나옴)
@@ -668,7 +668,7 @@ public bool JoinUnder(Guild parent)
 데이터가 이미 망가졌을 때를 대비해 `Leader()`에 방문 집합(`HashSet<Guild>`)이나 최대 단계를 두면, 무한루프 대신 오류로 드러난다.
 **교훈:** 그래프나 연결 리스트를 "끝(null)이 나올 때까지" 따라가는 코드는 **고리가 없다는 가정**에 기대고 있다. 그 가정은 데이터를 **바꾸는 곳**에서 지켜야 한다. 순회 쪽에서는 플로이드의 토끼와 거북이 알고리즘으로 고리를 찾을 수도 있다.
 
-## Lab 45 — 잠금 순서가 엇갈린 데드락
+## Lab 48 — 잠금 순서가 엇갈린 데드락
 ```
 병렬 스택:
     거래: Kael → Mira   Monitor.Enter ← Transfer(from=Kael, to=Mira)   lock (to.Sync) 줄에서 대기
@@ -692,7 +692,7 @@ lock (first.Sync)
 느린 일(`WriteTradeLog`)은 잠금 밖으로 빼는 것도 좋다. 잠금을 쥔 시간이 짧을수록 교착 상태와 경합이 줄어든다.
 **교훈:** 데드락은 **잠금 둘 + 엇갈린 순서**로 생긴다. 모두 중단 → 병렬 스택에서 `Monitor.Enter`로 기다리는 스레드들을 찾고, 각자 **이미 쥔 것**(바깥 lock)과 **기다리는 것**(안쪽 lock)을 적어 보면 고리가 보인다. 명령줄에서는 `dotnet-dump analyze`의 `syncblk`가 잠금 주인 스레드를 보여 준다.
 
-## Lab 46 — 예외 경로에서 SemaphoreSlim.Release 누락
+## Lab 49 — 예외 경로에서 SemaphoreSlim.Release 누락
 ```
 작업 창:               DownloadAsync 여러 개가 "대기 중" — SemaphoreSlim.WaitAsync를 기다림
 downloader.FreeSlots:  0
@@ -715,7 +715,7 @@ finally
 ```
 **교훈:** 세마포는 잠금과 같다. **얻었으면 `finally`에서 돌려준다.** `Monitor.Wait`/`Pulse`도 같은 종류의 멈춤을 만든다. 조건을 `if`로 한 번만 검사하거나, 기다리기 전에 온 `Pulse`를 놓치면 영원히 기다린다 (`while (조건) Monitor.Wait(gate);`가 기본형).
 
-## Lab 47 — volatile 없는 바쁜 대기 (Release에서만)
+## Lab 50 — volatile 없는 바쁜 대기 (Release에서만)
 ```
 Debug:     정상 (기다리며 수억 번 확인)
 Release:   응답 없음. 멈춘 순간 loader.Done == True, 읽은 에셋 20개 (로딩은 이미 끝났다!)
@@ -736,7 +736,7 @@ Release:   응답 없음. 멈춘 순간 loader.Done == True, 읽은 에셋 20개
 
 8부의 랩은 결과가 모두 맞습니다. `[FAIL]`은 측정값(할당 바이트, 비교 횟수, 예외 수)이 한도를 넘었을 때 납니다. 측정값은 실행 시간과 달리 PC 부하에 흔들리지 않아서, 고친 뒤에는 한도보다 훨씬 작게(대부분 0) 나옵니다.
 
-## Lab 48 — 핫 루프 안의 LINQ와 캡처하는 람다
+## Lab 51 — 핫 루프 안의 LINQ와 캡처하는 람다
 ```
 할당 추적:   Func<Enemy, bool>, <>c__DisplayClass..가 프레임 수만큼
 버그 상태:   프레임당 약 96바이트 (기대: 8 이하)
@@ -747,7 +747,7 @@ Release:   응답 없음. 멈춘 순간 loader.Done == True, 읽은 에셋 20개
 
 **교훈:** 1초에 수십 번 도는 코드(Update, 렌더, 서버 틱)에서 LINQ와 캡처하는 람다는 "보이지 않는 `new`"다. 결과가 같아도 GC가 자주 돌고 그때마다 모든 스레드가 잠깐 멈춘다. 캡처하지 않는 람다는 캐시되므로 `static` 람다로 써 두면 실수로 캡처하는 것을 컴파일러가 막아 준다.
 
-## Lab 49 — 루프 안의 문자열 `+=`
+## Lab 52 — 루프 안의 문자열 `+=`
 ```
 버그 상태:   할당이 결과 문자열 크기의 약 1500배 (기대: 8배 이하)
 조사식:      text.Length가 줄마다 커진다. += 할 때마다 그 길이만큼 통째로 복사
@@ -757,7 +757,7 @@ Release:   응답 없음. 멈춘 순간 loader.Done == True, 읽은 에셋 20개
 
 **교훈:** 몇 개를 이어 붙이는 것은 괜찮다(컴파일러가 `string.Concat` 하나로 만든다). **루프** 안의 `+=`가 문제다. 데이터가 2배가 되면 시간이 4배가 되는 코드는 작은 시험 데이터로는 절대 안 드러난다. 숨은 케이스처럼 크기를 바꿔 재 보면 보인다.
 
-## Lab 50 — `object`에 넣은 int (박싱)
+## Lab 53 — `object`에 넣은 int (박싱)
 ```
 할당 추적:   System.Int32가 이벤트 수만큼
 버그 상태:   이벤트 1000개당 약 48000바이트 (기대: 64 이하)
@@ -765,9 +765,9 @@ Release:   응답 없음. 멈춘 순간 loader.Done == True, 읽은 에셋 20개
 ```
 **수정:** `Dictionary<string, int>`. 값을 꺼내고 다시 넣는 조회 두 번이 아깝다면 `CollectionsMarshal.GetValueRefOrAddDefault(_values, key, out _) += amount`.
 
-**교훈:** "나중에 다른 형식도 담을지 몰라서" 만든 `object` 자리는 지금 당장 비용을 낸다. 숨은 박싱은 비제네릭 컬렉션, `object`/인터페이스 매개변수로 넘긴 struct, `IEquatable<T>` 없는 struct의 `Equals`, `string.Format`의 값 형식 인자(랩 53)에서도 생긴다.
+**교훈:** "나중에 다른 형식도 담을지 몰라서" 만든 `object` 자리는 지금 당장 비용을 낸다. 숨은 박싱은 비제네릭 컬렉션, `object`/인터페이스 매개변수로 넘긴 struct, `IEquatable<T>` 없는 struct의 `Equals`, `string.Format`의 값 형식 인자(랩 56)에서도 생긴다.
 
-## Lab 51 — `List.Contains`로 중복 제거 (O(n²))
+## Lab 54 — `List.Contains`로 중복 제거 (O(n²))
 ```
 버그 상태:   전리품 하나당 비교 약 1200번 (기대: 3 이하)
 CPU 사용량:  시간 대부분이 List.Contains → ItemId.Equals
@@ -777,7 +777,7 @@ CPU 사용량:  시간 대부분이 List.Contains → ItemId.Equals
 
 **교훈:** 컬렉션은 "무엇을 자주 묻는가"로 고른다. 포함 여부·키로 찾기는 `HashSet`/`Dictionary`, 앞에서 빼기는 `Queue`, 정렬 유지는 `SortedSet`. 루프 안의 `Contains`, `IndexOf`, `Remove(item)`, `Insert(0, ...)`는 모두 한 번에 O(n)이다. 해시 컬렉션에 넣는 struct는 `IEquatable<T>`와 `GetHashCode`를 제대로 구현해야 박싱 없이 빠르다.
 
-## Lab 52 — 부를 때마다 `new Regex`
+## Lab 55 — 부를 때마다 `new Regex`
 ```
 CPU 사용량:  RegexParser, RegexWriter 등 패턴 해석 코드가 핫 경로에
 버그 상태:   메시지당 약 2700바이트 (기대: 64 이하)
@@ -791,7 +791,7 @@ CPU 사용량:  RegexParser, RegexWriter 등 패턴 해석 코드가 핫 경로�
 
 **교훈:** 만들 때 비싼 객체(`Regex`, `JsonSerializerOptions`, `HttpClient`)는 만들어 두고 재사용한다. 할당 추적에서 "내 코드에 없는 내부 형식"(`RegexNode`, `RegexCharClass`)이 잔뜩 보이면, 그것을 만들게 한 내 코드의 `new`를 호출 스택에서 찾는다.
 
-## Lab 53 — 꺼진 로그의 `params` 배열과 박싱
+## Lab 56 — 꺼진 로그의 `params` 배열과 박싱
 ```
 지역 창(Log.Debug 첫 줄):  args = object[4] { -1, 0, 0f, 0f }  ← 이미 만들어져 있음
 버그 상태:   이동 1회당 152바이트 (기대: 1 이하)
@@ -806,7 +806,7 @@ CPU 사용량:  RegexParser, RegexWriter 등 패턴 해석 코드가 핫 경로�
 
 **교훈:** 인자는 함수가 실행되기 전에 계산된다. `params`, 박싱, 보간 문자열(`$"..."`), 인자 안의 메서드 호출은 모두 "꺼진 기능"에서도 비용을 낸다. 비슷하게 안 보이는 비용으로 큰 struct를 값으로 넘기는 복사가 있다 (`in`, `ref readonly` 매개변수).
 
-## Lab 54 — 예외로 흐름 제어
+## Lab 57 — 예외로 흐름 제어
 ```
 예외 설정에서 FormatException 체크:  거의 매번 멈춘다
 출력 창:      "예외 발생: 'System.FormatException'"이 줄줄이

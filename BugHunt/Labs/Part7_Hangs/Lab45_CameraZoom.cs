@@ -1,7 +1,7 @@
 namespace BugHunt;
 
 // 보스가 등장하면 카메라를 한 프레임에 step 씩 줌한다. 목표 배율에 닿으면 연출 끝.
-public static class Lab42
+public static class Lab45
 {
     class Camera
     {

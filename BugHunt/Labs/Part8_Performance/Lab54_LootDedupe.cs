@@ -1,7 +1,7 @@
 namespace BugHunt;
 
 // 레이드 전리품 목록에서 중복을 빼고, 처음 나온 순서대로 도감에 등록한다. 결과는 맞는데 큰 레이드에서는 몇 초씩 멈춘다.
-public static class Lab51
+public static class Lab54
 {
     // 아이템 Id. 비교 횟수를 세어 둔다(진단용). 이 형식에는 버그가 없다.
     readonly struct ItemId(int value) : IEquatable<ItemId>

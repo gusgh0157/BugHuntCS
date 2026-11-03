@@ -2,7 +2,7 @@ namespace BugHunt;
 
 // 길드는 다른 길드 밑으로 들어가 동맹이 될 수 있다. 동맹의 맹주(맨 위 길드)는 상위 길드를 따라 올라가서 찾는다.
 // 상위 길드를 고리로 만드는 가입 신청(A 밑에 B, B 밑에 A)은 거절해야 한다.
-public static class Lab44
+public static class Lab47
 {
     class Guild(string name)
     {

@@ -1,7 +1,7 @@
 namespace BugHunt;
 
 // 효과음 볼륨을 샘플 버퍼에 써 두면, 오디오 장치(네이티브 쪽)가 매 프레임 그 버퍼를 읽어 섞는다.
-public static unsafe class Lab37
+public static unsafe class Lab40
 {
     // "네이티브" 오디오 장치 흉내. 실제로는 C++ 드라이버라서 버퍼의 주소만 받아 두고 나중에 읽는다고 치자.
     // 이 클래스에는 버그가 없다.

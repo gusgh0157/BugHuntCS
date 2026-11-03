@@ -1,7 +1,7 @@
 namespace BugHunt;
 
 // 패치 파일을 한꺼번에 받되, 서버 부담을 줄이려고 동시에 2개까지만 받는다. 실패한 파일은 나중에 다시 받는다.
-public static class Lab46
+public static class Lab49
 {
     class Downloader(int maxParallel, HashSet<string> broken)
     {

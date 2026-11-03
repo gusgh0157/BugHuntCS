@@ -1,7 +1,7 @@
 namespace BugHunt;
 
 // 경기가 끝나면 리플레이(프레임별 입력)를 파일로 저장하고, 리플레이 뷰어가 그 파일을 읽는다.
-public static class Lab33
+public static class Lab36
 {
     static readonly string ReplayPath = Path.Combine(Path.GetTempPath(), "BugHunt", $"replay_{Environment.ProcessId}.txt");
 

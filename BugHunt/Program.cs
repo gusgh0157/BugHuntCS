@@ -46,32 +46,35 @@ static class Program
         new("파티 피해 집계",   "총 피해량이 매번 다르다",                        Lab30.Run),
         new("HUD 갱신",         "로딩 후 HUD가 엉뚱한 스레드에서 갱신된다",        Lab31.Run),
         new("매칭 취소",        "취소를 눌렀는데 매칭이 계속된다",                Lab32.Run),
+        new("(준비 중)",      "4부 예외 처리 랩 자리",                         () => LabKit.Skip("준비 중인 랩")),
+        new("(준비 중)",      "4부 예외 처리 랩 자리",                         () => LabKit.Skip("준비 중인 랩")),
+        new("(준비 중)",      "4부 예외 처리 랩 자리",                         () => LabKit.Skip("준비 중인 랩")),
         // 5부: 리소스와 메모리
-        new("리플레이 저장",    "저장한 리플레이 파일이 비어 있다",               Lab33.Run),
-        new("전투 기록 창",     "닫은 창들이 메모리에서 사라지지 않는다",          Lab34.Run),
-        new("텍스처 캐시",      "레벨을 나갔는데 텍스처 메모리가 그대로다",        Lab35.Run),
+        new("리플레이 저장",    "저장한 리플레이 파일이 비어 있다",               Lab36.Run),
+        new("전투 기록 창",     "닫은 창들이 메모리에서 사라지지 않는다",          Lab37.Run),
+        new("텍스처 캐시",      "레벨을 나갔는데 텍스처 메모리가 그대로다",        Lab38.Run),
         // 6부: unsafe와 네이티브 메모리
-        new("미니맵 경로",      "경로를 구했는데 미니맵에는 엉뚱한 타일이 찍힌다",  Lab36.Run, Hidden: 3, Release: true),
-        new("효과음 믹서",      "레벨을 넘어가면 효과음 볼륨이 엉망이 된다",       Lab37.Run, Hidden: 3, Release: true),
-        new("패킷 수신",        "손상된 패킷을 버렸는데 메모리가 안 줄어든다",      Lab38.Run, Hidden: 3),
-        new("박자 콜백",        "곡을 고르면 게임이 통째로 사라진다",              Lab39.Run, Hidden: 2, Release: true),
-        new("채팅 기록",        "채팅 기록이 전부 마지막 메시지로 바뀐다",          Lab40.Run, Hidden: 3),
-        new("패킷 헤더",        "서버가 보낸 채팅이 하나도 안 보인다",              Lab41.Run, Hidden: 3),
+        new("미니맵 경로",      "경로를 구했는데 미니맵에는 엉뚱한 타일이 찍힌다",  Lab39.Run, Hidden: 3, Release: true),
+        new("효과음 믹서",      "레벨을 넘어가면 효과음 볼륨이 엉망이 된다",       Lab40.Run, Hidden: 3, Release: true),
+        new("패킷 수신",        "손상된 패킷을 버렸는데 메모리가 안 줄어든다",      Lab41.Run, Hidden: 3),
+        new("박자 콜백",        "곡을 고르면 게임이 통째로 사라진다",              Lab42.Run, Hidden: 2, Release: true),
+        new("채팅 기록",        "채팅 기록이 전부 마지막 메시지로 바뀐다",          Lab43.Run, Hidden: 3),
+        new("패킷 헤더",        "서버가 보낸 채팅이 하나도 안 보인다",              Lab44.Run, Hidden: 3),
         // 7부: 멈춤 - 무한루프와 데드락
-        new("보스 등장 연출",   "보스가 나오면 카메라 줌이 끝나지 않는다",          Lab42.Run, Hidden: 3),
-        new("인벤토리 저장",    "확장 가방을 산 플레이어만 저장하다 멈춘다",        Lab43.Run, Hidden: 3),
-        new("길드 동맹",        "동맹 가입 뒤 맹주 찾기가 끝나지 않는다",           Lab44.Run, Hidden: 3),
-        new("동시 거래",        "두 사람이 서로 골드를 보내면 둘 다 멈춘다",         Lab45.Run, Hidden: 2),
-        new("패치 슬롯",        "몇 개 실패하더니 다운로드가 통째로 멈춘다",         Lab46.Run, Hidden: 3),
-        new("로딩 대기",        "Release 출시판에서만 로딩 화면이 끝나지 않는다",   Lab47.Run, Hidden: 1, Release: true),
+        new("보스 등장 연출",   "보스가 나오면 카메라 줌이 끝나지 않는다",          Lab45.Run, Hidden: 3),
+        new("인벤토리 저장",    "확장 가방을 산 플레이어만 저장하다 멈춘다",        Lab46.Run, Hidden: 3),
+        new("길드 동맹",        "동맹 가입 뒤 맹주 찾기가 끝나지 않는다",           Lab47.Run, Hidden: 3),
+        new("동시 거래",        "두 사람이 서로 골드를 보내면 둘 다 멈춘다",         Lab48.Run, Hidden: 2),
+        new("패치 슬롯",        "몇 개 실패하더니 다운로드가 통째로 멈춘다",         Lab49.Run, Hidden: 3),
+        new("로딩 대기",        "Release 출시판에서만 로딩 화면이 끝나지 않는다",   Lab50.Run, Hidden: 1, Release: true),
         // 8부: 성능 - 틀리지는 않는데 느리다
-        new("위협도 표시",      "전투가 길어지면 프레임이 툭툭 끊긴다",               Lab48.Run, Hidden: 2),
-        new("채팅 내보내기",    "기록이 길면 내보내기가 한참 걸린다",                 Lab49.Run, Hidden: 2),
-        new("전투 통계",        "통계를 켜면 GC 횟수가 확 늘어난다",                  Lab50.Run, Hidden: 2),
-        new("전리품 도감",      "큰 레이드가 끝나면 몇 초씩 멈춘다",                  Lab51.Run, Hidden: 2),
-        new("이름 검사",        "채팅이 몰리면 서버 CPU가 치솟는다",                  Lab52.Run, Hidden: 2),
-        new("디버그 로그",      "로그를 꺼 뒀는데도 이동 처리 때 GC가 돈다",          Lab53.Run, Hidden: 2),
-        new("주사위 명령",      "이상한 명령을 도배하면 서버가 느려진다",             Lab54.Run, Hidden: 2),
+        new("위협도 표시",      "전투가 길어지면 프레임이 툭툭 끊긴다",               Lab51.Run, Hidden: 2),
+        new("채팅 내보내기",    "기록이 길면 내보내기가 한참 걸린다",                 Lab52.Run, Hidden: 2),
+        new("전투 통계",        "통계를 켜면 GC 횟수가 확 늘어난다",                  Lab53.Run, Hidden: 2),
+        new("전리품 도감",      "큰 레이드가 끝나면 몇 초씩 멈춘다",                  Lab54.Run, Hidden: 2),
+        new("이름 검사",        "채팅이 몰리면 서버 CPU가 치솟는다",                  Lab55.Run, Hidden: 2),
+        new("디버그 로그",      "로그를 꺼 뒀는데도 이동 처리 때 GC가 돈다",          Lab56.Run, Hidden: 2),
+        new("주사위 명령",      "이상한 명령을 도배하면 서버가 느려진다",             Lab57.Run, Hidden: 2),
     ];
 
     // 챌린지: 힌트 없음. 기본 랩 번호와 따로 센다. C-n = 깊은 추적, B-n = 블라인드
@@ -99,7 +102,7 @@ static class Program
 
     const int ChallengePart = 9;   // --list 의 part 값. 채점기는 "챌린지"로 표시한다
 
-    const int Part2Start = 8, Part3Start = 19, Part4Start = 26, Part5Start = 33, Part6Start = 36, Part7Start = 42, Part8Start = 48;
+    const int Part2Start = 8, Part3Start = 19, Part4Start = 26, Part5Start = 36, Part6Start = 39, Part7Start = 45, Part8Start = 51;
 
     static string BuildName =>
 #if DEBUG
@@ -143,7 +146,7 @@ static class Program
             return 2;
         }
 
-        // 숨은 케이스 재현: BugHunt.exe 43 --seed 1234
+        // 숨은 케이스 재현: BugHunt.exe 46 --seed 1234
         int seedAt = Array.IndexOf(args, "--seed");
         if (seedAt >= 0 && seedAt + 1 < args.Length && int.TryParse(args[seedAt + 1], out int seed))
         {

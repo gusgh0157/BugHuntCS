@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 namespace BugHunt;
 
 // 리듬 게임. 오디오 엔진(네이티브)이 박자마다 콜백을 불러 주면, 그때 노트 판정을 한다.
-public static unsafe class Lab39
+public static unsafe class Lab42
 {
     // 네이티브 쪽이 부를 함수의 모양
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]

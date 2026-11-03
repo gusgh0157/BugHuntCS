@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace BugHunt;
 
 // 채팅 메시지마다 보낸 사람 이름이 규칙에 맞는지 검사한다. 결과는 맞는데, 채팅이 몰리면 서버 CPU 가 치솟는다.
-public static class Lab52
+public static class Lab55
 {
     // 이름 규칙: 영문자로 시작, 영문자·숫자·밑줄 3~16자
     static bool IsValidName(string name) => new Regex("^[A-Za-z][A-Za-z0-9_]{2,15}$").IsMatch(name);

@@ -1,7 +1,7 @@
 namespace BugHunt;
 
 // 전투 통계(타격 수, 치명타 수 등)를 이벤트마다 센다. 통계는 맞는데, 통계를 켜면 GC 횟수가 확 늘어난다.
-public static class Lab50
+public static class Lab53
 {
     class Stats
     {

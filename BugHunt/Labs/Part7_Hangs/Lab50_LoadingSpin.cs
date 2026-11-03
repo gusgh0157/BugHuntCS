@@ -2,7 +2,7 @@ namespace BugHunt;
 
 // 로딩 스레드가 에셋을 읽는 동안 메인 스레드는 "로딩 중" 표시를 돌리며 기다린다.
 // Debug 에서는 멀쩡하다. Release 로 빌드한 출시판에서만 로딩 화면이 끝나지 않는다는 제보가 왔다.
-public static class Lab47
+public static class Lab50
 {
     class Loader
     {
@@ -53,7 +53,7 @@ public static class Lab47
 // ============================================================================
 
 #region 힌트 1 (먼저 직접 추적해 보고 펼치세요)
-// 이 랩은 Release 에서 해야 재현됩니다. 구성을 Release 로 바꾸고 F5, 또는 BugHunt\bin\Release\net10.0\BugHunt.exe 47.
+// 이 랩은 Release 에서 해야 재현됩니다. 구성을 Release 로 바꾸고 F5, 또는 BugHunt\bin\Release\net10.0\BugHunt.exe 50.
 // 멈추면 모두 중단(디버거 없이 실행했다면 디버그 → 프로세스에 연결). 스레드 창에서 "로딩 스레드"는 아직 있나요?
 // 멈춘 순간 loader.Done 은 무엇인가요? 그런데 왜 while 은 계속 돌까요?
 #endregion

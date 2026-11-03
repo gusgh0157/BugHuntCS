@@ -1,7 +1,7 @@
 namespace BugHunt;
 
 // 개발 중에 넣어 둔 디버그 로그. 출시판에서는 로그를 꺼 두었는데도 이동 처리 때 GC 가 자주 돈다.
-public static class Lab53
+public static class Lab56
 {
     static class Log
     {

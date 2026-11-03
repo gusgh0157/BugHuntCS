@@ -1,7 +1,7 @@
 namespace BugHunt;
 
 // 레벨에 들어가면 텍스처를 GPU 메모리에 올리고, 레벨을 나가면 내린다.
-public static class Lab35
+public static class Lab38
 {
     // GPU 메모리 사용량. (실제로는 그래픽 드라이버가 관리하는 비관리 자원이라고 치자)
     static class GpuMemory

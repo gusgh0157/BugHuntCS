@@ -41,7 +41,7 @@ public static class LabKit
     public static bool IsGrading => Environment.GetEnvironmentVariable("BUGHUNT_GRADER") == "1";
 
     // 숨은 테스트 케이스. 0이면 화면에 보이는 기본 입력, 0이 아니면 그 값을 시드로 입력을 무작위로 만든다.
-    // 채점기가 BUGHUNT_SEED로 넘기고, 직접 재현할 때는 BugHunt.exe 43 --seed 1234 처럼 쓴다.
+    // 채점기가 BUGHUNT_SEED로 넘기고, 직접 재현할 때는 BugHunt.exe 46 --seed 1234 처럼 쓴다.
     public static int Seed { get; internal set; } =
         int.TryParse(Environment.GetEnvironmentVariable("BUGHUNT_SEED"), out int seed) ? seed : 0;
 

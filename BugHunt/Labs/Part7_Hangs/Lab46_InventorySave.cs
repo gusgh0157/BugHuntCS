@@ -1,7 +1,7 @@
 namespace BugHunt;
 
 // 인벤토리를 세이브 파일에 슬롯 순서대로 쓴다. 확장 가방을 산 플레이어는 슬롯이 255개를 넘는다.
-public static class Lab43
+public static class Lab46
 {
     record Item(string Name, int Count);
 

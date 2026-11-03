@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 namespace BugHunt;
 
 // 미니맵에 길찾기 경로를 그린다. 경로는 매 프레임 새로 구하므로 힙 할당을 줄이려고 stackalloc 버퍼를 쓴다.
-public static unsafe class Lab36
+public static unsafe class Lab39
 {
     const int MaxPathLength = 16;
 

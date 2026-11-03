@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 namespace BugHunt;
 
 // 전투 기록 창은 열려 있는 동안 피해 이벤트를 받아 줄을 쌓는다. 창을 닫으면 버려진다.
-public static class Lab34
+public static class Lab37
 {
     static class GameEvents
     {

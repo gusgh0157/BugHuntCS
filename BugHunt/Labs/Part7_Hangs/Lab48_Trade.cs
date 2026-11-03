@@ -1,7 +1,7 @@
 namespace BugHunt;
 
 // 두 플레이어가 서로에게 동시에 골드를 보낸다. 거래 중에는 두 사람의 지갑을 모두 잠근다.
-public static class Lab45
+public static class Lab48
 {
     class Player(int id, string name, int gold)
     {

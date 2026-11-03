@@ -6,7 +6,7 @@ namespace BugHunt;
 
 // 서버가 보낸 채팅 패킷을 읽는다. 서버 문서의 패킷 형식(리틀 엔디언, 빈틈 없이 붙어 있음):
 //   [Type: 1바이트][Length: 4바이트 int][Seq: 2바이트 ushort][본문: Length 바이트 UTF-8]
-public static class Lab41
+public static class Lab44
 {
     [StructLayout(LayoutKind.Sequential)]
     struct PacketHeader

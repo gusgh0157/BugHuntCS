@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 namespace BugHunt;
 
 // 네트워크 라이브러리(네이티브)에 바이트 배열을 고정해서 넘기면, 받은 패킷을 그 배열에 채워 준다.
-public static class Lab38
+public static class Lab41
 {
     // "네이티브" 수신 함수 흉내. 주소에 패킷 바이트를 채운다. 마지막 바이트는 체크섬이다. 이 클래스에는 버그가 없다.
     static class NativeNet

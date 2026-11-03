@@ -3,7 +3,7 @@ using System.Buffers;
 namespace BugHunt;
 
 // 채팅 메시지를 "[이름] 내용" 형태로 만들어 기록에 쌓는다. 메시지마다 string 을 만들지 않으려고 ArrayPool 버퍼를 빌려 쓴다.
-public static class Lab40
+public static class Lab43
 {
     static ReadOnlyMemory<char> FormatMessage(string sender, string text)
     {

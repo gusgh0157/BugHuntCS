@@ -1,7 +1,7 @@
 namespace BugHunt;
 
 // 매 프레임 플레이어 주변의 살아 있는 적 수를 센다(위협도 표시). 결과는 맞는데, 전투가 길어지면 GC 때문에 프레임이 툭툭 끊긴다.
-public static class Lab48
+public static class Lab51
 {
     record struct Vec(float X, float Y)
     {
