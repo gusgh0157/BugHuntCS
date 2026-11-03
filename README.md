@@ -13,7 +13,7 @@
 
 필요한 것: **.NET 10 SDK**, **Visual Studio 2026** (또는 .NET 10을 지원하는 Visual Studio, ".NET 데스크톱 개발" 워크로드)
 
-1. `BugHunt.slnx`를 Visual Studio로 엽니다.
+1. `BugHunt.sln`을 Visual Studio로 엽니다. (VS 2022 17.13 이상이면 `BugHunt.slnx`를 열어도 됩니다. Rider, VS Code 등 다른 IDE는 `.sln`을 쓰세요.)
 2. 위쪽 도구 모음에서 구성을 **Debug**로 둡니다.
 3. **F5**(디버깅 시작)로 실행 → 메뉴에서 랩 번호 입력.
    - 매번 같은 랩을 돌리려면: `BugHunt/Properties/launchSettings.json`의 `"commandLineArgs": ""`에 번호를 넣습니다 (예: `"1"`). 또는 솔루션 탐색기에서 BugHunt 우클릭 → 속성 → 디버그 → **디버그 시작 프로필 UI 열기** → **명령줄 인수**.
@@ -284,8 +284,8 @@ WinForms·WPF의 UI 스레드나 게임 엔진의 메인 스레드에는 **Synch
 | 진단 도구 창 | 디버깅 중 **Ctrl+Alt+F2** → 메모리 사용량 탭 | 메모리 그래프, GC 표시(노란 깃발) |
 | 메모리 스냅샷 | 진단 도구 → 메모리 사용량 → **스냅샷 생성** → 스냅샷 열기 → 형식 검색 | 지금 힙에 어떤 객체가 몇 개 있나. **루트 경로(Paths to Root)**로 누가 붙잡고 있나 |
 | 스냅샷 비교 | 스냅샷 두 개 찍고 뒤의 것에서 "비교 대상" 선택 | 무엇이 늘었나 |
-| dotnet-counters | `dotnet-counters monitor -p <PID>` | GC 횟수, 힙 크기, 스레드 풀 상태를 실시간으로 |
-| dotnet-dump | `dotnet-dump collect -p <PID>` → `dotnet-dump analyze <파일>` → `dumpheap -type 형식이름`, `gcroot <주소>` | VS 없이(서버 등에서) 힙과 GC 루트 조사 |
+| dotnet-counters | `dotnet-counters monitor -p <PID> --counters System.Runtime` (파일로 남기려면 `collect`) | GC 횟수, 세대별 힙 크기, 스레드 풀 상태를 실시간으로 |
+| dotnet-dump | `dotnet-dump collect -p <PID>` → `dotnet-dump analyze <파일>` → `dumpheap -type 형식이름 -stat`, `gcroot <주소>`, `dumpclass` | VS 없이(서버 등에서) 힙과 GC 루트 조사 |
 
 dotnet-counters와 dotnet-dump는 따로 설치합니다.
 
@@ -305,8 +305,88 @@ dotnet tool install --global dotnet-dump
 2. VS에서 **진단 도구** 창(Ctrl+Alt+F2) → **메모리 사용량** → **스냅샷 생성**. (진단 도구가 꺼져 있으면 디버그 → 창 → 진단 도구 표시)
 3. 스냅샷의 **개체** 숫자를 눌러 엽니다. 검색 칸에 `CombatLogWindow`. 몇 개인가요? 창은 다 닫았고 GC도 돌렸습니다. → *기대 0, 실제 ?*
 4. `CombatLogWindow`를 고르고 아래 **루트 경로**를 펼칩니다. 창을 붙잡고 있는 사슬의 끝(루트)은 무엇인가요?
-5. (선택) 같은 순간에 다른 터미널에서 `dotnet-dump collect -p <PID>`를 하고 `dumpheap -type CombatLogWindow` → `gcroot <주소>`로 같은 사슬을 확인해 보세요.
+5. (선택) 같은 순간에 명령줄 도구로도 확인해 보세요. 아래 "명령줄 도구로 해 보기"를 따라 하면 됩니다.
 6. 고치고 다시 실행해 [PASS]를 확인합니다. 스냅샷을 다시 찍어 개수도 비교해 보세요.
+
+### 명령줄 도구로 해 보기 (dotnet-counters, dotnet-dump)
+
+VS 없이 서버에서 조사할 때와 같은 방법입니다. 랩 27을 Ctrl+F5(또는 `BugHunt.exe 27`)로 실행해 `계속하려면 Enter`에서 멈춰 두고, **다른 터미널**에서 합니다. 아래 출력은 이 PC에서 실제로 나온 값입니다 (주소는 실행마다 다릅니다).
+
+**1. 프로세스 찾기.** 랩이 찍어 준 PID와 같은지 봅니다.
+
+```bash
+dotnet-counters ps
+```
+
+**2. 힙 크기 보기.** `monitor`는 화면이 계속 갱신되고(끝내려면 `q`), `collect`는 파일로 남깁니다.
+
+```bash
+dotnet-counters monitor -p <PID> --counters System.Runtime
+```
+
+.NET 10에서는 카운터 이름이 `dotnet.gc.last_collection.heap.size`처럼 바뀌었습니다. 세대별로 나오는데, 이 랩에서 볼 곳은 **LOH**(대형 개체 힙, 85KB가 넘는 배열이 가는 곳)입니다.
+
+```
+dotnet.gc.last_collection.heap.size (By)  [gc.heap.generation=loh]   13,110,000   ← 버그 상태: 256KB 텍스처 x 50
+dotnet.gc.last_collection.heap.size (By)  [gc.heap.generation=loh]            0   ← 고친 뒤
+```
+
+**3. 덤프 뜨고 개수 세기.**
+
+```bash
+dotnet-dump collect -p <PID> -o lab27.dmp
+```
+
+```bash
+dotnet-dump analyze lab27.dmp
+```
+
+`analyze` 프롬프트(`>`)에서:
+
+```
+> dumpheap -type CombatLogWindow -stat
+          MT Count TotalSize Class Name
+7ff870f515a0    50     2,000 BugHunt.Lab27+CombatLogWindow       ← 창 자체는 40바이트지만
+> dumpheap -stat -min 200000
+7ff870e035f8    50 13,108,400 System.Byte[]                      ← 창이 붙잡은 텍스처가 13MB
+> dumpheap -type CombatLogWindow -short
+01caa6c478f8                                                     ← 주소 하나를 고른다
+...
+```
+
+**4. 누가 붙잡고 있나.**
+
+```
+> gcroot 01caa6c478f8
+HandleTable:
+    000001caa47313e8 (strong handle)
+          -> 01caa4c00028     System.Object[]
+          -> 01caa7416bc8     System.Action<System.String, System.Int32> (static variable: System.Func<System.WeakReference, System.Boolean>.<>9__3_0)
+          -> 01caa740a380     System.Object[]
+          -> 01caa6c47940     System.Action<System.String, System.Int32>
+          -> 01caa6c478f8     BugHunt.Lab27+CombatLogWindow
+```
+
+아래에서 위로 읽습니다. 창 ← 그 창의 `OnDamageDealt`를 가리키는 대리자 ← 대리자 50개를 담은 호출 목록(`Object[]`) ← 그 목록을 가진 멀티캐스트 대리자 ← static 필드들을 담는 배열 ← GC 핸들(루트).
+
+> ⚠️ 괄호 안의 `static variable:` 이름은 **틀렸습니다.** SOS가 static 변수 이름을 추측하다 엉뚱한 람다 캐시 이름을 붙인 것입니다. 이름을 믿지 말고 주소로 확인하세요.
+
+**5. 그 static 필드가 정말 무엇인지 확인.** 의심 가는 클래스의 static 필드 값을 보고, 위 사슬의 주소(`01caa7416bc8`)와 같은지 비교합니다.
+
+```
+> name2ee BugHunt.dll BugHunt.Lab27+GameEvents
+MethodTable: 00007ff870f51690
+> dumpclass 00007ff870f51690
+              MT    Field   Offset   Type   VT     Attr            Value Name
+00007ff870f51bc8 040000a0        8   ...    No   static 000001caa7416bc8 DamageDealt     ← 같은 주소
+> dumpmt -md 00007ff870f51690
+00007FF870EF86A8 00007FF870F51630    JIT  ... GameEvents.add_DamageDealt(...)
+0000000000000000 00007FF870F51650   NONE  ... GameEvents.remove_DamageDealt(...)       ← 한 번도 불리지 않았다
+```
+
+`remove_DamageDealt`가 `NONE`(JIT 컴파일조차 안 됨)이라는 것은 **구독 해지가 한 번도 실행되지 않았다**는 증거입니다.
+
+고친 뒤 같은 순서로 다시 하면 `dumpheap -type CombatLogWindow -stat`에 아무것도 나오지 않고, LOH 크기도 0이 됩니다.
 
 ## 4부 랩 목록
 
@@ -390,7 +470,9 @@ dotnet_diagnostic.CA2000.severity = warning
 
 경쟁 조건(랩 23)과 타이밍(랩 19~25)은 PC 부하에 따라 결과가 달라질 수 있습니다. 버그 상태에서 `PASS`가 나오면 몇 번 더 실행해 보세요.
 
-확인하지 못한 것: VS의 각 창(예외 도우미 문구, 병렬 스택 모양, 메모리 스냅샷 화면)은 사람이 직접 띄워 보지 않았습니다. 버전에 따라 메뉴 이름이나 모양이 조금 다를 수 있습니다. dotnet-counters, dotnet-dump 사용 절차도 이 PC에 설치하지 않아 실행해 보지 않았습니다.
+확인하지 못한 것: VS의 각 창(예외 도우미 문구, 병렬 스택 모양, 메모리 스냅샷 화면)은 사람이 직접 띄워 보지 않았습니다. 버전에 따라 메뉴 이름이나 모양이 조금 다를 수 있습니다.
+
+dotnet-counters와 dotnet-dump(둘 다 10.0.750501)로 랩 27 절차를 실제로 해 봤습니다. 버그 상태에서는 `CombatLogWindow` 50개, `gcroot` 사슬이 `GameEvents.DamageDealt`로 이어지고, 고친 뒤에는 0개, LOH 0바이트였습니다. 랩 26과 28은 명령줄 도구로 해 보지 않았습니다.
 
 ## 다시 풀고 싶을 때
 
