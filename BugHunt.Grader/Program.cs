@@ -410,7 +410,26 @@ static class Program
         // 처리되지 않은 예외, 스택 오버플로, FailFast, 접근 위반 등
         string[] err = stderr.Result.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         string reason = string.Join(" ", err.Where(l => !l.StartsWith("at ") && !l.StartsWith("---") && !l.StartsWith(Text.MissingMark.Trim())).Take(2));
+        if (Text.IsJa)
+            reason = TranslateExceptionMessage(reason);
         return ("CRASH", $"0x{p.ExitCode:X8} {reason}".TrimEnd(), elapsed);
+    }
+
+    // 런타임이 찍는 "...Exception: 메시지"에서 랩이 던진 한국어 메시지만 표로 바꾼다 (AggregateException이면 괄호 안의 안쪽 메시지).
+    // 표에 없으면 그대로 둔다. 런타임의 영어 문구는 건드리지 않는다
+    static string TranslateExceptionMessage(string reason)
+    {
+        const string Key = "Exception: ";
+        int at = reason.IndexOf(Key, StringComparison.Ordinal);
+        if (at < 0)
+            return reason;
+        string head = reason[..(at + Key.Length)], message = reason[(at + Key.Length)..];
+        if (Text.JaOf(message) is string ja)
+            return head + ja;
+        int open = message.IndexOf(" (", StringComparison.Ordinal);
+        if (open >= 0 && message.EndsWith(')') && Text.JaOf(message[(open + 2)..^1]) is string inner)
+            return head + message[..(open + 2)] + inner + ")";
+        return reason;
     }
 
     static void WriteReport(string path, Report report)
