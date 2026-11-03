@@ -130,7 +130,7 @@ hotkeys[key] = () => CastSlot(thisSlot);
 本当の原因:     Select(...) は結果のリストではなく「クエリ」を返す。列挙するたびに Send がまた実行される
 ```
 **修正:** 副作用のあるクエリは即座に実体化する。`.Select(...).ToList()`。もっとよいのは Select の中で副作用を出さず、対象のリストを作ってから `foreach` で送ること。
-**教訓:** `IEnumerable<T>` の変数は**リストではなく作り方**かもしれない。デバッガーの「結果の表示」も列挙を実行して状態を変える。
+**教訓:** `IEnumerable<T>` の変数は**リストではなく作り方**かもしれない。デバッガーの「結果ビュー」も列挙を実行して状態を変える。
 
 ## Lab 11 — readonly struct フィールドの防御的コピー
 ```
@@ -364,7 +364,7 @@ public override int GetHashCode() => Id.GetHashCode();
 
 ## Lab 30 — ToList() なしで残した「スナップショット」
 ```
-Enter の _roster:      WhereListIterator (ウォッチで「結果の表示」を押さないと中身が出ない)
+Enter の _roster:      WhereListIterator (ウォッチで「結果ビュー」を押さないと中身が出ない)
 m => m.Online のブレークポイント:  Enter でも、RewardRecipients でも引っかかる
 本当の原因:  _roster は入場したときの名簿ではなく「接続中の人」という条件だ。報酬を渡すとき列挙すると、そのときのギルドを改めて絞り、
            出た人は外れ、あとで入った人(Newbie を含む)が入る。
@@ -1296,7 +1296,7 @@ finally
 ```
 Debug:     正常 (待ちながら数億回確認)
 Release:   応答なし。止まった瞬間 loader.Done == True、読んだアセット 20個 (ローディングはもう終わっている!)
-逆アセンブリ (Release、WaitForLoading のループ):
+逆アセンブル (Release、WaitForLoading のループ):
     Done をループに入る前に一度だけ読み、ループの中では spins++ とジャンプだけを繰り返す
 本当の原因:  JIT 最適化が「ループの中で誰も Done を書かない」と見て読みをループの外に出した。
            別のスレッドが Done = true を書いてもこのループは永遠に見ない。Debug は最適化を切るので毎回メモリから読む。
