@@ -6,11 +6,11 @@ public static class Lab50
     class Stats
     {
         // 숫자도 문자열도 담을 수 있게 object 로 만들었다. (지금은 숫자만 쓴다)
-        readonly Dictionary<string, int> _values = [];
+        readonly Dictionary<string, object> _values = [];
 
-        public void Add(string key, int amount) => _values[key] = _values.GetValueOrDefault(key) + amount;
+        public void Add(string key, int amount) => _values[key] = (int)_values.GetValueOrDefault(key, 0) + amount;
 
-        public int Get(string key) => _values.GetValueOrDefault(key);
+        public int Get(string key) => (int)_values.GetValueOrDefault(key, 0);
     }
 
     public static void Run()

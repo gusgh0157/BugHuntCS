@@ -27,8 +27,7 @@ public static class Lab53
         {
             units[i].X += dx;
             units[i].Y += dy;
-            if (Log.DebugEnabled)
-                Log.Debug("프레임 {0}: 유닛 {1} 이동 → ({2}, {3})", frame, units[i].Id, units[i].X, units[i].Y);
+            Log.Debug("프레임 {0}: 유닛 {1} 이동 → ({2}, {3})", frame, units[i].Id, units[i].X, units[i].Y);
         }
     }
 

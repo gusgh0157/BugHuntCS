@@ -1,5 +1,3 @@
-using System.Text;
-
 namespace BugHunt;
 
 // 길드 채팅 기록을 텍스트로 내보낸다. 내용은 맞는데, 기록이 길면 내보내기 버튼을 누르고 한참을 기다려야 한다.
@@ -9,10 +7,10 @@ public static class Lab49
 
     static string Export(List<ChatLine> lines)
     {
-        var text = new StringBuilder();
+        string text = "";
         foreach (ChatLine line in lines)
-            text.Append($"[{line.Minute / 60:00}:{line.Minute % 60:00}] {line.Sender}: {line.Text}\n");
-        return text.ToString();
+            text += $"[{line.Minute / 60:00}:{line.Minute % 60:00}] {line.Sender}: {line.Text}\n";
+        return text;
     }
 
     public static void Run()

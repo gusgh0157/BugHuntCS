@@ -6,7 +6,14 @@ public static class Lab54
     static int ParseRollMax(string command)
     {
         string arg = command.Length > 6 ? command[6..] : "";
-        return int.TryParse(arg, out int max) ? max : 100;
+        try
+        {
+            return int.Parse(arg);
+        }
+        catch (FormatException)
+        {
+            return 100;
+        }
     }
 
     public static void Run()

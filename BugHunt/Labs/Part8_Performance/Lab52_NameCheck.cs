@@ -6,9 +6,7 @@ namespace BugHunt;
 public static class Lab52
 {
     // 이름 규칙: 영문자로 시작, 영문자·숫자·밑줄 3~16자
-    static readonly Regex NameRule = new("^[A-Za-z][A-Za-z0-9_]{2,15}$");
-
-    static bool IsValidName(string name) => NameRule.IsMatch(name);
+    static bool IsValidName(string name) => new Regex("^[A-Za-z][A-Za-z0-9_]{2,15}$").IsMatch(name);
 
     public static void Run()
     {

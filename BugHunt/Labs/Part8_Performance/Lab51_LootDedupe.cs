@@ -16,9 +16,8 @@ public static class Lab51
     static List<ItemId> UniqueInOrder(List<ItemId> drops)
     {
         var unique = new List<ItemId>();
-        var seen = new HashSet<ItemId>();
         foreach (ItemId id in drops)
-            if (seen.Add(id))
+            if (!unique.Contains(id))
                 unique.Add(id);
         return unique;
     }

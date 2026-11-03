@@ -14,15 +14,8 @@ public static class Lab48
         public bool Alive = alive;
     }
 
-    static int CountNearby(List<Enemy> enemies, Vec player, float radius)
-    {
-        int count = 0;
-        float radiusSq = radius * radius;
-        foreach (Enemy e in enemies)
-            if (e.Alive && e.Pos.DistanceSq(player) <= radiusSq)
-                count++;
-        return count;
-    }
+    static int CountNearby(List<Enemy> enemies, Vec player, float radius) =>
+        enemies.Count(e => e.Alive && e.Pos.DistanceSq(player) <= radius * radius);
 
     public static void Run()
     {
