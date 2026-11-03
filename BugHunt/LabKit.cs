@@ -41,7 +41,7 @@ public static class LabKit
     public static bool IsGrading => Environment.GetEnvironmentVariable("BUGHUNT_GRADER") == "1";
 
     // 숨은 테스트 케이스. 0이면 화면에 보이는 기본 입력, 0이 아니면 그 값을 시드로 입력을 무작위로 만든다.
-    // 채점기가 BUGHUNT_SEED로 넘기고, 직접 재현할 때는 BugHunt.exe 36 --seed 1234 처럼 쓴다.
+    // 채점기가 BUGHUNT_SEED로 넘기고, 직접 재현할 때는 BugHunt.exe 43 --seed 1234 처럼 쓴다.
     public static int Seed { get; internal set; } =
         int.TryParse(Environment.GetEnvironmentVariable("BUGHUNT_SEED"), out int seed) ? seed : 0;
 
@@ -53,7 +53,7 @@ public static class LabKit
 
     public static T Pick<T>(T visible, params T[] pool) => Seed == 0 ? visible : pool[Rng.Next(pool.Length)];
 
-    // 6부: 멈출 수 있는 코드를 감시 타이머 아래에서 실행한다.
+    // 7부: 멈출 수 있는 코드를 감시 타이머 아래에서 실행한다.
     // timeoutMs 안에 끝나지 않으면 [FAIL] 응답 없음을 출력하고 false를 돌려준다. (랩이 정말 영원히 멈추지는 않게)
     // 디버거가 붙어 있으면 실패로 끝내지 않고 계속 기다린다. 그때 디버그 → 모두 중단으로 멈춘 곳을 보면 된다.
     public static bool FinishesWithin(string what, Action body, int timeoutMs = 2000)

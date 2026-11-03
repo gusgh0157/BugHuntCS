@@ -30,40 +30,40 @@ static class Program
         new("이벤트 남은 시간", "남은 시간이 9시간 어긋난다",                     Lab16.Run),
         new("친구 목록",        "대소문자만 다른 이름이 친구 목록에 두 번 들어간다", Lab17.Run),
         new("캐릭터 프리셋",    "복사본에 스킬을 넣었는데 원본도 바뀐다",          Lab18.Run),
-        // 3부: 비동기와 동시성
-        new("자동 저장",        "try/catch로 감쌌는데 저장 실패로 죽는다",         Lab19.Run),
-        new("로딩 화면",        "로딩 바가 100%에서 멈춘다",                      Lab20.Run),
-        new("업적 전송",        "업적을 세 개 보냈는데 서버는 0개 받았다",         Lab21.Run),
-        new("패치 다운로드",    "두 개가 실패했는데 로그에는 하나만 남는다",       Lab22.Run),
-        new("파티 피해 집계",   "총 피해량이 매번 다르다",                        Lab23.Run),
-        new("HUD 갱신",         "로딩 후 HUD가 엉뚱한 스레드에서 갱신된다",        Lab24.Run),
-        new("매칭 취소",        "취소를 눌렀는데 매칭이 계속된다",                Lab25.Run),
-        // 4부: 리소스와 메모리
-        new("리플레이 저장",    "저장한 리플레이 파일이 비어 있다",               Lab26.Run),
-        new("전투 기록 창",     "닫은 창들이 메모리에서 사라지지 않는다",          Lab27.Run),
-        new("텍스처 캐시",      "레벨을 나갔는데 텍스처 메모리가 그대로다",        Lab28.Run),
-        // 5부: unsafe와 네이티브 메모리
-        new("미니맵 경로",      "경로를 구했는데 미니맵에는 엉뚱한 타일이 찍힌다",  Lab29.Run, Hidden: 3, Release: true),
-        new("효과음 믹서",      "레벨을 넘어가면 효과음 볼륨이 엉망이 된다",       Lab30.Run, Hidden: 3, Release: true),
-        new("패킷 수신",        "손상된 패킷을 버렸는데 메모리가 안 줄어든다",      Lab31.Run, Hidden: 3),
-        new("박자 콜백",        "곡을 고르면 게임이 통째로 사라진다",              Lab32.Run, Hidden: 2, Release: true),
-        new("채팅 기록",        "채팅 기록이 전부 마지막 메시지로 바뀐다",          Lab33.Run, Hidden: 3),
-        new("패킷 헤더",        "서버가 보낸 채팅이 하나도 안 보인다",              Lab34.Run, Hidden: 3),
-        // 6부: 멈춤 - 무한루프와 데드락
-        new("보스 등장 연출",   "보스가 나오면 카메라 줌이 끝나지 않는다",          Lab35.Run, Hidden: 3),
-        new("인벤토리 저장",    "확장 가방을 산 플레이어만 저장하다 멈춘다",        Lab36.Run, Hidden: 3),
-        new("길드 동맹",        "동맹 가입 뒤 맹주 찾기가 끝나지 않는다",           Lab37.Run, Hidden: 3),
-        new("동시 거래",        "두 사람이 서로 골드를 보내면 둘 다 멈춘다",         Lab38.Run, Hidden: 2),
-        new("패치 슬롯",        "몇 개 실패하더니 다운로드가 통째로 멈춘다",         Lab39.Run, Hidden: 3),
-        new("로딩 대기",        "Release 출시판에서만 로딩 화면이 끝나지 않는다",   Lab40.Run, Hidden: 1, Release: true),
-        // 7부: 컨테이너와 컬렉션
-        new("퀘스트 정산",      "퀘스트를 다 깨기 전에 정산하면 죽는다",            Lab41.Run, Hidden: 3),
-        new("광역 공격",        "광역 공격을 맞아도 파티 HP가 그대로다",            Lab42.Run, Hidden: 3),
-        new("길드 창고",        "길드 태그를 바꾸자 창고가 사라졌다",               Lab43.Run, Hidden: 3),
-        new("처치 기록",        "처치 기록 수가 매번 모자라고 가끔 예외가 난다",     Lab44.Run, Hidden: 2),
-        new("시즌 리더보드",    "점수가 같으면 먼저 달성한 사람이 밀려난다",         Lab45.Run, Hidden: 3),
-        new("드롭 테이블",      "고장 난 파일을 건너뛰게 했는데 다른 곳에서 죽는다", Lab46.Run, Hidden: 3),
-        new("레이드 보상",      "레이드에 없던 사람이 보상을 받는다",               Lab47.Run, Hidden: 3),
+        // 3부: 컨테이너와 컬렉션
+        new("퀘스트 정산",      "퀘스트를 다 깨기 전에 정산하면 죽는다",            Lab19.Run, Hidden: 3),
+        new("광역 공격",        "광역 공격을 맞아도 파티 HP가 그대로다",            Lab20.Run, Hidden: 3),
+        new("길드 창고",        "길드 태그를 바꾸자 창고가 사라졌다",               Lab21.Run, Hidden: 3),
+        new("처치 기록",        "처치 기록 수가 매번 모자라고 가끔 예외가 난다",     Lab22.Run, Hidden: 2),
+        new("시즌 리더보드",    "점수가 같으면 먼저 달성한 사람이 밀려난다",         Lab23.Run, Hidden: 3),
+        new("드롭 테이블",      "고장 난 파일을 건너뛰게 했는데 다른 곳에서 죽는다", Lab24.Run, Hidden: 3),
+        new("레이드 보상",      "레이드에 없던 사람이 보상을 받는다",               Lab25.Run, Hidden: 3),
+        // 4부: 비동기와 동시성
+        new("자동 저장",        "try/catch로 감쌌는데 저장 실패로 죽는다",         Lab26.Run),
+        new("로딩 화면",        "로딩 바가 100%에서 멈춘다",                      Lab27.Run),
+        new("업적 전송",        "업적을 세 개 보냈는데 서버는 0개 받았다",         Lab28.Run),
+        new("패치 다운로드",    "두 개가 실패했는데 로그에는 하나만 남는다",       Lab29.Run),
+        new("파티 피해 집계",   "총 피해량이 매번 다르다",                        Lab30.Run),
+        new("HUD 갱신",         "로딩 후 HUD가 엉뚱한 스레드에서 갱신된다",        Lab31.Run),
+        new("매칭 취소",        "취소를 눌렀는데 매칭이 계속된다",                Lab32.Run),
+        // 5부: 리소스와 메모리
+        new("리플레이 저장",    "저장한 리플레이 파일이 비어 있다",               Lab33.Run),
+        new("전투 기록 창",     "닫은 창들이 메모리에서 사라지지 않는다",          Lab34.Run),
+        new("텍스처 캐시",      "레벨을 나갔는데 텍스처 메모리가 그대로다",        Lab35.Run),
+        // 6부: unsafe와 네이티브 메모리
+        new("미니맵 경로",      "경로를 구했는데 미니맵에는 엉뚱한 타일이 찍힌다",  Lab36.Run, Hidden: 3, Release: true),
+        new("효과음 믹서",      "레벨을 넘어가면 효과음 볼륨이 엉망이 된다",       Lab37.Run, Hidden: 3, Release: true),
+        new("패킷 수신",        "손상된 패킷을 버렸는데 메모리가 안 줄어든다",      Lab38.Run, Hidden: 3),
+        new("박자 콜백",        "곡을 고르면 게임이 통째로 사라진다",              Lab39.Run, Hidden: 2, Release: true),
+        new("채팅 기록",        "채팅 기록이 전부 마지막 메시지로 바뀐다",          Lab40.Run, Hidden: 3),
+        new("패킷 헤더",        "서버가 보낸 채팅이 하나도 안 보인다",              Lab41.Run, Hidden: 3),
+        // 7부: 멈춤 - 무한루프와 데드락
+        new("보스 등장 연출",   "보스가 나오면 카메라 줌이 끝나지 않는다",          Lab42.Run, Hidden: 3),
+        new("인벤토리 저장",    "확장 가방을 산 플레이어만 저장하다 멈춘다",        Lab43.Run, Hidden: 3),
+        new("길드 동맹",        "동맹 가입 뒤 맹주 찾기가 끝나지 않는다",           Lab44.Run, Hidden: 3),
+        new("동시 거래",        "두 사람이 서로 골드를 보내면 둘 다 멈춘다",         Lab45.Run, Hidden: 2),
+        new("패치 슬롯",        "몇 개 실패하더니 다운로드가 통째로 멈춘다",         Lab46.Run, Hidden: 3),
+        new("로딩 대기",        "Release 출시판에서만 로딩 화면이 끝나지 않는다",   Lab47.Run, Hidden: 1, Release: true),
         // 8부: 성능 - 틀리지는 않는데 느리다
         new("위협도 표시",      "전투가 길어지면 프레임이 툭툭 끊긴다",               Lab48.Run, Hidden: 2),
         new("채팅 내보내기",    "기록이 길면 내보내기가 한참 걸린다",                 Lab49.Run, Hidden: 2),
@@ -74,7 +74,7 @@ static class Program
         new("주사위 명령",      "이상한 명령을 도배하면 서버가 느려진다",             Lab54.Run, Hidden: 2),
     ];
 
-    const int Part2Start = 8, Part3Start = 19, Part4Start = 26, Part5Start = 29, Part6Start = 35, Part7Start = 41, Part8Start = 48;
+    const int Part2Start = 8, Part3Start = 19, Part4Start = 26, Part5Start = 33, Part6Start = 36, Part7Start = 42, Part8Start = 48;
 
     static string BuildName =>
 #if DEBUG
@@ -91,16 +91,16 @@ static class Program
             int n = i + 1;
             if (n == 1) Console.WriteLine("\n[1부] 예외와 스택 트레이스 - VS에서 F5로 실행하세요");
             else if (n == Part2Start) Console.WriteLine("\n[2부] 흐름 추적 - 크래시 없음. 중단점을 걸고 F10/F11로 따라가세요");
-            else if (n == Part3Start) Console.WriteLine("\n[3부] 비동기와 동시성 - 병렬 스택/작업 창");
-            else if (n == Part4Start) Console.WriteLine("\n[4부] 리소스와 메모리 (선택) - 진단 도구, 메모리 스냅샷");
-            else if (n == Part5Start) Console.WriteLine("\n[5부] unsafe와 네이티브 메모리 (선택) - 메모리 창, 조사식의 포인터 식");
-            else if (n == Part6Start) Console.WriteLine("\n[6부] 멈춤: 무한루프와 데드락 - 모두 중단, 병렬 스택, 스레드 창, dotnet-stack");
-            else if (n == Part7Start) Console.WriteLine("\n[7부] 컨테이너와 컬렉션 - 예외 도우미, 조사식, 개체 ID, 병렬 스택");
+            else if (n == Part3Start) Console.WriteLine("\n[3부] 컨테이너와 컬렉션 - 예외 도우미, 조사식, 개체 ID");
+            else if (n == Part4Start) Console.WriteLine("\n[4부] 비동기와 동시성 - 병렬 스택/작업 창");
+            else if (n == Part5Start) Console.WriteLine("\n[5부] 리소스와 메모리 (선택) - 진단 도구, 메모리 스냅샷");
+            else if (n == Part6Start) Console.WriteLine("\n[6부] unsafe와 네이티브 메모리 (선택) - 메모리 창, 조사식의 포인터 식");
+            else if (n == Part7Start) Console.WriteLine("\n[7부] 멈춤: 무한루프와 데드락 - 모두 중단, 병렬 스택, 스레드 창, dotnet-stack");
             else if (n == Part8Start) Console.WriteLine("\n[8부] 성능 - 틀리지는 않는데 느리다. 성능 프로파일러, dotnet-counters, dotnet-trace");
             Console.WriteLine($"  {n,2}. {Labs[i].Title}  - {Labs[i].Symptom}");
         }
         Console.WriteLine("  (명령줄 인자로 번호를 넘겨도 된다: BugHunt.exe 3)");
-        Console.WriteLine("  (채점: 저장소 폴더에서 grade.bat  또는  grade.bat 29-40)");
+        Console.WriteLine("  (채점: 저장소 폴더에서 grade.bat  또는  grade.bat 19-25)");
     }
 
     static int Main(string[] args)

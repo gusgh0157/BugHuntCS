@@ -80,7 +80,7 @@ Parallel.ForEach(Files, file =>
     }
 });
 ```
-(`skipped++`를 그대로 두면 스레드 경쟁이 생긴다. 랩 23 참고.) 더 나아가 `int.TryParse`로 예외 없이 처리할 수도 있다.
+(`skipped++`를 그대로 두면 스레드 경쟁이 생긴다. 랩 30 참고.) 더 나아가 `int.TryParse`로 예외 없이 처리할 수도 있다.
 **교훈:** 병렬 API(`Parallel`, `Task.Wait`, `Task.Result`)는 예외를 **AggregateException으로 감싼다**. 예외 설정 창의 first chance 중단으로 진짜 throw 지점(작업 스레드)을 바로 볼 수 있다.
 
 ## Lab 7 — `throw ex;`가 스택 트레이스를 덮어씀
@@ -219,9 +219,108 @@ ReferenceEquals(basePreset.Skills, custom.Skills)  true  (List는 주소만 복�
 
 ---
 
-# 3부: 비동기와 동시성
+# 3부: 컨테이너와 컬렉션
 
-## Lab 19 — async void의 예외는 catch에 오지 않는다
+## Lab 19 — Length와 Count를 섞어 쓴 범위 밖 인덱스
+```
+예외:        ArgumentOutOfRangeException: Index was out of range. Must be non-negative and less than the size of the collection. (Parameter 'index')
+멈춘 곳:     Settle의 clearSeconds[i]   (i == 3)
+조사식:      stages.Length == 4, clearSeconds.Count == 3
+진짜 원인:  루프는 퀘스트 전체 단계 수(stages.Length)만큼 도는데, 읽는 것은 지금까지 깬 단계의 목록(clearSeconds)
+```
+**수정:** `for (int i = 0; i < clearSeconds.Count; i++)`. 루프는 **실제로 읽는 컬렉션**의 크기로 돈다.
+**교훈:** 배열은 `IndexOutOfRangeException`, `List`는 `ArgumentOutOfRangeException`을 낸다. 메시지에 인덱스 값은 없으니 지역 창에서 `i`와 크기를 직접 비교한다. 이런 버그는 "다 깬 퀘스트"처럼 두 크기가 우연히 같은 데이터로만 시험하면 숨는다. 경계(0개, 일부, 전부)를 시험하자. (`<=`로 한 칸 넘어가는 off-by-one도 같은 모습이다.)
+
+## Lab 20 — `List<struct>` 인덱서가 돌려준 복사본을 고침
+```
+TakeDamage 안:   Hp 100 → 70   (줄어든다)
+AreaAttack로 나와서 party[i].Hp:   100   (그대로)
+진짜 원인:  List<T>의 인덱서는 get 메서드라서 struct의 "복사본"을 돌려준다. TakeDamage는 그 임시 복사본을 고치고 버린다.
+           party[i].Hp -= damage 는 컴파일러가 CS1612로 막지만, 메서드 호출은 막지 않는다.
+```
+**수정 (택1):**
+- 꺼내서 고치고 다시 넣는다.
+  ```csharp
+  Member member = party[i];
+  member.TakeDamage(damage);
+  party[i] = member;
+  ```
+- `CollectionsMarshal.AsSpan(party)[i].TakeDamage(damage);` — `Span`의 인덱서는 **칸 자체(ref)**를 돌려준다. (그 사이에 List에 넣거나 빼면 안 된다)
+- 바뀌는 데이터라면 `class`로 만든다. 또는 `readonly struct`로 만들어 바꾸는 메서드 자체를 없앤다.
+
+**교훈:** 배열의 `arr[i]`는 칸 자체(ref)지만 `List`, `Dictionary`의 인덱서와 속성은 **값을 돌려주는 메서드**다. 바뀌는 struct는 복사될 때마다 버그의 씨앗이 된다 (랩 10의 `readonly` 필드 방어적 복사와 같은 뿌리).
+
+## Lab 21 — Dictionary 키로 쓰는 동안 해시가 바뀜 (가변 키)
+```
+TryGetValue:   false
+조사식 storage:  키 목록에 이름이 바뀐 길드가 그대로 보인다
+storage.Keys.Contains(g):   true   (하나씩 Equals로 비교)
+storage.ContainsKey(g):     false  (해시로 칸을 찾음)
+GetHashCode 중단점:  넣을 때와 찾을 때 값이 다름
+진짜 원인:  GetHashCode가 Tag로 계산되는데, 키로 넣은 뒤에 Tag를 바꿈. 객체는 옛 해시의 칸에 남아 있다.
+```
+**수정:** 같은 길드인지는 **바뀌지 않는 값**으로 판단한다.
+```csharp
+public override bool Equals(object? obj) => obj is Guild g && g.Id == Id;
+public override int GetHashCode() => Id.GetHashCode();
+```
+태그를 키로 써야 한다면, 바꿀 때 딕셔너리에서 `Remove`하고 바꾼 뒤 다시 넣는다.
+**교훈:** 해시 기반 컬렉션(`Dictionary`, `HashSet`)의 키는 넣은 뒤에 **해시에 쓰이는 값이 바뀌면 안 된다.** 랩 17(Equals와 GetHashCode가 서로 어긋남)과 짝이다. `record`는 모든 속성으로 해시를 만들기 때문에, 속성을 바꿀 수 있는 record를 키로 쓰면 이 버그가 된다.
+
+## Lab 22 — Dictionary를 여러 스레드에서 동시에 고침
+```
+실행할 때마다:   기록 수가 199,8xx처럼 모자라거나, IndexOutOfRangeException / InvalidOperationException
+                ("Operations that change non-concurrent collections must have exclusive access...")
+병렬 스택:      여러 전투 스레드가 동시에 Dictionary.TryInsert, Resize 안에 있음
+진짜 원인:  Dictionary는 한 번에 한 스레드만 고친다는 가정으로 만들어졌다. 내부 배열을 늘리는(Resize) 도중에 다른 스레드가 넣으면
+           항목이 사라지거나 내부 연결이 꼬인다. 키가 겹치지 않아도 같다.
+```
+**수정 (택1):**
+- `ConcurrentDictionary<int, int>`
+- 고치는 곳을 `lock`으로 감싼다
+- 전투 스레드마다 따로 모았다가 끝난 뒤 한 스레드에서 합친다 (가장 빠르다)
+
+**교훈:** .NET Framework의 `Dictionary`는 이렇게 꼬이면 **무한루프**(CPU 100%로 멈춤)에 빠지기도 했다. 지금의 .NET은 꼬임을 일부 감지해 예외를 내지만, 항목이 조용히 사라지는 것은 막지 못한다. 결과가 실행마다 다르면 랩 30처럼 경쟁 조건부터 의심한다.
+
+## Lab 23 — 불안정 정렬 (List.Sort)
+```
+점수 순서:      맞다 (3000, 3000, ..., 2000, ...)
+같은 점수끼리:  P04 P20 P08 ... 처럼 들어온 순서가 아님
+16개 이하로 줄이면:  맞게 나온다 (작은 구간은 삽입 정렬이라 우연히 안정)
+진짜 원인:  List.Sort는 불안정 정렬(introsort). 비교자가 0을 돌려준 원소들의 원래 순서를 지키지 않는다.
+```
+**수정 (택1):**
+- 안정 정렬인 LINQ를 쓴다: `board.OrderByDescending(e => e.Score)`
+- 같을 때의 규칙을 비교자에 넣는다: 달성 시각이나 들어온 순서를 두 번째 키로 비교
+
+**교훈:** "같으면 먼저 온 사람"처럼 같은 값의 순서에 의미가 있으면, 그 규칙을 **명시**한다. 비교자는 일관되어야 한다. `(a, b) => a.Score > b.Score ? -1 : 1`(같을 때 0을 안 줌)이나 `a.Score - b.Score`(넘침, 랩 13)처럼 어긋난 비교자는 결과가 실행·크기마다 흔들리거나 `InvalidOperationException: IComparer.Compare() method returns inconsistent results`를 낸다.
+
+## Lab 24 — yield 메서드의 예외는 열거할 때 난다
+```
+예외:        FormatException: 드롭 테이블 줄이 이상하다: "sword=?"
+호출 스택:   <ParseDropTable>d__1.MoveNext() ← Enumerable.Sum ← Lab24.Run   (LoadDropTable은 없다)
+콘솔:        "고장 난 드롭 테이블, 기본 테이블 사용"이 한 번도 안 찍힘
+진짜 원인:  yield return이 있는 메서드는 부르는 순간 본문을 하나도 실행하지 않는다. LoadDropTable의 try는 "열거할 객체"만 받아서 바로 끝나고,
+           실제 파싱(과 예외)은 나중에 Sum이 열거할 때 일어난다.
+```
+**수정:** 잡고 싶은 곳에서 끝까지 열거한다: `return ParseDropTable(text).ToList();`
+**교훈:** 지연 실행되는 것은 LINQ(랩 9, 25)만이 아니다. `yield` 메서드의 **예외, 로그, 파일 열기 같은 부수 효과**는 모두 "열거하는 순간, 열거하는 곳"에서 일어난다. 인자 검사처럼 즉시 실패해야 하는 일은 `yield` 없는 바깥 메서드에서 먼저 하고, 열거는 안쪽 지역 함수에 맡긴다.
+
+## Lab 25 — ToList() 없이 남긴 "스냅샷"
+```
+Enter의 _roster:      WhereListIterator (조사식에서 "결과 보기"를 눌러야 내용이 나온다)
+m => m.Online 중단점:  Enter에서도, RewardRecipients에서도 걸림
+진짜 원인:  _roster는 입장할 때의 명단이 아니라 "접속 중인 사람"이라는 조건이다. 보상 줄 때 열거하면 그때의 길드를 다시 걸러서,
+           나간 사람은 빠지고 나중에 들어온 사람(Newbie 포함)이 들어간다.
+```
+**수정:** 그 순간의 명단을 찍어 둔다: `_roster = guild.Where(m => m.Online).ToList();`
+**교훈:** `Where`, `Select`, `Dictionary.Keys`/`Values`, `List.AsReadOnly()`는 원본을 비추는 **창문**이다. 원본이 바뀌면 보이는 것도 바뀐다. 그 순간의 사진이 필요하면 `ToList()`/`ToArray()`로 복사한다. 단 복사되는 것은 목록뿐이고 `Member` 객체는 여전히 공유된다 (얕은 복사, 랩 18).
+
+---
+
+# 4부: 비동기와 동시성
+
+## Lab 26 — async void의 예외는 catch에 오지 않는다
 ```
 멈춘 곳:    SaveAsync의 throw (스레드 창: .NET TP Worker, 호출 스택에 AutoSave/Run 없음)
 진짜 원인:  SaveAsync는 첫 await에서 바로 반환됨 → try 블록은 이미 끝남.
@@ -241,21 +340,21 @@ static async Task<int> AutoSaveAsync(SaveSystem saves, string[] checkpoints)
 `Run`에서는 `AutoSaveAsync(...).GetAwaiter().GetResult()` (콘솔의 최상위이므로 괜찮다).
 **교훈:** `async void`는 호출자가 **끝났는지도, 실패했는지도 알 수 없다.** 이벤트 처리기처럼 시그니처가 정해진 경우에만 쓴다.
 
-## Lab 20 — `.Result` 데드락
+## Lab 27 — `.Result` 데드락
 ```
 모두 중단 → 병렬 스택:
-    Main Thread (게임 루프):  Task.Result → ... → Lab20.OnEnterLoadingScreen  (막혀 있음)
+    Main Thread (게임 루프):  Task.Result → ... → Lab27.OnEnterLoadingScreen  (막혀 있음)
 작업 창:     LoadAssetsAsync  대기 중 (첫 await 이후 계속할 차례를 기다림)
 main.PendingCount:  1  ← LoadAssetsAsync의 나머지가 메인 스레드 큐에 줄 서 있음
 진짜 원인:  메인 스레드가 .Result로 막혀 있는데, await의 나머지는 그 메인 스레드에서만 실행될 수 있음
 ```
 **수정 (택1):**
 - 끝까지 async (권장): `static async Task OnEnterLoadingScreenAsync(...) { ... int loaded = await LoadAssetsAsync(); ... }` 그리고 `main.Run(() => OnEnterLoadingScreenAsync(screen))`
-- 라이브러리 쪽 `LoadAssetsAsync` 안의 `await Task.Delay(20).ConfigureAwait(false)` — 메인 스레드로 돌아오지 않으므로 데드락은 풀린다. 단, 그 뒤에서 메인 스레드 전용 객체를 만지면 랩 24의 버그가 된다.
+- 라이브러리 쪽 `LoadAssetsAsync` 안의 `await Task.Delay(20).ConfigureAwait(false)` — 메인 스레드로 돌아오지 않으므로 데드락은 풀린다. 단, 그 뒤에서 메인 스레드 전용 객체를 만지면 랩 31의 버그가 된다.
 
 **교훈:** SynchronizationContext가 있는 스레드에서 비동기 작업을 **동기로 기다리면** 데드락이 된다. 콘솔 기본 스레드에는 컨텍스트가 없어서 재현되지 않으므로, 콘솔에서 시험한 코드가 UI/게임에서 멈춘다.
 
-## Lab 21 — await 누락 (fire-and-forget)
+## Lab 28 — await 누락 (fire-and-forget)
 ```
 Expect 줄의 작업 창:  SubmitAsync 3개, 모두 "대기 중"
 Interlocked.Increment 중단점:  Expect 보다 나중에 걸림 (또는 프로세스가 먼저 끝나서 안 걸림)
@@ -272,7 +371,7 @@ static async Task SubmitUnlockedAsync(AchievementServer server, IEnumerable<stri
 동시에 보내도 된다면 `await Task.WhenAll(unlocked.Select(server.SubmitAsync));`. `Run`에서는 `.GetAwaiter().GetResult()`.
 **교훈:** Task를 돌려받으면 **누군가는 기다려야 한다.** `_ =`는 그 책임을 일부러 버린다는 표시다. CS4014를 끄려고 붙이면 안 된다.
 
-## Lab 22 — `await Task.WhenAll`은 첫 예외만 던진다
+## Lab 29 — `await Task.WhenAll`은 첫 예외만 던진다
 ```
 throw 중단점:  두 번 걸림 (sounds.pak, locale.pak)
 catch 안의 ex:  IOException "sounds.pak 다운로드 실패" 하나
@@ -293,7 +392,7 @@ catch (Exception)
 또는 `Task all = Task.WhenAll(downloads); try { await all; } catch { foreach (var ex in all.Exception!.InnerExceptions) ... }`.
 **교훈:** 예외는 사라지지 않고 **Task 안에** 남아 있다. 여러 작업의 실패를 모두 다루려면 Task를 직접 본다.
 
-## Lab 23 — lock 없는 경쟁 조건
+## Lab 30 — lock 없는 경쟁 조건
 ```
 결과:     매 실행마다 다른 값 (예: 타격 1,0xx,xxx / 기대 2,000,000)
 병렬 스택:  Record 안에 스레드 4개가 동시에 있음
@@ -306,16 +405,16 @@ catch (Exception)
 
 **교훈:** 결과가 실행마다 다르면 경쟁 조건부터 의심한다. 중단점을 걸면 타이밍이 바뀌어 오히려 안 보일 수 있다.
 
-## Lab 24 — ConfigureAwait(false) 뒤에서 메인 스레드 전용 객체를 만짐
+## Lab 31 — ConfigureAwait(false) 뒤에서 메인 스레드 전용 객체를 만짐
 ```
 RefreshHudAsync 첫 줄:  스레드 = Main Thread (게임 루프), SynchronizationContext.Current = MainThread
 hud.SetGold 줄:         스레드 = .NET TP Worker, SynchronizationContext.Current = null
 진짜 원인:  ConfigureAwait(false) 때문에 await 뒤가 메인 스레드로 돌아오지 않음
 ```
 **수정:** 이 메서드에서는 `ConfigureAwait(false)`를 지운다. 메인 스레드로 돌아와야 하는 코드(UI, 게임 오브젝트)는 기본 동작(컨텍스트 캡처)을 써야 한다.
-**교훈:** `ConfigureAwait(false)`는 **컨텍스트가 필요 없는 라이브러리 코드**용이다. 랩 20에서는 데드락을 푸는 도구였지만, 그 뒤에서 메인 스레드 전용 객체를 만지면 버그가 된다. 실제 WinForms/WPF/유니티에서는 여기서 예외가 나거나 화면이 가끔 깨진다.
+**교훈:** `ConfigureAwait(false)`는 **컨텍스트가 필요 없는 라이브러리 코드**용이다. 랩 27에서는 데드락을 푸는 도구였지만, 그 뒤에서 메인 스레드 전용 객체를 만지면 버그가 된다. 실제 WinForms/WPF/유니티에서는 여기서 예외가 나거나 화면이 가끔 깨진다.
 
-## Lab 25 — CancellationToken을 넘기지 않음
+## Lab 32 — CancellationToken을 넘기지 않음
 ```
 SearchRegionAsync (region == 10):
     token.IsCancellationRequested  false
@@ -328,9 +427,9 @@ FindMatchAsync 프레임의 token:   IsCancellationRequested true
 
 ---
 
-# 4부: 리소스와 메모리
+# 5부: 리소스와 메모리
 
-## Lab 26 — Dispose하지 않은 StreamWriter
+## Lab 33 — Dispose하지 않은 StreamWriter
 ```
 SaveReplay 마지막 줄:
     new FileInfo(path).Length    0
@@ -341,17 +440,17 @@ SaveReplay 마지막 줄:
 **수정:** `using var writer = new StreamWriter(path);` (또는 `using (...) { }` 블록, 또는 `File.WriteAllLines(path, frames)`).
 **교훈:** `IDisposable`을 구현한 객체는 **반드시 Dispose**한다. GC는 메모리를 회수할 뿐, 버퍼를 플러시하거나 파일을 닫아 주는 시점은 보장하지 않는다. .NET은 종료할 때 종료자도 돌리지 않는다.
 
-## Lab 27 — static 이벤트가 닫은 창을 붙잡음
+## Lab 34 — static 이벤트가 닫은 창을 붙잡음
 ```
 메모리 스냅샷:  CombatLogWindow 50개, 각각 256KB 텍스처 캐시
-루트 경로:     CombatLogWindow ← Action<string,int> (대리자의 Target) ← Lab27.GameEvents.DamageDealt (static 필드)
+루트 경로:     CombatLogWindow ← Action<string,int> (대리자의 Target) ← Lab34.GameEvents.DamageDealt (static 필드)
 진짜 원인:     Open에서 += 로 구독하고 Close에서 -= 로 해지하지 않음.
               이벤트(대리자)가 구독자를 참조하고, static 필드는 프로그램이 끝날 때까지 GC 루트
 ```
 **수정:** `Close()`에 `GameEvents.DamageDealt -= OnDamageDealt;`. 창의 수명이 명확하다면 `IDisposable`로 만들어 `Dispose`에서 해지한다.
 **교훈:** "참조를 다 버렸는데 메모리가 안 줄어든다"면 **누가 아직 붙잡고 있는지**를 찾는다. 메모리 스냅샷의 루트 경로나 `dotnet-dump`의 `gcroot`가 그 사슬을 보여 준다. 오래 사는 객체(static, 싱글턴)의 이벤트에 짧게 사는 객체가 구독하는 구조가 가장 흔한 누수다.
 
-## Lab 28 — 종료자에 자원 반납을 맡김
+## Lab 35 — 종료자에 자원 반납을 맡김
 ```
 ~Texture() 중단점:   Exit() 동안 안 걸림. 프로그램이 끝날 때까지도 안 걸림
 GC.CollectionCount(0)  0   ← GC가 한 번도 안 돌았음
@@ -385,9 +484,9 @@ public void Exit()
 
 ---
 
-# 5부: unsafe와 네이티브 메모리
+# 6부: unsafe와 네이티브 메모리
 
-## Lab 29 — 메서드가 끝난 stackalloc 메모리를 가리키는 포인터
+## Lab 36 — 메서드가 끝난 stackalloc 메모리를 가리키는 포인터
 ```
 FindPath의 return 줄:          path[0] == 3, path[1] == 4   ← 여기까지는 맞다
 DrawMinimapBackground 다음:    path[0] == -1 또는 쓰레기 값
@@ -412,7 +511,7 @@ int length = FindPath(start, goal, path);
 (크기가 크거나 정해지지 않았다면 `int[]`나 `ArrayPool`을 쓴다.)
 **교훈:** 컴파일러가 `Span`을 막는 것은 **수명 검사**다. 포인터, `Unsafe.AsRef`, `MemoryMarshal.CreateSpan`으로 그 검사를 우회하면 C++의 "지역 변수 주소 반환"과 똑같은 버그가 된다. 값을 망가뜨리는 것은 읽는 순간이 아니라 **그 사이의 다른 호출**이라서, 중단점을 거는 위치에 따라 멀쩡해 보이기도 한다.
 
-## Lab 30 — fixed 블록 밖으로 빼낸 포인터를 GC 압축 뒤에 사용
+## Lab 37 — fixed 블록 밖으로 빼낸 포인터를 GC 압축 뒤에 사용
 ```
 Attach 줄의 (long)p:              처음 주소
 LoadLevel 뒤 Samples의 주소:       다른 주소   ← 배열이 옮겨졌다
@@ -422,12 +521,12 @@ MixFrame의 (long)_buffer:          처음 주소 그대로
 ```
 **수정 (택1):**
 - 처음부터 옮겨지지 않는 힙(POH)에 만든다: `public short[] Samples { get; } = GC.AllocateArray<short>(32, pinned: true);`
-- `GCHandle.Alloc(Samples, GCHandleType.Pinned)`로 고정하고, 장치에서 떼어 낼 때 `Free` (랩 31 참고)
+- `GCHandle.Alloc(Samples, GCHandleType.Pinned)`로 고정하고, 장치에서 떼어 낼 때 `Free` (랩 38 참고)
 - 네이티브가 오래 쓸 버퍼는 아예 `NativeMemory.Alloc`으로 GC 밖에 만들고 `NativeMemory.Free`로 돌려준다
 
 **교훈:** 관리 참조는 GC가 같이 고쳐 주지만 **포인터는 GC가 모르는 숫자**다. 네이티브 쪽이 "주소를 기억해 두는" API라면 `fixed`로는 안 된다. 실제로는 GC가 언제 압축하느냐에 따라 오랫동안 멀쩡하다가 터지는 버그인데, 이 랩은 `GC.Collect(..., compacting: true)`로 그 순간을 고정해 두었다.
 
-## Lab 31 — 예외 경로에서 GCHandle.Free 누락
+## Lab 38 — 예외 경로에서 GCHandle.Free 누락
 ```
 살아 남은 버퍼 수:     2  == 손상된 패킷 수
 throw 줄에서 F10:      handle.Free()로 가지 않고 catch로 빠짐
@@ -448,12 +547,12 @@ finally
 }
 ```
 짧게만 고정한다면 `fixed (byte* p = buffer) { ... }`가 더 간단하다 (블록을 어떻게 빠져나가든 풀린다).
-**교훈:** `GCHandle`은 GC 바깥의 강한 참조라서, `Free`를 잊으면 **GC가 있어도 누수**다. Pinned 핸들은 게다가 힙 압축도 방해한다. 얻었으면 `finally`에서 돌려준다. `lock`, 세마포(랩 39)와 같은 규칙이다.
+**교훈:** `GCHandle`은 GC 바깥의 강한 참조라서, `Free`를 잊으면 **GC가 있어도 누수**다. Pinned 핸들은 게다가 힙 압축도 방해한다. 얻었으면 `finally`에서 돌려준다. `lock`, 세마포(랩 46)와 같은 규칙이다.
 
-## Lab 32 — 네이티브에 넘긴 콜백 대리자가 GC에 수거됨
+## Lab 39 — 네이티브에 넘긴 콜백 대리자가 GC에 수거됨
 ```
 콘솔(디버거 없이):  Process terminated.
-                    A callback was made on a garbage collected delegate of type 'BugHunt!BugHunt.Lab32+BeatCallback::Invoke'.
+                    A callback was made on a garbage collected delegate of type 'BugHunt!BugHunt.Lab39+BeatCallback::Invoke'.
 F5:                 PlayBeat의 _onBeat(beat) 줄에서 멈춤
 진짜 원인:  GetFunctionPointerForDelegate(OnBeat)에 넘긴 대리자는 그 자리에서 만들어진 임시 객체다.
            네이티브 쪽은 함수 포인터(숫자)만 가지고 있으므로 GC는 대리자를 쓰레기로 보고, LoadSong의 GC.Collect가 수거한다.
@@ -475,7 +574,7 @@ F5:                 PlayBeat의 _onBeat(beat) 줄에서 멈춤
 `GC.KeepAlive(callback)`은 **그 줄까지만** 살려 두므로, 나중에 불리는 콜백에는 소용이 없다.
 **교훈:** .NET Framework에서 MDA `CallbackOnCollectedDelegate`로 유명했던 버그다. 지금의 .NET은 수거된 대리자의 진입점을 막아 두기 때문에, 엉뚱한 곳으로 뛰지 않고 **이유를 적고 즉시 끝난다.** 그 메시지의 형식 이름이 범인이다.
 
-## Lab 33 — ArrayPool에 반납한 배열을 Memory로 계속 사용
+## Lab 40 — ArrayPool에 반납한 배열을 Memory로 계속 사용
 ```
 history.Add 중단점마다 history[0]:  "[Kael] 안녕" → 다음 메시지로 덮어써진 값 → ...   ← 매번 바뀐다
 개체 ID:   FormatMessage의 buffer가 매번 같은 $1
@@ -492,7 +591,7 @@ return message.AsMemory();
 (더 간단히는 `string.Concat`으로 string을 바로 만든다. 풀은 **그 메서드 안에서만** 쓰는 임시 버퍼에 쓴다.)
 **교훈:** `Return`은 "이제 다른 사람이 써도 된다"는 약속이다. 반납한 배열을 가리키는 `Span`, `Memory`, 슬라이스가 남아 있으면 해제 후 사용(use-after-free)과 같다. 크래시는 안 나고 **남의 데이터가 보일 뿐**이라 더 찾기 어렵다.
 
-## Lab 34 — 구조체 레이아웃의 패딩
+## Lab 41 — 구조체 레이아웃의 패딩
 ```
 header:   Type 7, Length 엄청 큰 수(또는 음수), Seq 엉뚱한 값
 Unsafe.SizeOf<PacketHeader>():   12   (1 + 4 + 2 = 7이 아님)
@@ -516,9 +615,9 @@ Marshal.SizeOf<PacketHeader>():  12
 
 ---
 
-# 6부: 멈춤 - 무한루프와 데드락
+# 7부: 멈춤 - 무한루프와 데드락
 
-## Lab 35 — 실수 누적과 `!=` 종료 조건
+## Lab 42 — 실수 누적과 `!=` 종료 조건
 ```
 모두 중단 → 랩 본문 스레드:  ZoomTo의 for 줄
 zoom:    목표(2.0)를 한참 지난 값 (계속 커지다가, 어느 크기부터는 0.1을 더해도 안 바뀜)
@@ -539,7 +638,7 @@ camera.Zoom = target;
 `zoom < target`으로만 바꾸면 멈추지는 않지만, 누적 오차 때문에 프레임이 하나 더 그려질 수 있다 (`1.9999998 < 2.0`).
 **교훈:** 랩 12와 같은 원인(실수 동등 비교)이 **종료 조건**에 들어가면 "틀린 값"이 아니라 "안 끝남"이 된다. 실수는 범위(`<`)로 비교하거나, 반복 자체는 정수로 센다.
 
-## Lab 36 — byte 루프 변수의 넘침
+## Lab 43 — byte 루프 변수의 넘침
 ```
 모두 중단 여러 번:  written은 계속 커지는데 slot은 항상 0~255
 조건부 중단점 slot == 255 → F10:  slot == 0
@@ -548,7 +647,7 @@ camera.Zoom = target;
 **수정:** `for (int slot = 0; slot < items.Count; slot++)`. 세이브 형식이 정말 슬롯 번호를 1바이트로만 쓸 수 있다면, 저장하기 전에 개수를 검사해서 형식을 올리거나 오류를 낸다.
 **교훈:** 루프 변수는 **비교 대상과 같은 형식**으로. 같은 함정: `for (uint i = n - 1; i >= 0; i--)` (uint는 0 아래로 가지 않는다). `checked` 블록이나 "산술 오버플로 검사" 옵션을 켜면 255 다음에서 `OverflowException`으로 바로 보인다.
 
-## Lab 37 — 고리가 생긴 부모 사슬
+## Lab 44 — 고리가 생긴 부모 사슬
 ```
 가입 신청:  "승인"
 모두 중단 → Leader()의 g:  Dawn → Ember → Frost → Gale → Dawn → ...   (개체 ID가 다시 나옴)
@@ -569,7 +668,7 @@ public bool JoinUnder(Guild parent)
 데이터가 이미 망가졌을 때를 대비해 `Leader()`에 방문 집합(`HashSet<Guild>`)이나 최대 단계를 두면, 무한루프 대신 오류로 드러난다.
 **교훈:** 그래프나 연결 리스트를 "끝(null)이 나올 때까지" 따라가는 코드는 **고리가 없다는 가정**에 기대고 있다. 그 가정은 데이터를 **바꾸는 곳**에서 지켜야 한다. 순회 쪽에서는 플로이드의 토끼와 거북이 알고리즘으로 고리를 찾을 수도 있다.
 
-## Lab 38 — 잠금 순서가 엇갈린 데드락
+## Lab 45 — 잠금 순서가 엇갈린 데드락
 ```
 병렬 스택:
     거래: Kael → Mira   Monitor.Enter ← Transfer(from=Kael, to=Mira)   lock (to.Sync) 줄에서 대기
@@ -593,7 +692,7 @@ lock (first.Sync)
 느린 일(`WriteTradeLog`)은 잠금 밖으로 빼는 것도 좋다. 잠금을 쥔 시간이 짧을수록 교착 상태와 경합이 줄어든다.
 **교훈:** 데드락은 **잠금 둘 + 엇갈린 순서**로 생긴다. 모두 중단 → 병렬 스택에서 `Monitor.Enter`로 기다리는 스레드들을 찾고, 각자 **이미 쥔 것**(바깥 lock)과 **기다리는 것**(안쪽 lock)을 적어 보면 고리가 보인다. 명령줄에서는 `dotnet-dump analyze`의 `syncblk`가 잠금 주인 스레드를 보여 준다.
 
-## Lab 39 — 예외 경로에서 SemaphoreSlim.Release 누락
+## Lab 46 — 예외 경로에서 SemaphoreSlim.Release 누락
 ```
 작업 창:               DownloadAsync 여러 개가 "대기 중" — SemaphoreSlim.WaitAsync를 기다림
 downloader.FreeSlots:  0
@@ -616,7 +715,7 @@ finally
 ```
 **교훈:** 세마포는 잠금과 같다. **얻었으면 `finally`에서 돌려준다.** `Monitor.Wait`/`Pulse`도 같은 종류의 멈춤을 만든다. 조건을 `if`로 한 번만 검사하거나, 기다리기 전에 온 `Pulse`를 놓치면 영원히 기다린다 (`while (조건) Monitor.Wait(gate);`가 기본형).
 
-## Lab 40 — volatile 없는 바쁜 대기 (Release에서만)
+## Lab 47 — volatile 없는 바쁜 대기 (Release에서만)
 ```
 Debug:     정상 (기다리며 수억 번 확인)
 Release:   응답 없음. 멈춘 순간 loader.Done == True, 읽은 에셋 20개 (로딩은 이미 끝났다!)
@@ -630,105 +729,6 @@ Release:   응답 없음. 멈춘 순간 loader.Done == True, 읽은 에셋 20개
 - 바쁜 대기를 없앤다: `ManualResetEventSlim`을 `Set`/`Wait`하거나, 로딩을 `Task`로 만들어 기다린다. CPU를 태우지 않는다.
 
 **교훈:** "Debug에서는 되는데 Release에서만 멈춘다"면 **최적화가 바꿀 수 있는 가정**(다른 스레드와 공유하는 메모리)을 의심한다. 다른 스레드가 바꾸는 값은 `volatile`/`Volatile`/`Interlocked`/`lock` 중 하나를 거쳐서 읽고 쓴다.
-
----
-
-# 7부: 컨테이너와 컬렉션
-
-## Lab 41 — Length와 Count를 섞어 쓴 범위 밖 인덱스
-```
-예외:        ArgumentOutOfRangeException: Index was out of range. Must be non-negative and less than the size of the collection. (Parameter 'index')
-멈춘 곳:     Settle의 clearSeconds[i]   (i == 3)
-조사식:      stages.Length == 4, clearSeconds.Count == 3
-진짜 원인:  루프는 퀘스트 전체 단계 수(stages.Length)만큼 도는데, 읽는 것은 지금까지 깬 단계의 목록(clearSeconds)
-```
-**수정:** `for (int i = 0; i < clearSeconds.Count; i++)`. 루프는 **실제로 읽는 컬렉션**의 크기로 돈다.
-**교훈:** 배열은 `IndexOutOfRangeException`, `List`는 `ArgumentOutOfRangeException`을 낸다. 메시지에 인덱스 값은 없으니 지역 창에서 `i`와 크기를 직접 비교한다. 이런 버그는 "다 깬 퀘스트"처럼 두 크기가 우연히 같은 데이터로만 시험하면 숨는다. 경계(0개, 일부, 전부)를 시험하자. (`<=`로 한 칸 넘어가는 off-by-one도 같은 모습이다.)
-
-## Lab 42 — `List<struct>` 인덱서가 돌려준 복사본을 고침
-```
-TakeDamage 안:   Hp 100 → 70   (줄어든다)
-AreaAttack로 나와서 party[i].Hp:   100   (그대로)
-진짜 원인:  List<T>의 인덱서는 get 메서드라서 struct의 "복사본"을 돌려준다. TakeDamage는 그 임시 복사본을 고치고 버린다.
-           party[i].Hp -= damage 는 컴파일러가 CS1612로 막지만, 메서드 호출은 막지 않는다.
-```
-**수정 (택1):**
-- 꺼내서 고치고 다시 넣는다.
-  ```csharp
-  Member member = party[i];
-  member.TakeDamage(damage);
-  party[i] = member;
-  ```
-- `CollectionsMarshal.AsSpan(party)[i].TakeDamage(damage);` — `Span`의 인덱서는 **칸 자체(ref)**를 돌려준다. (그 사이에 List에 넣거나 빼면 안 된다)
-- 바뀌는 데이터라면 `class`로 만든다. 또는 `readonly struct`로 만들어 바꾸는 메서드 자체를 없앤다.
-
-**교훈:** 배열의 `arr[i]`는 칸 자체(ref)지만 `List`, `Dictionary`의 인덱서와 속성은 **값을 돌려주는 메서드**다. 바뀌는 struct는 복사될 때마다 버그의 씨앗이 된다 (랩 10의 `readonly` 필드 방어적 복사와 같은 뿌리).
-
-## Lab 43 — Dictionary 키로 쓰는 동안 해시가 바뀜 (가변 키)
-```
-TryGetValue:   false
-조사식 storage:  키 목록에 이름이 바뀐 길드가 그대로 보인다
-storage.Keys.Contains(g):   true   (하나씩 Equals로 비교)
-storage.ContainsKey(g):     false  (해시로 칸을 찾음)
-GetHashCode 중단점:  넣을 때와 찾을 때 값이 다름
-진짜 원인:  GetHashCode가 Tag로 계산되는데, 키로 넣은 뒤에 Tag를 바꿈. 객체는 옛 해시의 칸에 남아 있다.
-```
-**수정:** 같은 길드인지는 **바뀌지 않는 값**으로 판단한다.
-```csharp
-public override bool Equals(object? obj) => obj is Guild g && g.Id == Id;
-public override int GetHashCode() => Id.GetHashCode();
-```
-태그를 키로 써야 한다면, 바꿀 때 딕셔너리에서 `Remove`하고 바꾼 뒤 다시 넣는다.
-**교훈:** 해시 기반 컬렉션(`Dictionary`, `HashSet`)의 키는 넣은 뒤에 **해시에 쓰이는 값이 바뀌면 안 된다.** 랩 17(Equals와 GetHashCode가 서로 어긋남)과 짝이다. `record`는 모든 속성으로 해시를 만들기 때문에, 속성을 바꿀 수 있는 record를 키로 쓰면 이 버그가 된다.
-
-## Lab 44 — Dictionary를 여러 스레드에서 동시에 고침
-```
-실행할 때마다:   기록 수가 199,8xx처럼 모자라거나, IndexOutOfRangeException / InvalidOperationException
-                ("Operations that change non-concurrent collections must have exclusive access...")
-병렬 스택:      여러 전투 스레드가 동시에 Dictionary.TryInsert, Resize 안에 있음
-진짜 원인:  Dictionary는 한 번에 한 스레드만 고친다는 가정으로 만들어졌다. 내부 배열을 늘리는(Resize) 도중에 다른 스레드가 넣으면
-           항목이 사라지거나 내부 연결이 꼬인다. 키가 겹치지 않아도 같다.
-```
-**수정 (택1):**
-- `ConcurrentDictionary<int, int>`
-- 고치는 곳을 `lock`으로 감싼다
-- 전투 스레드마다 따로 모았다가 끝난 뒤 한 스레드에서 합친다 (가장 빠르다)
-
-**교훈:** .NET Framework의 `Dictionary`는 이렇게 꼬이면 **무한루프**(CPU 100%로 멈춤)에 빠지기도 했다. 지금의 .NET은 꼬임을 일부 감지해 예외를 내지만, 항목이 조용히 사라지는 것은 막지 못한다. 결과가 실행마다 다르면 랩 23처럼 경쟁 조건부터 의심한다.
-
-## Lab 45 — 불안정 정렬 (List.Sort)
-```
-점수 순서:      맞다 (3000, 3000, ..., 2000, ...)
-같은 점수끼리:  P04 P20 P08 ... 처럼 들어온 순서가 아님
-16개 이하로 줄이면:  맞게 나온다 (작은 구간은 삽입 정렬이라 우연히 안정)
-진짜 원인:  List.Sort는 불안정 정렬(introsort). 비교자가 0을 돌려준 원소들의 원래 순서를 지키지 않는다.
-```
-**수정 (택1):**
-- 안정 정렬인 LINQ를 쓴다: `board.OrderByDescending(e => e.Score)`
-- 같을 때의 규칙을 비교자에 넣는다: 달성 시각이나 들어온 순서를 두 번째 키로 비교
-
-**교훈:** "같으면 먼저 온 사람"처럼 같은 값의 순서에 의미가 있으면, 그 규칙을 **명시**한다. 비교자는 일관되어야 한다. `(a, b) => a.Score > b.Score ? -1 : 1`(같을 때 0을 안 줌)이나 `a.Score - b.Score`(넘침, 랩 13)처럼 어긋난 비교자는 결과가 실행·크기마다 흔들리거나 `InvalidOperationException: IComparer.Compare() method returns inconsistent results`를 낸다.
-
-## Lab 46 — yield 메서드의 예외는 열거할 때 난다
-```
-예외:        FormatException: 드롭 테이블 줄이 이상하다: "sword=?"
-호출 스택:   <ParseDropTable>d__1.MoveNext() ← Enumerable.Sum ← Lab46.Run   (LoadDropTable은 없다)
-콘솔:        "고장 난 드롭 테이블, 기본 테이블 사용"이 한 번도 안 찍힘
-진짜 원인:  yield return이 있는 메서드는 부르는 순간 본문을 하나도 실행하지 않는다. LoadDropTable의 try는 "열거할 객체"만 받아서 바로 끝나고,
-           실제 파싱(과 예외)은 나중에 Sum이 열거할 때 일어난다.
-```
-**수정:** 잡고 싶은 곳에서 끝까지 열거한다: `return ParseDropTable(text).ToList();`
-**교훈:** 지연 실행되는 것은 LINQ(랩 9, 47)만이 아니다. `yield` 메서드의 **예외, 로그, 파일 열기 같은 부수 효과**는 모두 "열거하는 순간, 열거하는 곳"에서 일어난다. 인자 검사처럼 즉시 실패해야 하는 일은 `yield` 없는 바깥 메서드에서 먼저 하고, 열거는 안쪽 지역 함수에 맡긴다.
-
-## Lab 47 — ToList() 없이 남긴 "스냅샷"
-```
-Enter의 _roster:      WhereListIterator (조사식에서 "결과 보기"를 눌러야 내용이 나온다)
-m => m.Online 중단점:  Enter에서도, RewardRecipients에서도 걸림
-진짜 원인:  _roster는 입장할 때의 명단이 아니라 "접속 중인 사람"이라는 조건이다. 보상 줄 때 열거하면 그때의 길드를 다시 걸러서,
-           나간 사람은 빠지고 나중에 들어온 사람(Newbie 포함)이 들어간다.
-```
-**수정:** 그 순간의 명단을 찍어 둔다: `_roster = guild.Where(m => m.Online).ToList();`
-**교훈:** `Where`, `Select`, `Dictionary.Keys`/`Values`, `List.AsReadOnly()`는 원본을 비추는 **창문**이다. 원본이 바뀌면 보이는 것도 바뀐다. 그 순간의 사진이 필요하면 `ToList()`/`ToArray()`로 복사한다. 단 복사되는 것은 목록뿐이고 `Member` 객체는 여전히 공유된다 (얕은 복사, 랩 18).
 
 ---
 
