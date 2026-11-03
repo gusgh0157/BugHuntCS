@@ -37,6 +37,10 @@ static class Program
         new("파티 피해 집계",   "총 피해량이 매번 다르다",                        Lab23.Run),
         new("HUD 갱신",         "로딩 후 HUD가 엉뚱한 스레드에서 갱신된다",        Lab24.Run),
         new("매칭 취소",        "취소를 눌렀는데 매칭이 계속된다",                Lab25.Run),
+        // 4부: 리소스와 메모리
+        new("리플레이 저장",    "저장한 리플레이 파일이 비어 있다",               Lab26.Run),
+        new("전투 기록 창",     "닫은 창들이 메모리에서 사라지지 않는다",          Lab27.Run),
+        new("텍스처 캐시",      "레벨을 나갔는데 텍스처 메모리가 그대로다",        Lab28.Run),
     ];
 
     const int Part2Start = 8, Part3Start = 19, Part4Start = 26;
