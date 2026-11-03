@@ -64,9 +64,17 @@ static class Program
         new("시즌 리더보드",    "점수가 같으면 먼저 달성한 사람이 밀려난다",         Lab45.Run, Hidden: 3),
         new("드롭 테이블",      "고장 난 파일을 건너뛰게 했는데 다른 곳에서 죽는다", Lab46.Run, Hidden: 3),
         new("레이드 보상",      "레이드에 없던 사람이 보상을 받는다",               Lab47.Run, Hidden: 3),
+        // 8부: 성능 - 틀리지는 않는데 느리다
+        new("위협도 표시",      "전투가 길어지면 프레임이 툭툭 끊긴다",               Lab48.Run, Hidden: 2),
+        new("채팅 내보내기",    "기록이 길면 내보내기가 한참 걸린다",                 Lab49.Run, Hidden: 2),
+        new("전투 통계",        "통계를 켜면 GC 횟수가 확 늘어난다",                  Lab50.Run, Hidden: 2),
+        new("전리품 도감",      "큰 레이드가 끝나면 몇 초씩 멈춘다",                  Lab51.Run, Hidden: 2),
+        new("이름 검사",        "채팅이 몰리면 서버 CPU가 치솟는다",                  Lab52.Run, Hidden: 2),
+        new("디버그 로그",      "로그를 꺼 뒀는데도 이동 처리 때 GC가 돈다",          Lab53.Run, Hidden: 2),
+        new("주사위 명령",      "이상한 명령을 도배하면 서버가 느려진다",             Lab54.Run, Hidden: 2),
     ];
 
-    const int Part2Start = 8, Part3Start = 19, Part4Start = 26, Part5Start = 29, Part6Start = 35, Part7Start = 41;
+    const int Part2Start = 8, Part3Start = 19, Part4Start = 26, Part5Start = 29, Part6Start = 35, Part7Start = 41, Part8Start = 48;
 
     static string BuildName =>
 #if DEBUG
@@ -88,6 +96,7 @@ static class Program
             else if (n == Part5Start) Console.WriteLine("\n[5부] unsafe와 네이티브 메모리 (선택) - 메모리 창, 조사식의 포인터 식");
             else if (n == Part6Start) Console.WriteLine("\n[6부] 멈춤: 무한루프와 데드락 - 모두 중단, 병렬 스택, 스레드 창, dotnet-stack");
             else if (n == Part7Start) Console.WriteLine("\n[7부] 컨테이너와 컬렉션 - 예외 도우미, 조사식, 개체 ID, 병렬 스택");
+            else if (n == Part8Start) Console.WriteLine("\n[8부] 성능 - 틀리지는 않는데 느리다. 성능 프로파일러, dotnet-counters, dotnet-trace");
             Console.WriteLine($"  {n,2}. {Labs[i].Title}  - {Labs[i].Symptom}");
         }
         Console.WriteLine("  (명령줄 인자로 번호를 넘겨도 된다: BugHunt.exe 3)");
@@ -156,5 +165,5 @@ static class Program
     }
 
     static int PartOf(int n) =>
-        n >= Part7Start ? 7 : n >= Part6Start ? 6 : n >= Part5Start ? 5 : n >= Part4Start ? 4 : n >= Part3Start ? 3 : n >= Part2Start ? 2 : 1;
+        n >= Part8Start ? 8 : n >= Part7Start ? 7 : n >= Part6Start ? 6 : n >= Part5Start ? 5 : n >= Part4Start ? 4 : n >= Part3Start ? 3 : n >= Part2Start ? 2 : 1;
 }

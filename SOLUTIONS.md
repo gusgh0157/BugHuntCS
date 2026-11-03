@@ -729,3 +729,91 @@ m => m.Online 중단점:  Enter에서도, RewardRecipients에서도 걸림
 ```
 **수정:** 그 순간의 명단을 찍어 둔다: `_roster = guild.Where(m => m.Online).ToList();`
 **교훈:** `Where`, `Select`, `Dictionary.Keys`/`Values`, `List.AsReadOnly()`는 원본을 비추는 **창문**이다. 원본이 바뀌면 보이는 것도 바뀐다. 그 순간의 사진이 필요하면 `ToList()`/`ToArray()`로 복사한다. 단 복사되는 것은 목록뿐이고 `Member` 객체는 여전히 공유된다 (얕은 복사, 랩 18).
+
+---
+
+# 8부: 성능 - 틀리지는 않는데 느리다
+
+8부의 랩은 결과가 모두 맞습니다. `[FAIL]`은 측정값(할당 바이트, 비교 횟수, 예외 수)이 한도를 넘었을 때 납니다. 측정값은 실행 시간과 달리 PC 부하에 흔들리지 않아서, 고친 뒤에는 한도보다 훨씬 작게(대부분 0) 나옵니다.
+
+## Lab 48 — 핫 루프 안의 LINQ와 캡처하는 람다
+```
+할당 추적:   Func<Enemy, bool>, <>c__DisplayClass..가 프레임 수만큼
+버그 상태:   프레임당 약 96바이트 (기대: 8 이하)
+진짜 원인:  enemies.Count(e => ... player ... radius)의 람다가 바깥 변수 player, radius를 캡처한다.
+           부를 때마다 캡처를 담을 객체 하나와 대리자 하나가 새로 만들어진다. 2000프레임이면 4000개.
+```
+**수정:** 평범한 `foreach`로 센다. `radius * radius`도 루프 밖에서 한 번만 계산한다.
+
+**교훈:** 1초에 수십 번 도는 코드(Update, 렌더, 서버 틱)에서 LINQ와 캡처하는 람다는 "보이지 않는 `new`"다. 결과가 같아도 GC가 자주 돌고 그때마다 모든 스레드가 잠깐 멈춘다. 캡처하지 않는 람다는 캐시되므로 `static` 람다로 써 두면 실수로 캡처하는 것을 컴파일러가 막아 준다.
+
+## Lab 49 — 루프 안의 문자열 `+=`
+```
+버그 상태:   할당이 결과 문자열 크기의 약 1500배 (기대: 8배 이하)
+조사식:      text.Length가 줄마다 커진다. += 할 때마다 그 길이만큼 통째로 복사
+진짜 원인:  string은 불변이라 a += b는 a 전체를 복사한 새 문자열을 만든다. n줄이면 복사량이 n²에 비례한다.
+```
+**수정:** `StringBuilder`에 `Append`하고 마지막에 한 번 `ToString()`. (줄 수를 알면 `string.Join`, 파일로 쓸 거면 `StreamWriter`로 바로 쓰기)
+
+**교훈:** 몇 개를 이어 붙이는 것은 괜찮다(컴파일러가 `string.Concat` 하나로 만든다). **루프** 안의 `+=`가 문제다. 데이터가 2배가 되면 시간이 4배가 되는 코드는 작은 시험 데이터로는 절대 안 드러난다. 숨은 케이스처럼 크기를 바꿔 재 보면 보인다.
+
+## Lab 50 — `object`에 넣은 int (박싱)
+```
+할당 추적:   System.Int32가 이벤트 수만큼
+버그 상태:   이벤트 1000개당 약 48000바이트 (기대: 64 이하)
+진짜 원인:  Dictionary<string, object>에 int를 넣을 때마다 박싱으로 힙에 상자가 생긴다 (랩 4, 11).
+```
+**수정:** `Dictionary<string, int>`. 값을 꺼내고 다시 넣는 조회 두 번이 아깝다면 `CollectionsMarshal.GetValueRefOrAddDefault(_values, key, out _) += amount`.
+
+**교훈:** "나중에 다른 형식도 담을지 몰라서" 만든 `object` 자리는 지금 당장 비용을 낸다. 숨은 박싱은 비제네릭 컬렉션, `object`/인터페이스 매개변수로 넘긴 struct, `IEquatable<T>` 없는 struct의 `Equals`, `string.Format`의 값 형식 인자(랩 53)에서도 생긴다.
+
+## Lab 51 — `List.Contains`로 중복 제거 (O(n²))
+```
+버그 상태:   전리품 하나당 비교 약 1200번 (기대: 3 이하)
+CPU 사용량:  시간 대부분이 List.Contains → ItemId.Equals
+진짜 원인:  List.Contains는 처음부터 하나씩 비교한다. 전리품마다 도감 전체를 훑으니 비교는 전리품 수 × 도감 크기.
+```
+**수정:** "이미 있나?"는 `HashSet<ItemId>`에 묻고, 순서는 `List`에 따로 남긴다: `if (seen.Add(id)) unique.Add(id);`
+
+**교훈:** 컬렉션은 "무엇을 자주 묻는가"로 고른다. 포함 여부·키로 찾기는 `HashSet`/`Dictionary`, 앞에서 빼기는 `Queue`, 정렬 유지는 `SortedSet`. 루프 안의 `Contains`, `IndexOf`, `Remove(item)`, `Insert(0, ...)`는 모두 한 번에 O(n)이다. 해시 컬렉션에 넣는 struct는 `IEquatable<T>`와 `GetHashCode`를 제대로 구현해야 박싱 없이 빠르다.
+
+## Lab 52 — 부를 때마다 `new Regex`
+```
+CPU 사용량:  RegexParser, RegexWriter 등 패턴 해석 코드가 핫 경로에
+버그 상태:   메시지당 약 2700바이트 (기대: 64 이하)
+진짜 원인:  new Regex(pattern)는 패턴을 해석해서 실행할 수 있는 형태로 만든다. 그 일을 메시지마다 다시 한다.
+```
+**수정 (택1):**
+- 한 번만 만든다: `static readonly Regex NameRule = new("...");`
+- 소스 생성기: `[GeneratedRegex("...")] private static partial Regex NameRule();` (빌드할 때 만들어 둔다)
+
+정적 메서드 `Regex.IsMatch(name, pattern)`은 내부 캐시(기본 15개)를 쓰므로 이 랩에서는 통과하지만, 패턴이 많으면 캐시에서 밀려나 같은 일이 생긴다.
+
+**교훈:** 만들 때 비싼 객체(`Regex`, `JsonSerializerOptions`, `HttpClient`)는 만들어 두고 재사용한다. 할당 추적에서 "내 코드에 없는 내부 형식"(`RegexNode`, `RegexCharClass`)이 잔뜩 보이면, 그것을 만들게 한 내 코드의 `new`를 호출 스택에서 찾는다.
+
+## Lab 53 — 꺼진 로그의 `params` 배열과 박싱
+```
+지역 창(Log.Debug 첫 줄):  args = object[4] { -1, 0, 0f, 0f }  ← 이미 만들어져 있음
+버그 상태:   이동 1회당 152바이트 (기대: 1 이하)
+진짜 원인:  params object?[] 배열과 그 안의 상자(int, float 박싱)는 Log.Debug에 들어가기 "전에", 부르는 쪽에서 만들어진다.
+           함수 안의 if (!DebugEnabled) return;은 이미 비용을 치른 뒤다.
+```
+**수정 (택1):**
+- 부르는 쪽에서 감싼다: `if (Log.DebugEnabled) Log.Debug(...);`
+- 제네릭 오버로드 `Debug<T1, T2, T3, T4>(string format, T1 a, ...)`를 만들어 배열과 박싱을 없앤다
+- 출시판에서 호출 자체를 지운다: `[Conditional("DEBUG")]` (인자 계산까지 사라진다)
+- 보간 문자열 처리기(`[InterpolatedStringHandler]`)로 꺼져 있으면 아무것도 만들지 않게 한다 (`ILogger`가 쓰는 방식)
+
+**교훈:** 인자는 함수가 실행되기 전에 계산된다. `params`, 박싱, 보간 문자열(`$"..."`), 인자 안의 메서드 호출은 모두 "꺼진 기능"에서도 비용을 낸다. 비슷하게 안 보이는 비용으로 큰 struct를 값으로 넘기는 복사가 있다 (`in`, `ref readonly` 매개변수).
+
+## Lab 54 — 예외로 흐름 제어
+```
+예외 설정에서 FormatException 체크:  거의 매번 멈춘다
+출력 창:      "예외 발생: 'System.FormatException'"이 줄줄이
+버그 상태:   처리 중 던져진 예외 약 11000개 (기대: 0)
+진짜 원인:  "숫자가 아님"은 흔한 입력인데 int.Parse의 예외로 처리한다. 예외는 던질 때 스택 트레이스를 모으고 catch를 찾아 스택을 거슬러 올라가서,
+           if 문보다 수천 배 비싸다.
+```
+**수정:** `return int.TryParse(arg, out int max) ? max : 100;`
+
+**교훈:** 예상되는 실패(사용자 입력, 파일 없음, 키 없음)는 값으로 다룬다: `TryParse`, `TryGetValue`, `File.Exists`. 예외는 정말 예외적인 상황용이다. `dotnet-counters`의 예외 수가 초당 수백 개를 넘거나 출력 창에 첫 예외 메시지가 쏟아지면 그 자체가 성능 버그의 단서다. 공격자가 예외 경로를 일부러 두드리면 서비스 거부가 되기도 한다.

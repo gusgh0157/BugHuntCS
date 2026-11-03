@@ -18,6 +18,25 @@ public static class LabKit
         return ok;
     }
 
+    // 8부: 측정값이 한도 이하인가 (할당 바이트, 비교 횟수 등)
+    public static bool ExpectAtMost(string what, long limit, long actual)
+    {
+        bool ok = actual <= limit;
+        if (ok) PassCount++; else FailCount++;
+        Console.WriteLine($"  {(ok ? "[PASS]" : "[FAIL]")} {what}  (기대: {limit} 이하, 실제: {actual})");
+        return ok;
+    }
+
+    // 8부: body 를 실행하는 동안 이 스레드가 할당한 바이트와 걸린 시간(ms)
+    public static (long Bytes, long Ms) Measure(Action body)
+    {
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        var watch = Stopwatch.StartNew();
+        body();
+        watch.Stop();
+        return (GC.GetAllocatedBytesForCurrentThread() - before, watch.ElapsedMilliseconds);
+    }
+
     // 채점기(BugHunt.Grader)가 실행한 프로세스인가
     public static bool IsGrading => Environment.GetEnvironmentVariable("BUGHUNT_GRADER") == "1";
 
