@@ -513,3 +513,120 @@ Marshal.SizeOf<PacketHeader>():  12
 
 **교훈:** 바이트 형식이 정해진 데이터(네트워크, 파일, 네이티브 구조체)를 구조체로 그대로 읽을 때는 **크기와 오프셋을 먼저 확인**한다. `Marshal.SizeOf`(마샬링 크기)와 `Unsafe.SizeOf`/`sizeof`(메모리 크기)는 다를 수도 있다. 예를 들어 `bool` 필드는 메모리에서는 1바이트지만 마샬링하면 4바이트(Win32 `BOOL`)다.
 
+
+---
+
+# 6부: 멈춤 - 무한루프와 데드락
+
+## Lab 35 — 실수 누적과 `!=` 종료 조건
+```
+모두 중단 → 랩 본문 스레드:  ZoomTo의 for 줄
+zoom:    목표(2.0)를 한참 지난 값 (계속 커지다가, 어느 크기부터는 0.1을 더해도 안 바뀜)
+(double)zoom (2.0 근처):  1.9999998807907104 다음 2.0999999046325684
+진짜 원인:  0.1f를 누적한 값은 2.0f를 정확히 밟지 않는다. zoom != target은 영원히 참.
+```
+**수정:** 반복 횟수를 정수로 정하고, 값은 그 정수로 계산한다.
+```csharp
+float start = camera.Zoom;
+int frames = (int)MathF.Round((target - start) / step);
+for (int frame = 0; frame < frames; frame++)
+{
+    camera.Zoom = start + frame * step;
+    camera.Render();
+}
+camera.Zoom = target;
+```
+`zoom < target`으로만 바꾸면 멈추지는 않지만, 누적 오차 때문에 프레임이 하나 더 그려질 수 있다 (`1.9999998 < 2.0`).
+**교훈:** 랩 12와 같은 원인(실수 동등 비교)이 **종료 조건**에 들어가면 "틀린 값"이 아니라 "안 끝남"이 된다. 실수는 범위(`<`)로 비교하거나, 반복 자체는 정수로 센다.
+
+## Lab 36 — byte 루프 변수의 넘침
+```
+모두 중단 여러 번:  written은 계속 커지는데 slot은 항상 0~255
+조건부 중단점 slot == 255 → F10:  slot == 0
+진짜 원인:  byte는 255 다음에 0이 된다(unchecked). items.Count가 256 이상이면 slot < items.Count가 영원히 참.
+```
+**수정:** `for (int slot = 0; slot < items.Count; slot++)`. 세이브 형식이 정말 슬롯 번호를 1바이트로만 쓸 수 있다면, 저장하기 전에 개수를 검사해서 형식을 올리거나 오류를 낸다.
+**교훈:** 루프 변수는 **비교 대상과 같은 형식**으로. 같은 함정: `for (uint i = n - 1; i >= 0; i--)` (uint는 0 아래로 가지 않는다). `checked` 블록이나 "산술 오버플로 검사" 옵션을 켜면 255 다음에서 `OverflowException`으로 바로 보인다.
+
+## Lab 37 — 고리가 생긴 부모 사슬
+```
+가입 신청:  "승인"
+모두 중단 → Leader()의 g:  Dawn → Ember → Frost → Gale → Dawn → ...   (개체 ID가 다시 나옴)
+진짜 원인:  JoinUnder는 parent.Parent == this (A↔B, 길이 2인 고리)만 막는다.
+           Dawn ← Ember ← Frost ← Gale 사슬에서 Dawn이 Gale 밑으로 들어가면 길이 4인 고리가 생기고, Leader()가 영원히 돈다.
+```
+**수정:** 새 부모에서 위로 끝까지 올라가며 자기 자신을 만나는지 본다.
+```csharp
+public bool JoinUnder(Guild parent)
+{
+    for (Guild? g = parent; g != null; g = g.Parent)
+        if (g == this)
+            return false;   // 고리가 생기는 가입은 거절
+    Parent = parent;
+    return true;
+}
+```
+데이터가 이미 망가졌을 때를 대비해 `Leader()`에 방문 집합(`HashSet<Guild>`)이나 최대 단계를 두면, 무한루프 대신 오류로 드러난다.
+**교훈:** 그래프나 연결 리스트를 "끝(null)이 나올 때까지" 따라가는 코드는 **고리가 없다는 가정**에 기대고 있다. 그 가정은 데이터를 **바꾸는 곳**에서 지켜야 한다. 순회 쪽에서는 플로이드의 토끼와 거북이 알고리즘으로 고리를 찾을 수도 있다.
+
+## Lab 38 — 잠금 순서가 엇갈린 데드락
+```
+병렬 스택:
+    거래: Kael → Mira   Monitor.Enter ← Transfer(from=Kael, to=Mira)   lock (to.Sync) 줄에서 대기
+    거래: Mira → Kael   Monitor.Enter ← Transfer(from=Mira, to=Kael)   lock (to.Sync) 줄에서 대기
+진짜 원인:  한 스레드는 Kael을 쥐고 Mira를, 다른 스레드는 Mira를 쥐고 Kael을 기다린다.
+```
+**수정:** 모든 곳에서 같은 순서로 잠근다.
+```csharp
+Player first = from.Id < to.Id ? from : to;
+Player second = first == from ? to : from;
+lock (first.Sync)
+{
+    WriteTradeLog(from, to, gold);
+    lock (second.Sync)
+    {
+        from.Gold -= gold;
+        to.Gold += gold;
+    }
+}
+```
+느린 일(`WriteTradeLog`)은 잠금 밖으로 빼는 것도 좋다. 잠금을 쥔 시간이 짧을수록 교착 상태와 경합이 줄어든다.
+**교훈:** 데드락은 **잠금 둘 + 엇갈린 순서**로 생긴다. 모두 중단 → 병렬 스택에서 `Monitor.Enter`로 기다리는 스레드들을 찾고, 각자 **이미 쥔 것**(바깥 lock)과 **기다리는 것**(안쪽 lock)을 적어 보면 고리가 보인다. 명령줄에서는 `dotnet-dump analyze`의 `syncblk`가 잠금 주인 스레드를 보여 준다.
+
+## Lab 39 — 예외 경로에서 SemaphoreSlim.Release 누락
+```
+작업 창:               DownloadAsync 여러 개가 "대기 중" — SemaphoreSlim.WaitAsync를 기다림
+downloader.FreeSlots:  0
+받은 파일:             1개, 실패 2개 → 그 뒤로 아무도 슬롯을 못 얻음
+진짜 원인:  FetchAsync가 예외를 던지면 _slots.Release()를 건너뜀. 실패가 maxParallel번 쌓이면 슬롯이 0개가 된다.
+```
+**수정:**
+```csharp
+await _slots.WaitAsync();
+try
+{
+    byte[] data = await FetchAsync(file);
+    Interlocked.Increment(ref Downloaded);
+    return data.Length > 0;
+}
+finally
+{
+    _slots.Release();
+}
+```
+**교훈:** 세마포는 잠금과 같다. **얻었으면 `finally`에서 돌려준다.** `Monitor.Wait`/`Pulse`도 같은 종류의 멈춤을 만든다. 조건을 `if`로 한 번만 검사하거나, 기다리기 전에 온 `Pulse`를 놓치면 영원히 기다린다 (`while (조건) Monitor.Wait(gate);`가 기본형).
+
+## Lab 40 — volatile 없는 바쁜 대기 (Release에서만)
+```
+Debug:     정상 (기다리며 수억 번 확인)
+Release:   응답 없음. 멈춘 순간 loader.Done == True, 읽은 에셋 20개 (로딩은 이미 끝났다!)
+디스어셈블리 (Release, WaitForLoading의 루프):
+    Done을 루프에 들어가기 전에 한 번만 읽고, 루프 안에서는 spins++ 와 점프만 반복한다
+진짜 원인:  JIT 최적화가 "루프 안에서 아무도 Done을 쓰지 않는다"고 보고 읽기를 루프 밖으로 꺼냈다.
+           다른 스레드가 Done = true를 써도 이 루프는 영영 보지 못한다. Debug는 최적화를 끄므로 매번 메모리에서 읽는다.
+```
+**수정 (택1):**
+- `public volatile bool Done;` 또는 루프에서 `while (!Volatile.Read(ref loader.Done))`
+- 바쁜 대기를 없앤다: `ManualResetEventSlim`을 `Set`/`Wait`하거나, 로딩을 `Task`로 만들어 기다린다. CPU를 태우지 않는다.
+
+**교훈:** "Debug에서는 되는데 Release에서만 멈춘다"면 **최적화가 바꿀 수 있는 가정**(다른 스레드와 공유하는 메모리)을 의심한다. 다른 스레드가 바꾸는 값은 `volatile`/`Volatile`/`Interlocked`/`lock` 중 하나를 거쳐서 읽고 쓴다.

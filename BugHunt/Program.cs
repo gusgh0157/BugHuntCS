@@ -49,9 +49,16 @@ static class Program
         new("박자 콜백",        "곡을 고르면 게임이 통째로 사라진다",              Lab32.Run, Hidden: 2, Release: true),
         new("채팅 기록",        "채팅 기록이 전부 마지막 메시지로 바뀐다",          Lab33.Run, Hidden: 3),
         new("패킷 헤더",        "서버가 보낸 채팅이 하나도 안 보인다",              Lab34.Run, Hidden: 3),
+        // 6부: 멈춤 - 무한루프와 데드락
+        new("보스 등장 연출",   "보스가 나오면 카메라 줌이 끝나지 않는다",          Lab35.Run, Hidden: 3),
+        new("인벤토리 저장",    "확장 가방을 산 플레이어만 저장하다 멈춘다",        Lab36.Run, Hidden: 3),
+        new("길드 동맹",        "동맹 가입 뒤 맹주 찾기가 끝나지 않는다",           Lab37.Run, Hidden: 3),
+        new("동시 거래",        "두 사람이 서로 골드를 보내면 둘 다 멈춘다",         Lab38.Run, Hidden: 2),
+        new("패치 슬롯",        "몇 개 실패하더니 다운로드가 통째로 멈춘다",         Lab39.Run, Hidden: 3),
+        new("로딩 대기",        "Release 출시판에서만 로딩 화면이 끝나지 않는다",   Lab40.Run, Hidden: 1, Release: true),
     ];
 
-    const int Part2Start = 8, Part3Start = 19, Part4Start = 26, Part5Start = 29;
+    const int Part2Start = 8, Part3Start = 19, Part4Start = 26, Part5Start = 29, Part6Start = 35;
 
     static string BuildName =>
 #if DEBUG
@@ -71,6 +78,7 @@ static class Program
             else if (n == Part3Start) Console.WriteLine("\n[3부] 비동기와 동시성 - 병렬 스택/작업 창");
             else if (n == Part4Start) Console.WriteLine("\n[4부] 리소스와 메모리 (선택) - 진단 도구, 메모리 스냅샷");
             else if (n == Part5Start) Console.WriteLine("\n[5부] unsafe와 네이티브 메모리 (선택) - 메모리 창, 조사식의 포인터 식");
+            else if (n == Part6Start) Console.WriteLine("\n[6부] 멈춤: 무한루프와 데드락 - 모두 중단, 병렬 스택, 스레드 창, dotnet-stack");
             Console.WriteLine($"  {n,2}. {Labs[i].Title}  - {Labs[i].Symptom}");
         }
         Console.WriteLine("  (명령줄 인자로 번호를 넘겨도 된다: BugHunt.exe 3)");
