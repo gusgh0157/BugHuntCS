@@ -58,7 +58,7 @@ grade.bat
 dotnet run --project BugHunt.Grader
 ```
 
-둘은 같은 것입니다. 일부만 채점하려면 랩 번호를 붙입니다 (`grade.bat 45-50`, `grade.bat 1,5,39-44`). 챌린지는 `grade.bat C`(깊은 추적), `grade.bat B`(블라인드), `grade.bat C-1,B-3`처럼 코드로 고릅니다.
+둘은 같은 것입니다. 다른 폴더에서 `...grade.bat`을 불러도 채점기는 **자기가 들어 있는 저장소**를 채점합니다. 일부만 채점하려면 랩 번호를 붙입니다 (`grade.bat 45-50`, `grade.bat 1,5,39-44`). 챌린지는 `grade.bat C`(깊은 추적), `grade.bat B`(블라인드), `grade.bat C-1,B-3`처럼 코드로 고릅니다.
 
 채점기(`BugHunt.Grader` 프로젝트)가 하는 일:
 

@@ -172,9 +172,11 @@ static class Program
         return o;
     }
 
+    // 채점기 자신이 들어 있는 저장소를 먼저 찾는다. 현재 폴더를 먼저 보면, 다른 폴더에서 grade.bat 을 부를 때
+    // 엉뚱한 체크아웃(다른 worktree)을 채점한다. 채점기 exe 를 저장소 밖으로 복사해 쓸 때만 현재 폴더로 찾는다.
     static string? FindRepoRoot()
     {
-        foreach (string start in new[] { Directory.GetCurrentDirectory(), AppContext.BaseDirectory })
+        foreach (string start in new[] { AppContext.BaseDirectory, Directory.GetCurrentDirectory() })
         {
             for (DirectoryInfo? dir = new(start); dir != null; dir = dir.Parent)
             {
