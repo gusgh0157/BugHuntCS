@@ -1,6 +1,7 @@
 namespace BugHunt;
 
 // 부대 편성. 전투가 끝나면 쓰러진 자리를 예비 병력으로 채운다.
+// [JA] 部隊編成。戦闘が終わったら、倒れた枠を予備兵力で埋めます。
 public static class ChallengeB4
 {
     abstract class Unit(string name, int power)

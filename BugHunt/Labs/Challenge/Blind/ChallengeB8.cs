@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 namespace BugHunt;
 
 // 텍스처 스트리밍. 텍스처 픽셀은 네이티브 메모리 풀에 있고, 텍스처 객체가 사라지면(종료자) 블록을 풀에 돌려준다.
+// [JA] テクスチャ ストリーミング。テクスチャのピクセルはネイティブ メモリ プールにあり、テクスチャ オブジェクトが消えると(ファイナライザー)ブロックをプールに返します。
 public static class ChallengeB8
 {
     const int Rows = 64, RowBytes = 64;

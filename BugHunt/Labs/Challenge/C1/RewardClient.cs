@@ -1,6 +1,7 @@
 namespace BugHunt.Challenge.C1;
 
 // 클라이언트 쪽 보상 수신함. 받은 패킷마다 ack 를 보내고, 처음 보는 패킷이면 RewardArrived 를 알린다.
+// [JA] クライアント側の報酬受信箱。受け取ったパケットごとに ack を送り、初めて見るパケットなら RewardArrived で知らせます。
 public sealed class RewardInbox(UnreliableLink link)
 {
     readonly HashSet<Guid> _seen = [];
@@ -38,6 +39,7 @@ public sealed class RewardInbox(UnreliableLink link)
 }
 
 // 파티원마다 보이는 가방 창. 수신함의 알림을 받아 아이템 줄을 추가한다.
+// [JA] パーティー メンバーごとに見えるバッグ ウィンドウ。受信箱の通知を受けてアイテムの行を追加します。
 public sealed class InventoryView
 {
     readonly Dictionary<string, List<string>> _lines = [];

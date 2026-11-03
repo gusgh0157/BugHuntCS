@@ -1,6 +1,7 @@
 namespace BugHunt;
 
 // 점검이 끝나면 접속했던 플레이어 모두에게 보상 우편을 보낸다. 여러 통을 한꺼번에 보내서 빨리 끝낸다.
+// [JA] メンテナンスが終わったら、接続していたプレイヤー全員に補償の郵便を送ります。何通もまとめて送って早く終わらせます。
 public static class ChallengeB7
 {
     sealed class MailServer(int latencyMs)

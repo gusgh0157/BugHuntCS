@@ -7,6 +7,11 @@ namespace BugHunt;
 // 이 클래스는 일을 큐에 받아 스레드 하나에서만 차례로 실행하고, 자신을 SynchronizationContext 로 등록한다.
 // 그래서 이 스레드에서 시작한 await 는 끝난 뒤 다시 이 큐로 돌아온다.
 // 랩 63, 67 에서 쓴다. 이 파일에는 버그가 없다.
+// [JA] ゲームエンジンの「メインスレッド」をまねます。(WinForms/WPF の UI スレッド、Unity のメインスレッドと同じ役割)
+// [JA] コンソール アプリには SynchronizationContext がないので、await のあとのコードは任意のスレッドで実行されます。
+// [JA] このクラスは仕事をキューで受け取り、一つのスレッドだけで順に実行し、自分を SynchronizationContext として登録します。
+// [JA] そのため、このスレッドで始めた await は、終わったあと再びこのキューに戻ってきます。
+// [JA] ラボ 63、67 で使います。このファイルにはバグはありません。
 public sealed class MainThread : SynchronizationContext
 {
     readonly BlockingCollection<Action> _queue = [];

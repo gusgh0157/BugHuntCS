@@ -1,6 +1,7 @@
 namespace BugHunt.Challenge.C2;
 
 // 서버에 있는 업적 진행도 (진짜 기록). 읽어 오는 데 한 프레임 걸린다.
+// [JA] サーバーにある実績の進行度(本当の記録)。読み込むのに 1 フレームかかります。
 public sealed class ProgressServer(GameLoop loop)
 {
     readonly Dictionary<string, int> _saved = [];
@@ -18,6 +19,8 @@ public sealed class ProgressServer(GameLoop loop)
 
 // 클라이언트 쪽 진행도 캐시. 처음 쓸 때 서버에서 한 번 읽어 오고, 그 뒤로는 캐시를 쓴다.
 // 채널을 옮기면 캐시를 버리고 다시 읽는다.
+// [JA] クライアント側の進行度キャッシュ。最初に使うときにサーバーから一度読み込み、その後はキャッシュを使います。
+// [JA] チャンネルを移動したらキャッシュを捨てて読み直します。
 public sealed class AchievementStore(ProgressServer server)
 {
     Dictionary<string, int>? _progress;
@@ -60,6 +63,7 @@ public sealed class AchievementStore(ProgressServer server)
 }
 
 // 퀘스트 진행 알림을 받아 업적 진행도를 올리고, 목표에 닿으면 업적을 연다.
+// [JA] クエスト進行の通知を受けて実績の進行度を上げ、目標に届いたら実績を解除します。
 public sealed class AchievementTracker(AchievementStore store, IReadOnlyDictionary<string, int> goals)
 {
     int _handled;

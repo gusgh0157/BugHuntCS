@@ -2,6 +2,8 @@ namespace BugHunt.Challenge.C1;
 
 // 레이드가 끝나면 드롭마다 보상 패킷을 만들어 보낸다.
 // 일정 틱 안에 ack 가 안 오면 같은 패킷을 다시 보낸다(재전송). 받는 쪽은 Id 로 중복을 걸러야 한다.
+// [JA] レイドが終わったら、ドロップごとに報酬パケットを作って送ります。
+// [JA] 一定ティック内に ack が来なければ同じパケットをもう一度送ります(再送)。受け取る側は Id で重複を除かなければなりません。
 public sealed class RewardServer(UnreliableLink link)
 {
     const int ResendAfterTicks = 3;

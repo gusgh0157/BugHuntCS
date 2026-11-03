@@ -1,6 +1,7 @@
 namespace BugHunt.Challenge.C3;
 
 // 친구 랭킹 창: 친구들만 골라서 "친구 중 몇 위"로 보여 준다.
+// [JA] フレンド ランキング ウィンドウ: フレンドだけを選んで「フレンドの中で何位」かを見せます。
 public sealed class FriendRankingScreen(RankingService service)
 {
     public List<string> Show(string region, IReadOnlySet<string> friends)
@@ -11,6 +12,7 @@ public sealed class FriendRankingScreen(RankingService service)
 }
 
 // 길드 랭킹 창: 우리 길드원이 전체에서 몇 위인지 보여 준다.
+// [JA] ギルド ランキング ウィンドウ: 自分のギルド メンバーが全体で何位かを見せます。
 public sealed class GuildRankingScreen(RankingService service)
 {
     public List<string> Show(string region, string guild) =>
@@ -18,6 +20,7 @@ public sealed class GuildRankingScreen(RankingService service)
 }
 
 // 주간 보상 우편: 상위 N명에게 순위별 보상을 보낸다.
+// [JA] 週間報酬の郵便: 上位 N 名に順位別の報酬を送ります。
 public sealed class WeeklyRewardMailer(RankingService service)
 {
     public const int Winners = 10;

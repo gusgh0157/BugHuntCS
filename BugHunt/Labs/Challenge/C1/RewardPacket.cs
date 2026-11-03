@@ -3,6 +3,7 @@ using System.Text.Json;
 namespace BugHunt.Challenge.C1;
 
 // 서버와 클라이언트가 같이 쓰는 보상 패킷. 회선으로는 JSON 문자열로 오간다.
+// [JA] サーバーとクライアントが共通で使う報酬パケット。回線上では JSON 文字列でやり取りされます。
 public sealed class RewardPacket
 {
     // 패킷마다 붙는 고유 번호. 재전송된 패킷을 알아보는 데 쓴다.
@@ -17,6 +18,7 @@ public sealed class RewardPacket
 }
 
 // 회선 위의 형식. 받은 쪽이 확인(ack)을 보내야 보낸 쪽이 그 패킷을 잊는다.
+// [JA] 回線上の形式。受け取った側が確認(ack)を送ってはじめて、送った側はそのパケットを忘れます。
 public static class Wire
 {
     static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web);
@@ -37,6 +39,8 @@ public static class Wire
 
 // 믿을 수 없는 회선. 틱마다 쌓인 메시지를 건네준다.
 // 패킷이 통째로 사라지거나(drop), 패킷은 도착했는데 ack 가 사라지는(ack loss) 일이 생긴다.
+// [JA] 信頼できない回線。ティックごとにたまったメッセージを渡します。
+// [JA] パケットが丸ごと消えたり(drop)、パケットは届いたのに ack が消えたり(ack loss)することがあります。
 public sealed class UnreliableLink(Func<int, bool> dropPacket, Func<int, bool> dropAck)
 {
     readonly Queue<string> _toClient = new();

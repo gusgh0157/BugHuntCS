@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 namespace BugHunt;
 
 // 전투 기록 창은 열려 있는 동안 피해 이벤트를 받아 줄을 쌓는다. 창을 닫으면 버려진다.
+// [JA] 戦闘ログ ウィンドウは開いている間ダメージ イベントを受け取って行をためます。ウィンドウを閉じると捨てられます。
 public static class Lab73
 {
     static class GameEvents
@@ -69,20 +70,31 @@ public static class Lab73
 
 // ============================================================================
 // 힌트: 막힐 때 하나씩만 펼치세요. (Ctrl+M, Ctrl+O = 전부 접기)
+// ヒント: 詰まったら一つずつ開いてください。(Ctrl+M, Ctrl+O = すべて折りたたむ)
 // ============================================================================
 
-#region 힌트 1 (먼저 직접 추적해 보고 펼치세요)
+#region 힌트 1 / ヒント 1 (먼저 직접 추적해 보고 펼치세요 / まず自分で追ってから開いてください)
 // F5 로 실행하고, "계속하려면 Enter" 가 나오면 VS 의 진단 도구 창(Ctrl+Alt+F2) → 메모리 사용량 → 스냅샷 생성.
 // 스냅샷을 열고 CombatLogWindow 를 검색하세요. 몇 개인가요?
+//
+// [JA] F5 で実行し、Enter で続行するよう求める表示("계속하려면 Enter")が出たら、VS の診断ツール ウィンドウ(Ctrl+Alt+F2) → メモリ使用量 → スナップショットの作成。
+// [JA] スナップショットを開いて CombatLogWindow を検索してください。いくつありますか?
 #endregion
 
-#region 힌트 2
+#region 힌트 2 / ヒント 2
 // 스냅샷에서 CombatLogWindow 를 고르고 아래쪽 "루트 경로"(Paths to Root)를 펼치세요.
 // 누가 이 창을 붙잡고 있나요? 맨 끝(루트)은 무엇인가요?
 // dotnet-dump 로 할 때는: dumpheap -type CombatLogWindow → 주소 하나 골라서 gcroot <주소>
+//
+// [JA] スナップショットで CombatLogWindow を選び、下の「ルートへのパス」(Paths to Root)を展開してください。
+// [JA] 誰がこのウィンドウをつかんでいますか? 一番端(ルート)は何ですか?
+// [JA] dotnet-dump で行う場合は: dumpheap -type CombatLogWindow → アドレスを一つ選んで gcroot <アドレス>
 #endregion
 
-#region 힌트 3
+#region 힌트 3 / ヒント 3
 // 이벤트에 구독하면 이벤트 쪽이 구독자(대리자 → 대상 객체)를 참조합니다. 반대 방향이 아닙니다.
 // 이벤트가 static 이면 그 참조는 프로그램이 끝날 때까지 살아 있는 GC 루트입니다.
+//
+// [JA] イベントを購読すると、イベント側が購読者(デリゲート → 対象オブジェクト)を参照します。逆方向ではありません。
+// [JA] イベントが static なら、その参照はプログラムが終わるまで生きている GC ルートです。
 #endregion

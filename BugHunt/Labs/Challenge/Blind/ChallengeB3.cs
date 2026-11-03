@@ -1,6 +1,7 @@
 namespace BugHunt;
 
 // 길찾기에서 이미 가 본 칸을 HashSet 으로 기억한다. 결과는 맞는데 맵이 커질수록 급격히 느려진다.
+// [JA] 経路探索で、すでに訪れたマスを HashSet で覚えます。結果は合っていますが、マップが大きくなるほど急激に遅くなります。
 public static class ChallengeB3
 {
     readonly struct Cell(int x, int y) : IEquatable<Cell>

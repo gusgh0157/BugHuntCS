@@ -1,6 +1,7 @@
 namespace BugHunt;
 
 // 자동 저장. 게임을 시작할 때 타이머를 걸어 두면 일정 간격으로 저장한다.
+// [JA] オートセーブ。ゲーム開始時にタイマーを仕掛けておくと、一定間隔で保存します。
 public static class ChallengeB5
 {
     static int _saves;

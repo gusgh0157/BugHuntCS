@@ -2,6 +2,8 @@ namespace BugHunt.Challenge.C2;
 
 // 한 스레드에서 도는 게임 루프. await 뒤의 이어서 실행(continuation)은 이 루프에 올라가 다음 프레임에 돈다.
 // (유니티의 메인 스레드, WinForms/WPF 의 UI 스레드와 같은 모양)
+// [JA] 一つのスレッドで回るゲーム ループ。await のあとの続きの実行(continuation)はこのループに載り、次のフレームで回ります。
+// [JA] (Unity のメイン スレッド、WinForms/WPF の UI スレッドと同じ形)
 public sealed class GameLoop : SynchronizationContext
 {
     readonly Queue<(SendOrPostCallback Callback, object? State)> _posted = new();

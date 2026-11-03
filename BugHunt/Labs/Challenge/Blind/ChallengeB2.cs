@@ -3,6 +3,7 @@ using System.Globalization;
 namespace BugHunt;
 
 // 채팅 명령 처리. 대소문자를 가리지 않게 대문자로 바꿔서 명령표에서 찾는다.
+// [JA] チャット コマンドの処理。大文字・小文字を区別しないように大文字に変えてからコマンド表で探します。
 public static class ChallengeB2
 {
     static readonly Dictionary<string, string> Commands = new()

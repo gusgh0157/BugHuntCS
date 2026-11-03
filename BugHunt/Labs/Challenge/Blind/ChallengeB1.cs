@@ -1,6 +1,7 @@
 namespace BugHunt;
 
 // 로딩 스레드가 지역 데이터를 읽는 동안 메인 스레드는 화면을 준비하고, 다 되면 결과를 받아 간다.
+// [JA] ローディング スレッドが地域データを読む間、メイン スレッドは画面を準備し、終わったら結果を受け取ります。
 public static class ChallengeB1
 {
     sealed class RegionLoader
