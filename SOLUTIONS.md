@@ -425,6 +425,82 @@ FindMatchAsync 프레임의 token:   IsCancellationRequested true
 **수정:** `await SearchRegionAsync(region, token);`. 가능하면 `CancellationToken` 매개변수에 기본값을 두지 않아서 빠뜨리면 컴파일 오류가 나게 한다.
 **교훈:** 취소는 **사슬의 모든 고리**에 토큰을 넘겨야 전달된다. `CanBeCanceled == false`는 "누가 토큰을 안 넘겼다"는 신호다. CA2016이 이것을 잡는다.
 
+## Lab 33 — 예외를 삼키고 성공을 돌려줌
+```
+1단계 콘솔:  [로그] 창고 업로드 경고: 영웅의 증표: 귀속 아이템은 창고에 넣을 수 없습니다
+             영웅의 증표 보관 완료        ← 실패했는데 "완료"
+첫 예외 중단(InvalidOperationException) → F10:  catch (Exception) 로 들어가 로그만 찍고 return true
+진짜 원인:  UploadToStorageAsync가 모든 예외를 잡고 무조건 true. 호출자는 "맡겼다"고 믿고 가방에서 뺌.
+           증상(아이템 소실)은 2단계에서 가방이 저장되고 3단계에서 다시 읽을 때 처음 보인다
+```
+**수정:** 처리 방법을 아는 예외만 잡고, 실패를 호출자에게 돌려준다.
+```csharp
+try
+{
+    await server.UploadAsync(item, count);
+    return true;
+}
+catch (InvalidOperationException ex)   // 서버가 거절함: 가방에 그대로 둔다
+{
+    Console.WriteLine($"  [로그] 창고 업로드 거절: {ex.Message}");
+    return false;
+}
+```
+다른 예외(네트워크 끊김, 코드 버그)는 잡지 않고 위로 올려 보낸다. 거기서 잡을지는 그것을 처리할 줄 아는 쪽이 정한다.
+**가짜 수정:** `if (item == "영웅의 증표") return false;`처럼 보이는 아이템만 막으면 기본 케이스는 통과하지만, 숨은 케이스는 다른 아이템이 귀속이라 실패한다. `catch (Exception)`을 그대로 두고 `return false`로만 바꾸면 이 랩은 통과하지만, 코드 버그까지 "보관 실패"로 바꿔 버리는 같은 냄새가 남는다.
+**교훈:** `catch (Exception) { 로그 }` 뒤에 성공 값을 돌려주면, 실패가 **다른 단계의 다른 증상**으로 바뀌어 나타난다. 로그 한 줄은 처리가 아니다. 잡을 예외는 좁히고, 실패는 반환값이나 예외로 호출자에게 알린다.
+
+## Lab 34 — 시간 초과를 "사용자가 취소함"으로 처리
+```
+첫 예외 중단(TaskCanceledException), Mira(서버 응답 없음):
+    userCancel.IsCancellationRequested       false
+    timeout.Token.IsCancellationRequested    true    ← CancelAfter(300) 이 취소함
+    ex.CancellationToken                     연결된 토큰 (userCancel 이 아님)
+진짜 원인:  catch (OperationCanceledException) 하나가 사용자 취소와 시간 초과를 둘 다 "취소됨"으로 바꿈.
+           그래서 EnterAsync 의 "시간 초과면 예비 채널" 분기가 한 번도 실행되지 않음
+```
+**수정:** 예외 필터로 "누가 취소했나"를 구분한다.
+```csharp
+catch (OperationCanceledException) when (userCancel.IsCancellationRequested)
+{
+    return "취소됨";      // 플레이어가 눌렀다
+}
+catch (OperationCanceledException)
+{
+    return "시간 초과";   // 우리가 건 CancelAfter
+}
+```
+시간 초과를 `throw new TimeoutException(...)`으로 바꿔 던지고 `EnterAsync`에서 `catch (TimeoutException)`으로 받아도 된다.
+`when (ex.CancellationToken == userCancel)`은 **틀린** 수정이다. 예외에 실린 토큰은 연결된 토큰이라 이 조건은 늘 거짓이고, 진짜 사용자 취소가 시간 초과로 바뀐다.
+**가짜 수정:** 시간 제한을 늘리거나 없애면 응답 없는 서버를 끝없이 기다린다. 이름으로 예외를 두면(`Mira`) 숨은 케이스에서 다른 플레이어가 걸린다.
+**교훈:** `OperationCanceledException`은 "취소됐다"만 말하고 **누가** 취소했는지는 말하지 않는다. 토큰을 여러 개 엮었다면 `catch ... when (내 토큰.IsCancellationRequested)`로 구분한다. 예외 필터는 조건이 거짓이면 그 catch를 건너뛰고, 스택을 풀기 전에 평가되므로 첫 예외 중단과 같이 쓰기 좋다.
+
+## Lab 35 — 잡아 둔 예외를 나중에 `throw ex;`로 다시 던짐
+```
+재시도 로그:  [재시도 3/3] FormatException: The input string '두백' was not in a correct format.
+보고서:       FormatException @ RetryAsync          ← 형식은 맞는데 위치가 재시도 함수
+첫 예외 중단(FormatException):  호출 스택 맨 위의 BugHunt 프레임은 ParseRewardAsync
+개체 ID로 같은 예외임을 확인하고 throw last! 줄을 F10:  StackTrace 가 RetryAsync 에서 새로 시작
+진짜 원인:  throw last; 는 스택 트레이스를 "지금 이 줄"부터 다시 쓴다. catch 블록 밖이라 throw; 도 못 쓴다
+```
+**수정:** 원래 스택 트레이스를 그대로 다시 던진다.
+```csharp
+using System.Runtime.ExceptionServices;
+...
+ExceptionDispatchInfo? last = null;
+...
+catch (Exception ex)
+{
+    last = ExceptionDispatchInfo.Capture(ex);
+    ...
+}
+last!.Throw();
+throw new UnreachableException();   // 컴파일러용. Throw()는 돌아오지 않는다
+```
+`ExceptionDispatchInfo.Throw(lastException)`(정적 메서드)도 같다. 또는 마지막 시도에서는 잡지 않는다: `catch (Exception ex) when (attempt < Attempts)`. 그러면 마지막 예외는 손대지 않은 채 그대로 올라간다.
+**가짜 수정:** `throw new Exception(last.Message, last)`로 감싸면 예외 형식이 바뀌고 위치는 여전히 `RetryAsync`다. 보고서에 함수 이름을 박아 넣으면 숨은 케이스(헤더 손상, 다운로드 실패)에서 틀린다.
+**교훈:** 예외를 저장했다가 **나중에, 다른 곳에서** 던질 때(재시도, 큐, `await` 경계를 넘긴 콜백)는 `ExceptionDispatchInfo`를 쓴다. `await`가 실패한 Task의 예외를 다시 던질 때 원래 스택이 살아 있는 것도 같은 장치 덕분이다. 랩 7의 `throw ex;`와 같은 뿌리지만 `throw;`로는 고칠 수 없다는 점이 다르다.
+
 ---
 
 # 5부: 리소스와 메모리
