@@ -17,16 +17,21 @@ public static class Lab23
 
     public static void Run()
     {
-        const int HitsPerMember = 200_000;
+        const int HitsPerMember = 500_000;
         string[] party = ["Kael", "Mira", "Doran", "Selene"];
         var meter = new DamageMeter();
 
-        // 파티원마다 전투 기록을 따로 처리한다.
-        Parallel.ForEach(party, new ParallelOptions { MaxDegreeOfParallelism = party.Length }, member =>
+        // 파티원마다 전투 기록 처리 스레드를 하나씩 두고, 다 준비되면 동시에 시작한다.
+        using var startTogether = new Barrier(party.Length);
+        Thread[] workers = party.Select(member => new Thread(() =>
         {
+            startTogether.SignalAndWait();
             for (int i = 0; i < HitsPerMember; i++)
                 meter.Record(10);
-        });
+        }) { Name = $"Combat log: {member}" }).ToArray();
+
+        foreach (Thread worker in workers) worker.Start();
+        foreach (Thread worker in workers) worker.Join();
 
         Console.WriteLine($"  타격 {meter.Hits:N0}회, 총 피해 {meter.TotalDamage:N0}");
         Expect("타격 횟수", party.Length * HitsPerMember, meter.Hits);
