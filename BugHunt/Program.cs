@@ -1,5 +1,5 @@
-using System.Diagnostics;
 using System.Text;
+using System.Text.Json;
 
 namespace BugHunt;
 
@@ -82,15 +82,20 @@ static class Program
             Console.WriteLine($"  {n,2}. {Labs[i].Title}  - {Labs[i].Symptom}");
         }
         Console.WriteLine("  (명령줄 인자로 번호를 넘겨도 된다: BugHunt.exe 3)");
-        Console.WriteLine("  (채점: BugHunt.exe grade  또는  BugHunt.exe grade 8-18)");
+        Console.WriteLine("  (채점: 저장소 폴더에서 grade.bat  또는  grade.bat 29-40)");
     }
 
     static int Main(string[] args)
     {
         Console.OutputEncoding = Encoding.UTF8;
 
+        if (args.Length > 0 && args[0] == "--list")
+            return ListLabs();
         if (args.Length > 0 && args[0] == "grade")
-            return Grade(args.Length > 1 ? args[1] : null);
+        {
+            Console.WriteLine("채점기는 별도 프로젝트로 옮겼습니다: grade.bat 또는 dotnet run --project BugHunt.Grader (README의 \"채점기\" 참고)");
+            return 2;
+        }
 
         // 숨은 케이스 재현: BugHunt.exe 36 --seed 1234
         int seedAt = Array.IndexOf(args, "--seed");
@@ -126,71 +131,21 @@ static class Program
         return FailCount == 0 && PassCount > 0 ? 0 : 1;
     }
 
-    // 각 랩을 별도 프로세스로 실행해서 판정한다. (StackOverflow와 데드락도 판정할 수 있게)
-    // PASS: 종료 코드 0, [FAIL] 없음, [PASS] 1개 이상, 제한 시간 안에 끝남
-    static int Grade(string? range)
+    // 채점기(BugHunt.Grader)가 랩 목록을 읽어 가는 출력
+    static int ListLabs()
     {
-        int from = 1, to = Labs.Length;
-        if (range != null)
+        var labs = Labs.Select((lab, i) => new
         {
-            string[] parts = range.Split('-');
-            from = int.Parse(parts[0]);
-            to = parts.Length > 1 ? int.Parse(parts[1]) : from;
-        }
-
-        // BugHunt.exe 로 실행했으면 그대로, "dotnet BugHunt.dll" 로 실행했으면 dll 경로를 앞에 붙인다.
-        string exe = Environment.ProcessPath!;
-        string dllArg = Path.GetFileNameWithoutExtension(exe) == "dotnet"
-            ? $"\"{typeof(Program).Assembly.Location}\" "
-            : "";
-        int passed = 0;
-        for (int n = from; n <= to; n++)
-        {
-            var psi = new ProcessStartInfo(exe, dllArg + n)
-            {
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                StandardOutputEncoding = Encoding.UTF8,
-                StandardErrorEncoding = Encoding.UTF8,
-                UseShellExecute = false,
-            };
-            psi.Environment["BUGHUNT_GRADER"] = "1";
-            using Process p = Process.Start(psi)!;
-            Task<string> stdout = p.StandardOutput.ReadToEndAsync();
-            Task<string> stderr = p.StandardError.ReadToEndAsync();
-
-            string verdict, detail = "";
-            if (!p.WaitForExit(TimeSpan.FromSeconds(30)))
-            {
-                p.Kill(entireProcessTree: true);
-                verdict = "TIMEOUT";
-            }
-            else
-            {
-                p.WaitForExit();
-                string output = stdout.Result;
-                string[] lines = output.Split('\n', StringSplitOptions.TrimEntries);
-                if (p.ExitCode == 0 && output.Contains("[PASS]") && !output.Contains("[FAIL]"))
-                {
-                    verdict = "PASS";
-                }
-                else if (p.ExitCode is 0 or 1)
-                {
-                    verdict = "FAIL";
-                    detail = lines.FirstOrDefault(l => l.StartsWith("[FAIL]")) ?? "";
-                }
-                else
-                {
-                    verdict = $"CRASH (0x{p.ExitCode:X8})";
-                    detail = stderr.Result.Split('\n', StringSplitOptions.TrimEntries)
-                        .FirstOrDefault(l => l.Length > 0) ?? "";
-                }
-            }
-
-            if (verdict == "PASS") passed++;
-            Console.WriteLine($"  Lab {n,2} {verdict,-20} {Labs[n - 1].Title}  {detail}");
-        }
-        Console.WriteLine($"\n  {passed} / {to - from + 1} 통과");
-        return passed == to - from + 1 ? 0 : 1;
+            Id = i + 1,
+            lab.Title,
+            Part = PartOf(i + 1),
+            lab.Hidden,
+            lab.Release,
+        });
+        Console.WriteLine(JsonSerializer.Serialize(labs, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
+        return 0;
     }
+
+    static int PartOf(int n) =>
+        n >= Part6Start ? 6 : n >= Part5Start ? 5 : n >= Part4Start ? 4 : n >= Part3Start ? 3 : n >= Part2Start ? 2 : 1;
 }

@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>BugHunt.Grader</RootNamespace>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <!--
+    채점기는 BugHunt 프로젝트를 참조하지 않는다. 실행할 때마다 BugHunt를 직접 빌드(dotnet build)하고,
+    빌드된 BugHunt.exe를 랩마다 새 프로세스로 띄운다. 그래야 학습자가 고친 최신 코드를 채점하고,
+    랩 하나가 죽거나 멈춰도 채점기는 살아남는다.
+  -->
+
+</Project>

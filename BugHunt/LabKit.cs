@@ -18,7 +18,7 @@ public static class LabKit
         return ok;
     }
 
-    // 채점기(BugHunt.exe grade)가 실행한 프로세스인가
+    // 채점기(BugHunt.Grader)가 실행한 프로세스인가
     public static bool IsGrading => Environment.GetEnvironmentVariable("BUGHUNT_GRADER") == "1";
 
     // 숨은 테스트 케이스. 0이면 화면에 보이는 기본 입력, 0이 아니면 그 값을 시드로 입력을 무작위로 만든다.
@@ -56,6 +56,9 @@ public static class LabKit
         PauseForTools($"멈춘 스레드는 아직 그대로입니다. 다른 터미널에서 dotnet-stack report -p {Environment.ProcessId} 로 스택을 보거나, VS에서 디버그 → 프로세스에 연결 → 모두 중단 해 보세요.");
         return false;
     }
+
+    // 이 환경에서는 판정할 수 없는 랩. 채점기는 SKIP으로 센다.
+    public static void Skip(string reason) => Console.WriteLine($"  [SKIP] {reason}");
 
     // 사람이 실행할 때만 잠깐 멈춰서, 그동안 진단 도구(스냅샷, dotnet-dump 등)를 쓸 수 있게 한다.
     public static void PauseForTools(string message)
