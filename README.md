@@ -52,6 +52,8 @@
 dotnet run --project BugHunt -- 3
 ```
 
+실행 출력(메뉴, 판정 줄)은 일본어로도 볼 수 있습니다: `dotnet run --project BugHunt -- --lang ja 3` 또는 환경 변수 `BUGHUNT_LANG=ja`. 지정하지 않으면 Windows 화면 언어가 일본어일 때 일본어, 그 밖에는 한국어입니다. 랩 소스의 주석과 힌트는 한 파일에 두 언어가 같이 있습니다(`#region 힌트 1 / ヒント 1`).
+
 ### 채점기
 
 고친 뒤에는 채점기로 확인합니다. 저장소 폴더(이 README가 있는 곳)에서:
@@ -94,6 +96,7 @@ dotnet run --project BugHunt.Grader
 | `--no-build` | 빌드를 건너뜀 (이미 빌드된 것을 채점) |
 | `--timeout MS` | 실행 한 번의 제한 시간 (기본 20000) |
 | `--out 경로` | 보고서 위치 |
+| `--lang ko` / `--lang ja` | 출력 언어 (기본: 환경 변수 `BUGHUNT_LANG`, 없으면 Windows 화면 언어, 그 밖에는 한국어). 판정은 언어와 상관없이 같습니다 |
 
 숨은 케이스 하나를 디버거로 다시 보려면, 실패 상세의 `seed` 값을 명령 인수에 같이 넣습니다: `"commandLineArgs": "84 --seed 123456"`.
 
@@ -105,13 +108,13 @@ BugHunt 네 판(C++, C#, 언리얼, 유니티)이 같은 형식을 씁니다.
 {
   "edition": "cs",
   "version": "1",
-  "total": 68,
+  "total": 106,
   "passed": 12,
   "labs": [
     { "id": 1, "title": "친구 프로필", "part": 1, "result": "PASS", "ms": 85, "detail": "" },
-    { "id": 42, "title": "박자 콜백", "part": 6, "result": "CRASH", "ms": 152,
+    { "id": 78, "title": "박자 콜백", "part": 10, "result": "CRASH", "ms": 152,
       "detail": "[Debug] 0x80131623 Process terminated. A callback was made on a garbage collected delegate ..." },
-    { "id": 48, "title": "동시 거래", "part": 7, "result": "TIMEOUT", "ms": 2075,
+    { "id": 86, "title": "동시 거래", "part": 11, "result": "TIMEOUT", "ms": 2075,
       "detail": "응답 없음 (2000 ms 초과): 동시 거래" }
   ]
 }
@@ -124,13 +127,13 @@ BugHunt 네 판(C++, C#, 언리얼, 유니티)이 같은 형식을 씁니다.
 | `total` | 정수 | 채점한 랩 수 (SKIP 포함) |
 | `passed` | 정수 | `PASS` 수 |
 | `labs[].id` | 정수 | 랩 번호. 챌린지는 `C-n`이 `100+n`, `B-n`이 `200+n` (예: C-1은 101, B-3은 203) |
-| `labs[].title` | 문자열 | 랩 이름 |
+| `labs[].title` | 문자열 | 랩 이름. `--lang`으로 고른 언어 |
 | `labs[].part` | 정수 | 부 번호 (1~12). 챌린지는 `0` |
 | `labs[].result` | 문자열 | `PASS`, `FAIL`, `TIMEOUT`, `CRASH`, `SKIP` 중 하나 |
 | `labs[].ms` | 정수 | 걸린 시간 (그 랩의 모든 실행을 합친 밀리초) |
-| `labs[].detail` | 문자열 | 실패 이유 한 줄. `PASS`면 빈 문자열. 숨은 케이스나 Release에서 실패했으면 앞에 `[Release, 숨은 케이스 seed N]`처럼 붙음. 숨은 케이스에서만 실패했으면 그 앞에 `증상은 사라졌지만 원인이 남아 있음`이 더 붙음 |
+| `labs[].detail` | 문자열 | 실패 이유 한 줄. `PASS`면 빈 문자열. 숨은 케이스나 Release에서 실패했으면 앞에 `[Release, 숨은 케이스 seed N]`처럼 붙음. 숨은 케이스에서만 실패했으면 그 앞에 `증상은 사라졌지만 원인이 남아 있음`이 더 붙음. 이 문구도 고른 언어를 따름 |
 
-파일은 UTF-8(BOM 없음)이고 채점기의 종료 코드는 만점이면 0, 아니면 1, 빌드 실패 등으로 채점을 못 하면 2입니다. CI에서 쓸 수 있습니다.
+파일은 UTF-8(BOM 없음)이고 채점기의 종료 코드는 만점이면 0, 아니면 1, 빌드 실패 등으로 채점을 못 하면 2, `--lang ja`에서 일본어 번역이 빠진 출력 줄이 있으면 3(빠진 줄을 끝에 보여 줌)입니다. 키 이름과 `result` 값은 언어와 상관없이 같습니다. CI에서 쓸 수 있습니다.
 
 ### 경고 정책
 

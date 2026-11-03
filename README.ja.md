@@ -52,6 +52,8 @@
 dotnet run --project BugHunt -- 3
 ```
 
+実行出力(メニュー、判定の行)は日本語でも見られます: `dotnet run --project BugHunt -- --lang ja 3` または環境変数 `BUGHUNT_LANG=ja`。指定しなければ Windows の表示言語が日本語のとき日本語、それ以外は韓国語です。ラボのソースのコメントとヒントは一つのファイルに二つの言語が並んでいます(`#region 힌트 1 / ヒント 1`)。
+
 ### 採点ツール
 
 直したあとは採点ツールで確かめます。リポジトリのフォルダー(この README がある所)で:
@@ -94,6 +96,7 @@ dotnet run --project BugHunt.Grader
 | `--no-build` | ビルドを飛ばす (すでにビルドされたものを採点) |
 | `--timeout MS` | 実行一回の制限時間 (既定 20000) |
 | `--out パス` | レポートの場所 |
+| `--lang ko` / `--lang ja` | 出力言語 (既定: 環境変数 `BUGHUNT_LANG`、なければ Windows の表示言語、それ以外は韓国語)。判定は言語に関係なく同じです |
 
 隠しケースの一つをデバッガーで見直すには、失敗詳細の `seed` 値をコマンド引数に一緒に入れます: `"commandLineArgs": "84 --seed 123456"`。
 
@@ -105,13 +108,13 @@ BugHunt の四つの版(C++、C#、Unreal、Unity)が同じ形式を使います
 {
   "edition": "cs",
   "version": "1",
-  "total": 68,
+  "total": 106,
   "passed": 12,
   "labs": [
     { "id": 1, "title": "친구 프로필", "part": 1, "result": "PASS", "ms": 85, "detail": "" },
-    { "id": 42, "title": "박자 콜백", "part": 6, "result": "CRASH", "ms": 152,
+    { "id": 78, "title": "박자 콜백", "part": 10, "result": "CRASH", "ms": 152,
       "detail": "[Debug] 0x80131623 Process terminated. A callback was made on a garbage collected delegate ..." },
-    { "id": 48, "title": "동시 거래", "part": 7, "result": "TIMEOUT", "ms": 2075,
+    { "id": 86, "title": "동시 거래", "part": 11, "result": "TIMEOUT", "ms": 2075,
       "detail": "응답 없음 (2000 ms 초과): 동시 거래" }
   ]
 }
@@ -124,13 +127,13 @@ BugHunt の四つの版(C++、C#、Unreal、Unity)が同じ形式を使います
 | `total` | 整数 | 採点したラボ数 (SKIP 含む) |
 | `passed` | 整数 | `PASS` の数 |
 | `labs[].id` | 整数 | ラボ番号。チャレンジは `C-n` が `100+n`、`B-n` が `200+n` (例: C-1 は 101、B-3 は 203) |
-| `labs[].title` | 文字列 | ラボの名前 |
+| `labs[].title` | 文字列 | ラボの名前。`--lang` で選んだ言語 |
 | `labs[].part` | 整数 | 部番号 (1〜12)。チャレンジは `0` |
 | `labs[].result` | 文字列 | `PASS`、`FAIL`、`TIMEOUT`、`CRASH`、`SKIP` のいずれか |
 | `labs[].ms` | 整数 | かかった時間 (そのラボのすべての実行を合わせたミリ秒) |
-| `labs[].detail` | 文字列 | 失敗理由の一行。`PASS` なら空文字列。隠しケースや Release で失敗したなら前に `[Release, 숨은 케이스 seed N]` のように付く。隠しケースでだけ失敗したなら、その前に `증상은 사라졌지만 원인이 남아 있음` がさらに付く |
+| `labs[].detail` | 文字列 | 失敗理由の一行。`PASS` なら空文字列。隠しケースや Release で失敗したなら前に `[Release, 숨은 케이스 seed N]` のように付く。隠しケースでだけ失敗したなら、その前に `증상은 사라졌지만 원인이 남아 있음` がさらに付く。この文言も選んだ言語に従う (`--lang ja` では `[Release, 隠しケース seed N]`、`症状は消えたが原因が残っている`) |
 
-ファイルは UTF-8(BOM なし)で、採点ツールの終了コードは満点なら 0、そうでなければ 1、ビルド失敗などで採点できなければ 2 です。CI で使えます。
+ファイルは UTF-8(BOM なし)で、採点ツールの終了コードは満点なら 0、そうでなければ 1、ビルド失敗などで採点できなければ 2、`--lang ja` で日本語訳が抜けている出力行があれば 3 (抜けている行を最後に表示) です。キー名と `result` の値は言語に関係なく同じです。CI で使えます。
 
 ### 警告ポリシー
 
