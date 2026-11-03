@@ -85,6 +85,15 @@ static class Program
         new("즐겨찾기",         "가방에는 있다는 아이템이 즐겨찾기에서는 없다",       Lab95.Run, Hidden: 3),
         new("처치 보상",        "보스를 잡았는데 일반 적만큼만 준다",                 Lab96.Run, Hidden: 3),
         new("시작 가방",        "물약을 넣는 순간 ArrayTypeMismatchException",        Lab97.Run, Hidden: 3),
+        // 새 부: 파일 입출력 (Lab98~105 = 메뉴 66~73)
+        new("세이브 폴더",      "폴더를 한 번 열고 나면 세이브가 없다고 한다",         Lab98.Run, Hidden: 3),
+        new("전투 기록 파일",   "저장한 전투 기록의 마지막 몇 줄이 빠져 있다",         Lab99.Run, Hidden: 3),
+        new("채팅 신고",        "신고하면 채팅 로그를 '사용 중'이라 못 읽는다",        Lab100.Run, Hidden: 3),
+        new("프로필 가져오기",  "가져온 프로필의 세이브만 백업에서 빠진다",            Lab101.Run, Hidden: 3),
+        new("NPC 대사 모드",    "모드에 따라 첫 대사가 없거나 한글이 깨진다",          Lab102.Run, Hidden: 3),
+        new("차단 목록",        "메모장으로 고친 뒤 아무도 차단되지 않는다",            Lab103.Run, Hidden: 3),
+        new("안전한 저장",      "저장이 실패하자 지난번 세이브까지 망가졌다",          Lab104.Run, Hidden: 3),
+        new("클라우드 동기화",  "서버에는 늘 한 번 전의 설정이 올라간다",              Lab105.Run, Hidden: 3),
     ];
 
     // 챌린지: 힌트 없음. 기본 랩 번호와 따로 센다. C-n = 깊은 추적, B-n = 블라인드
