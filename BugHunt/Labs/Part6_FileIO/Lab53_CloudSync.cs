@@ -4,13 +4,13 @@ namespace BugHunt;
 
 // 옵션 창에서 설정을 바꾸면 설정 파일에 저장하고, 곧바로 클라우드 동기화가 그 파일을 읽어 서버에 올린다.
 // 서버에는 늘 "한 번 전의" 설정이 올라간다.
-// 이 랩은 %TEMP%\BugHunt\Lab53_CloudSync 아래에만 쓰고, 끝나면 지운다.
+// 이 랩은 %TEMP%\BugHunt\Lab53_CloudSync_<프로세스 ID> 아래에만 쓰고, 끝나면 지운다.
 // [JA] オプション画面で設定を変えると設定ファイルに保存し、すぐにクラウド同期がそのファイルを読んでサーバーにアップロードします。
 // [JA] サーバーにはいつも「一つ前の」設定がアップロードされます。
-// [JA] このラボは %TEMP%\BugHunt\Lab53_CloudSync の下にだけ書き込み、終わったら削除します。
+// [JA] このラボは %TEMP%\BugHunt\Lab53_CloudSync_<プロセス ID> の下にだけ書き込み、終わったら削除します。
 public static partial class Lab53
 {
-    static readonly string Root = Path.Combine(Path.GetTempPath(), "BugHunt", "Lab53_CloudSync");
+    static readonly string Root = Path.Combine(Path.GetTempPath(), "BugHunt", $"Lab53_CloudSync_{Environment.ProcessId}");
 
     // 저장 대기열: 저장은 한 번에 하나씩, 들어온 순서대로. 게임을 끌 때 마지막 저장까지 기다린다.
     static Task _saveQueue = Task.CompletedTask;
@@ -20,12 +20,17 @@ public static partial class Lab53
 
     static string OneLine(string s) => s.Replace('\n', ' ').Trim();
 
+    // 설정 파일 잠금: 저장(쓰기)과 클라우드 동기화(읽기)가 파일을 동시에 열지 않게 한다.
+    static readonly SemaphoreSlim FileLock = new(1, 1);
+
     // 설정 저장. 앞의 저장이 끝난 뒤에 시작하고, 압축과 체크섬 계산 때문에 시간이 조금 걸린다.
     static async Task SaveSettingsAsync(Task previous, string path, int volume, int sensitivity)
     {
         await previous;
         await Task.Delay(200);   // 압축·체크섬
-        await File.WriteAllTextAsync(path, Format(volume, sensitivity));
+        await FileLock.WaitAsync();
+        try { await File.WriteAllTextAsync(path, Format(volume, sensitivity)); }
+        finally { FileLock.Release(); }
     }
 
     // 옵션 창의 "적용" 버튼
@@ -34,7 +39,10 @@ public static partial class Lab53
         Task save = _saveQueue = SaveSettingsAsync(_saveQueue, path, volume, sensitivity);
 
         // 클라우드 동기화: 저장된 설정 파일을 그대로 올린다
-        string uploaded = await File.ReadAllTextAsync(path);
+        string uploaded;
+        await FileLock.WaitAsync();
+        try { uploaded = await File.ReadAllTextAsync(path); }
+        finally { FileLock.Release(); }
         Console.WriteLine($"  클라우드에 올림: {OneLine(uploaded)}");
         return uploaded;
     }
@@ -43,25 +51,31 @@ public static partial class Lab53
     {
         Directory.CreateDirectory(Root);
         string path = Path.Combine(Root, "settings.ini");
-        try
-        {
-            // 지난번에 저장해 둔 설정
-            File.WriteAllText(path, Format(50, 5));
 
-            (int Volume, int Sensitivity)[] changes = Pick(Changes[0], Changes[1..]);
-            foreach ((int volume, int sensitivity) in changes)
-            {
-                Console.WriteLine($"  설정 변경: 볼륨 {volume}, 감도 {sensitivity}");
-                string uploaded = ApplyAsync(path, volume, sensitivity).GetAwaiter().GetResult();
-                Expect($"클라우드에 올라간 설정 (볼륨 {volume}, 감도 {sensitivity})", OneLine(Format(volume, sensitivity)), OneLine(uploaded));
-            }
-        }
-        finally
+        // 옵션 창은 게임의 메인 스레드에서 돈다: await 뒤의 코드는 이 스레드로 돌아온다 (MainThread.cs)
+        var main = new MainThread();
+        main.Run(async () =>
         {
-            // 게임 종료: 진행 중인 저장을 기다린다
-            _saveQueue.GetAwaiter().GetResult();
-            if (Directory.Exists(Root)) Directory.Delete(Root, recursive: true);
-        }
+            try
+            {
+                // 지난번에 저장해 둔 설정
+                File.WriteAllText(path, Format(50, 5));
+
+                (int Volume, int Sensitivity)[] changes = Pick(Changes[0], Changes[1..]);
+                foreach ((int volume, int sensitivity) in changes)
+                {
+                    Console.WriteLine($"  설정 변경: 볼륨 {volume}, 감도 {sensitivity}");
+                    string uploaded = await ApplyAsync(path, volume, sensitivity);
+                    Expect($"클라우드에 올라간 설정 (볼륨 {volume}, 감도 {sensitivity})", OneLine(Format(volume, sensitivity)), OneLine(uploaded));
+                }
+            }
+            finally
+            {
+                // 게임 종료: 진행 중인 저장을 기다린 뒤 지운다 (기다리다 실패해도 지운다)
+                try { await _saveQueue; }
+                finally { if (Directory.Exists(Root)) Directory.Delete(Root, recursive: true); }
+            }
+        }).GetAwaiter().GetResult();
     }
 }
 
@@ -80,12 +94,12 @@ public static partial class Lab53
 
 #region 힌트 2 / ヒント 2
 // SaveSettingsAsync 를 부르면 첫 await(Task.Delay)에서 바로 Task 를 돌려받습니다. 파일 쓰기는 아직 시작도 안 했습니다.
-// ApplyAsync 는 그 Task 를 저장 대기열에 넣기만 하고 기다리지 않은 채 파일을 읽습니다. 그래서 읽는 것은 이전 설정입니다. 다음 "적용" 때는 그 전 설정이 덮여 있고요.
+// ApplyAsync 는 그 Task 를 저장 대기열에 넣기만 하고 기다리지 않은 채 파일을 읽습니다. 그래서 읽는 것은 아직 저장이 끝나지 않은, 이전 내용입니다.
 // 경고가 없는 이유: Task 를 변수에 받으면 "await 하지 않은 호출" 경고(CS4014)가 나지 않습니다. 대기열에 넣은 것도 기다린 것이 아닙니다.
 // 병렬 작업 창(디버그 → 창 → 작업)에서 읽기 시점에 SaveSettingsAsync 가 "대기 중"인 것을 볼 수 있습니다.
 //
 // [JA] SaveSettingsAsync を呼ぶと最初の await(Task.Delay)ですぐに Task が返ってきます。ファイルの書き込みはまだ始まってもいません。
-// [JA] ApplyAsync はその Task を保存キューに入れるだけで、待たずにファイルを読みます。だから読むのは前の設定です。次の「適用」のときにはその前の設定で上書きされています。
+// [JA] ApplyAsync はその Task を保存キューに入れるだけで、待たずにファイルを読みます。だから読むのは、まだ保存が終わっていない前の内容です。
 // [JA] 警告が出ない理由: Task を変数で受け取ると「await していない呼び出し」の警告(CS4014)は出ません。キューに入れたのも待ったことにはなりません。
 // [JA] 並列タスクウィンドウ(デバッグ → ウィンドウ → タスク)で、読み込み時点に SaveSettingsAsync が「待機中」なのが見えます。
 #endregion
