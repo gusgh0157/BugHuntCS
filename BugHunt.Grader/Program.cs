@@ -334,7 +334,9 @@ static class Program
             if (dll == null)
                 return new LabResult(lab.Id, lab.Title, lab.Part, "SKIP", totalMs, Text.F("{0} 빌드가 없음 (--no-build 없이 실행하세요)", c.Config));
 
-            (string result, string detail, long ms) = RunOnce(dll, lab.Id, c.Seed, options.TimeoutMs);
+            // 랩 8(스택 오버플로)은 PC가 바쁘면 런타임이 넘친 스택을 찍는 데만 20초 가까이 걸린다. 이 랩만 제한 시간을 60초 이상으로
+            int timeoutMs = lab.Id == 8 ? Math.Max(options.TimeoutMs, 60_000) : options.TimeoutMs;
+            (string result, string detail, long ms) = RunOnce(dll, lab.Id, c.Seed, timeoutMs);
             totalMs += ms;
             if (result == "PASS")
             {
