@@ -12,35 +12,39 @@ public static class ChallengeB5
         Console.WriteLine($"  자동 저장 시작 ({intervalMs}ms마다)");
     }
 
-    // 게임 진행: 매 프레임 이것저것 만들고 버린다. 가끔 GC 가 돈다.
-    static void PlayFor(int ms)
+    // 게임 한 프레임: 이것저것 만들고 버린다. 가끔 GC 가 돈다.
+    static void PlayFrame(int frame)
     {
-        var watch = System.Diagnostics.Stopwatch.StartNew();
-        int frame = 0;
-        while (watch.ElapsedMilliseconds < ms)
+        _ = new byte[64 * 1024];
+        if (frame % 10 == 1)
         {
-            _ = new byte[64 * 1024];
-            if (++frame % 10 == 0)
-            {
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-            }
-            Thread.Sleep(5);
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
         }
+        Thread.Sleep(5);
     }
 
     public static void Run()
     {
         _saves = 0;
         int interval = Pick(20, 15, 40);
-        int playMs = Pick(800, 600, 1200);
+        int wanted = Pick(10, 8, 12);
 
         StartAutoSave(interval);
-        PlayFor(playMs);
 
-        int saves = Volatile.Read(ref _saves);
-        int atLeast = playMs / interval / 2;
-        Console.WriteLine($"  {playMs}ms 동안 저장 {saves}번");
-        Expect($"저장 횟수가 {atLeast}번 이상", true, saves >= atLeast);
+        // 자동 저장이 wanted 번 될 때까지 게임을 계속한다.
+        int frames = 0;
+        if (FinishesWithin($"자동 저장 {wanted}번", () =>
+            {
+                while (Volatile.Read(ref _saves) < wanted)
+                    PlayFrame(++frames);
+            }))
+        {
+            int saves = Volatile.Read(ref _saves);
+            Console.WriteLine($"  {frames}프레임 동안 저장 {saves}번");
+            Expect($"저장 횟수가 {wanted}번 이상", true, saves >= wanted);
+        }
+        else
+            Console.WriteLine($"  (멈춘 순간 {frames}프레임, 저장 {Volatile.Read(ref _saves)}번)");
     }
 }
