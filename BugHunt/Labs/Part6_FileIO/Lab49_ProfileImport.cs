@@ -2,13 +2,13 @@ namespace BugHunt;
 
 // 플레이어 프로필마다 세이브 폴더를 하나씩 둔다. 옛 설치에서 가져온 프로필은 폴더 이름 대신 옛 경로를 들고 있다.
 // 모든 프로필을 저장한 뒤 세이브 루트를 통째로 백업했는데, 백업에 프로필 하나가 빠져 있다.
-// 이 랩은 %TEMP%\BugHunt\Lab49_ProfileImport 아래에만 쓰고, 끝나면 지운다.
+// 이 랩은 %TEMP%\BugHunt\Lab49_ProfileImport_<프로세스 ID> 아래에만 쓰고, 끝나면 지운다.
 // [JA] プレイヤープロフィールごとにセーブフォルダーを一つずつ置きます。旧インストールから取り込んだプロフィールはフォルダー名の代わりに旧パスを持っています。
 // [JA] すべてのプロフィールを保存したあとセーブルートを丸ごとバックアップしたのに、バックアップにプロフィールが一つ欠けています。
-// [JA] このラボは %TEMP%\BugHunt\Lab49_ProfileImport の下にだけ書き込み、終わったら削除します。
+// [JA] このラボは %TEMP%\BugHunt\Lab49_ProfileImport_<プロセス ID> の下にだけ書き込み、終わったら削除します。
 public static partial class Lab49
 {
-    static readonly string Root = Path.Combine(Path.GetTempPath(), "BugHunt", "Lab49_ProfileImport");
+    static readonly string Root = Path.Combine(Path.GetTempPath(), "BugHunt", $"Lab49_ProfileImport_{Environment.ProcessId}");
 
     sealed record Profile(string Name, string Folder);
 

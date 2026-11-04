@@ -2,13 +2,13 @@ namespace BugHunt;
 
 // 채팅 로그는 게임이 켜져 있는 동안 계속 열어 두고 쓴다. 신고 버튼을 누르면 업로더가 그 로그 파일을 읽어 서버로 보낸다.
 // 업로더가 "다른 프로세스가 사용 중"이라며 아무것도 못 읽는다.
-// 이 랩은 %TEMP%\BugHunt\Lab48_ChatUpload 아래에만 쓰고, 끝나면 지운다.
+// 이 랩은 %TEMP%\BugHunt\Lab48_ChatUpload_<프로세스 ID> 아래에만 쓰고, 끝나면 지운다.
 // [JA] チャットログはゲームが起動している間ずっと開いたまま書き込みます。通報ボタンを押すとアップローダーがそのログファイルを読んでサーバーに送ります。
 // [JA] アップローダーが「別のプロセスが使用中」と言って何も読めません。
-// [JA] このラボは %TEMP%\BugHunt\Lab48_ChatUpload の下にだけ書き込み、終わったら削除します。
+// [JA] このラボは %TEMP%\BugHunt\Lab48_ChatUpload_<プロセス ID> の下にだけ書き込み、終わったら削除します。
 public static partial class Lab48
 {
-    static readonly string Root = Path.Combine(Path.GetTempPath(), "BugHunt", "Lab48_ChatUpload");
+    static readonly string Root = Path.Combine(Path.GetTempPath(), "BugHunt", $"Lab48_ChatUpload_{Environment.ProcessId}");
 
     // 게임이 켜져 있는 동안 열어 두는 로그
     sealed class ChatLogger(string path) : IDisposable

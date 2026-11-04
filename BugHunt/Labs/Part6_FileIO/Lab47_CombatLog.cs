@@ -1,12 +1,12 @@
 namespace BugHunt;
 
 // 전투가 끝나면 전투 기록을 파일로 저장한다. 파일 스트림은 using 으로 닫았는데, 저장된 파일의 마지막 몇 줄이 빠져 있다.
-// 이 랩은 %TEMP%\BugHunt\Lab47_CombatLog 아래에만 쓰고, 끝나면 지운다.
+// 이 랩은 %TEMP%\BugHunt\Lab47_CombatLog_<프로세스 ID> 아래에만 쓰고, 끝나면 지운다.
 // [JA] 戦闘が終わると戦闘ログをファイルに保存します。ファイルストリームは using で閉じたのに、保存されたファイルの最後の数行が欠けています。
-// [JA] このラボは %TEMP%\BugHunt\Lab47_CombatLog の下にだけ書き込み、終わったら削除します。
+// [JA] このラボは %TEMP%\BugHunt\Lab47_CombatLog_<プロセス ID> の下にだけ書き込み、終わったら削除します。
 public static partial class Lab47
 {
-    static readonly string Root = Path.Combine(Path.GetTempPath(), "BugHunt", "Lab47_CombatLog");
+    static readonly string Root = Path.Combine(Path.GetTempPath(), "BugHunt", $"Lab47_CombatLog_{Environment.ProcessId}");
 
     static void SaveLog(string path, IReadOnlyList<string> lines)
     {

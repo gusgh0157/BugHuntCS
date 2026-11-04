@@ -4,13 +4,13 @@ namespace BugHunt;
 
 // 인벤토리를 세이브 파일에 저장한다. 저장 도중 아이템 하나가 손상되어 저장이 실패했다. 실패한 저장은 무시하고 지난번 세이브를 쓰면 되는데,
 // 다시 불러오니 지난번 세이브까지 망가져 있다.
-// 이 랩은 %TEMP%\BugHunt\Lab52_SafeSave 아래에만 쓰고, 끝나면 지운다.
+// 이 랩은 %TEMP%\BugHunt\Lab52_SafeSave_<프로세스 ID> 아래에만 쓰고, 끝나면 지운다.
 // [JA] インベントリをセーブファイルに保存します。保存の途中でアイテムが一つ壊れていて保存に失敗しました。失敗した保存は無視して前回のセーブを使えばいいはずですが、
 // [JA] ロードし直すと前回のセーブまで壊れています。
-// [JA] このラボは %TEMP%\BugHunt\Lab52_SafeSave の下にだけ書き込み、終わったら削除します。
+// [JA] このラボは %TEMP%\BugHunt\Lab52_SafeSave_<プロセス ID> の下にだけ書き込み、終わったら削除します。
 public static partial class Lab52
 {
-    static readonly string Root = Path.Combine(Path.GetTempPath(), "BugHunt", "Lab52_SafeSave");
+    static readonly string Root = Path.Combine(Path.GetTempPath(), "BugHunt", $"Lab52_SafeSave_{Environment.ProcessId}");
 
     sealed record Item(string Name, int Count);
 

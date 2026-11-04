@@ -3,12 +3,12 @@ using System.Globalization;
 namespace BugHunt;
 
 // 세이브는 게임 폴더 아래 saves 에 둔다. 저장 뒤 모드 폴더를 열었다가(파일 대화상자처럼 작업 디렉터리가 바뀐다) 다시 불러오면 세이브가 없다고 한다.
-// 이 랩은 %TEMP%\BugHunt\Lab46_SaveFolder 아래에 가짜 게임 폴더를 만들어 쓰고, 끝나면 지운다.
+// 이 랩은 %TEMP%\BugHunt\Lab46_SaveFolder_<프로세스 ID> 아래에 가짜 게임 폴더를 만들어 쓰고, 끝나면 지운다.
 // [JA] セーブはゲームフォルダー直下の saves に置きます。保存後に MOD フォルダーを開き(ファイルダイアログのように作業ディレクトリが変わります)、もう一度ロードするとセーブがないと言われます。
-// [JA] このラボは %TEMP%\BugHunt\Lab46_SaveFolder の下に仮のゲームフォルダーを作って使い、終わったら削除します。
+// [JA] このラボは %TEMP%\BugHunt\Lab46_SaveFolder_<プロセス ID> の下に仮のゲームフォルダーを作って使い、終わったら削除します。
 public static partial class Lab46
 {
-    static readonly string Root = Path.Combine(Path.GetTempPath(), "BugHunt", "Lab46_SaveFolder");
+    static readonly string Root = Path.Combine(Path.GetTempPath(), "BugHunt", $"Lab46_SaveFolder_{Environment.ProcessId}");
 
     sealed class SaveSystem(string gameDir)
     {
