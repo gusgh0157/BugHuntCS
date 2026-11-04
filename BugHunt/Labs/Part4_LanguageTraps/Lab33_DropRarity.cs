@@ -70,12 +70,12 @@ public static partial class Lab33
 #region 힌트 3 / ヒント 3
 // 바깥에서 온 정수를 enum 으로 받을 때는 범위를 검사하세요:
 //   if (!Enum.IsDefined((Rarity)value)) { /* 모르는 등급: 건너뛰거나 로그 */ continue; }
-// switch 에서 _ => 는 "그 밖의 아는 값"이 아니라 "예상 못 한 값"입니다. 기본값을 주지 말고 0 을 돌려주거나 예외를 내세요: _ => throw new ArgumentOutOfRangeException(...).
+// switch 에서 _ => 는 "그 밖의 아는 값"이 아니라 "예상 못 한 값"입니다. 기본값을 주지 말고 0 을 돌려주세요(_ => 0). 예외(_ => throw new ArgumentOutOfRangeException(...))를 내려면 Run 에서 Weight 를 부르기 전에 Enum.IsDefined 로 먼저 걸러야 합니다. 지금 Run 은 Weight 를 먼저 부르므로 throw 만 바꾸면 모르는 등급에서 죽습니다.
 // 모르는 등급을 일반으로 세는 수정(_ => 100 유지)은 숨은 케이스의 다른 범위 밖 코드에서 걸립니다. [Flags] 라면 None 체크는 HasFlag 대신 (flags & X) != 0 로 하세요.
 //
 // [JA] 外から来た整数を enum として受け取るときは範囲を検査してください:
 // [JA]   if (!Enum.IsDefined((Rarity)value)) { /* 知らない等級: スキップするかログ */ continue; }
-// [JA] switch の _ => は「その他の既知の値」ではなく「想定外の値」です。既定値を与えず、0 を返すか例外を出してください: _ => throw new ArgumentOutOfRangeException(...)。
+// [JA] switch の _ => は「その他の既知の値」ではなく「想定外の値」です。既定値を与えず、0 を返してください(_ => 0)。例外(_ => throw new ArgumentOutOfRangeException(...))を出すなら、Run で Weight を呼ぶ前に Enum.IsDefined で先に弾く必要があります。今の Run は Weight を先に呼ぶので、throw だけに変えると知らない等級で落ちます。
 // [JA] 知らない等級をノーマルとして数える修正(_ => 100 のまま)は、隠しケースの別の範囲外コードで引っかかります。[Flags] なら None のチェックは HasFlag ではなく (flags & X) != 0 で行ってください。
 #endregion
 

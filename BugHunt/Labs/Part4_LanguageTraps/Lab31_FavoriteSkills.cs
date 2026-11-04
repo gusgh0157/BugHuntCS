@@ -59,12 +59,12 @@ public static partial class Lab31
 // GetHashCode 의 결과를 디스크·DB·네트워크로 내보내 "나중에 다시 비교"하면 안 됩니다. 영속되는 값은 다음 중 하나로:
 //   - 키 자체(스킬 이름)를 저장하고 이름으로 비교한다.
 //   - 프로세스와 무관하게 고정된 해시(FNV-1a, SHA-256 등)를 직접 구현해 쓴다 (여기 OldSessionHash 가 FNV 예시).
-// GetHashCode 는 메모리 안의 Dictionary/HashSet 처럼 "한 번 실행되는 동안"만 쓰세요. 같은 함정이 Enum.GetHashCode, 익명 형식에도 있습니다.
+// GetHashCode 는 메모리 안의 Dictionary/HashSet 처럼 "한 번 실행되는 동안"만 쓰세요. 같은 함정이 HashCode.Combine 과, 문자열 멤버를 가진 record·튜플·익명 형식에도 있습니다 (안에서 string.GetHashCode 를 쓰기 때문). 정수 기반인 enum 의 해시는 실행마다 같습니다.
 //
 // [JA] GetHashCode の結果をディスク・DB・ネットワークに出して「あとで比較し直す」のはいけません。永続させる値は次のいずれかに:
 // [JA]   - キー自体(スキル名)を保存し、名前で比較する。
 // [JA]   - プロセスに依存しない固定ハッシュ(FNV-1a、SHA-256 など)を自分で実装して使う(ここの OldSessionHash が FNV の例)。
-// [JA] GetHashCode はメモリ内の Dictionary/HashSet のように「一度の実行の間」だけ使ってください。同じ罠が Enum.GetHashCode や匿名型にもあります。
+// [JA] GetHashCode はメモリ内の Dictionary/HashSet のように「一度の実行の間」だけ使ってください。同じ罠が HashCode.Combine や、文字列メンバーを持つ record・タプル・匿名型にもあります(中で string.GetHashCode を使うため)。整数がもとの enum のハッシュは実行ごとに同じです。
 #endregion
 
 #region 채점용 숨은 테스트 / 採点用の隠しテスト

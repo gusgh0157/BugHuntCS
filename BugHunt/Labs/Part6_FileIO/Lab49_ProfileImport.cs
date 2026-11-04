@@ -90,12 +90,12 @@ public static partial class Lab49
 #endregion
 
 #region 힌트 3 / ヒント 3
-// 바깥에서 온 값은 "폴더 이름"으로만 받으세요: Path.GetFileName(profile.Folder) 로 마지막 조각만 쓰거나, Path.IsPathRooted / ".." 포함이면 거부하세요.
+// 바깥에서 온 값은 "폴더 이름"으로만 받으세요: Path.GetFileName(profile.Folder) 로 마지막 조각만 써서 세이브 루트 안에 저장하세요. (거부해 버리면 그 프로필의 세이브가 빠져 백업 수가 모자랍니다.)
 // 합친 뒤에 확인하는 방법도 있습니다: Path.GetFullPath(합친 경로)가 Path.GetFullPath(saveRoot) + 구분자로 시작하는지.
 // Path.Join 은 앞 인자를 버리지는 않지만 "saves\C:\old\..." 같은 엉뚱한 경로를 만듭니다. 검증을 대신해 주지 않습니다.
 // 가져온 프로필을 그냥 건너뛰는 수정은 백업 수에서 걸립니다. 그 프로필도 세이브 루트 안에 저장되어야 합니다.
 //
-// [JA] 外から来た値は「フォルダー名」としてだけ受け取ってください: Path.GetFileName(profile.Folder) で最後の部分だけ使うか、Path.IsPathRooted / ".." を含むなら拒否してください。
+// [JA] 外から来た値は「フォルダー名」としてだけ受け取ってください: Path.GetFileName(profile.Folder) で最後の部分だけ使ってセーブルートの中に保存してください。(拒否してしまうとそのプロフィールのセーブが抜けて、バックアップ数が足りなくなります。)
 // [JA] 結合したあとに確認する方法もあります: Path.GetFullPath(結合したパス)が Path.GetFullPath(saveRoot) + 区切り文字で始まるかどうか。
 // [JA] Path.Join は前の引数を捨てはしませんが "saves\C:\old\..." のようなおかしなパスを作ります。検証の代わりにはなりません。
 // [JA] 取り込んだプロフィールをただ飛ばす修正はバックアップ数で引っかかります。そのプロフィールもセーブルートの中に保存されなければなりません。

@@ -74,12 +74,12 @@ public static partial class Lab38
 // FireSkill.Damage 의 선언을 보세요. override 가 아니라 new 입니다.
 // new 는 "기반 메서드를 가상으로 덮어쓰지 않고, 같은 이름의 새 메서드를 하나 더 만든다"는 뜻입니다.
 // 그래서 변수의 선언 형식이 Skill 이면 Skill.Damage 가, FireSkill 이면 FireSkill.Damage 가 불립니다. (실행 시간의 실제 객체와 상관없이)
-// new 를 지우면 경고 CS0108 이 나옵니다. 그 경고를 없애려고 누군가 new 를 붙였을 가능성이 큽니다.
+// new 를 지우면 경고 CS0114 가 나옵니다. 그 경고를 없애려고 누군가 new 를 붙였을 가능성이 큽니다.
 //
 // [JA] FireSkill.Damage の宣言を見てください。override ではなく new です。
 // [JA] new は「基底メソッドを仮想的に上書きせず、同じ名前の新しいメソッドをもう一つ作る」という意味です。
 // [JA] そのため変数の宣言の型が Skill なら Skill.Damage が、FireSkill なら FireSkill.Damage が呼ばれます。(実行時の実際のオブジェクトとは無関係に)
-// [JA] new を消すと警告 CS0108 が出ます。その警告を消すために誰かが new を付けた可能性が高いです。
+// [JA] new を消すと警告 CS0114 が出ます。その警告を消すために誰かが new を付けた可能性が高いです。
 #endregion
 
 #region 힌트 3 / ヒント 3

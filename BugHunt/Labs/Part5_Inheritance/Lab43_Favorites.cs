@@ -82,7 +82,7 @@ public static partial class Lab43
 //
 // [JA] Equals(object) と Equals(T) は必ず同じ規則でなければなりません。普通 Equals(object) は一行で Equals(T) に委譲します:
 // [JA]   public override bool Equals(object? obj) => Equals(obj as ItemStack);
-// [JA] GetHashCode も同じ規則(Id)でなければなりません(ラボ17)。三つのうち一つでもずれると、コレクションの種類によって違う答えが出ます。
+// [JA] GetHashCode も同じ規則(Id)でなければなりません(ラボ 18)。三つのうち一つでもずれると、コレクションの種類によって違う答えが出ます。
 // [JA] 同じ型がインターフェイス・object・ジェネリックの三つの経路で比較されうることを覚えておいてください。(== 演算子を再定義していればそれも四つ目の経路です)
 #endregion
 
