@@ -54,11 +54,12 @@ public static class LabKit
     public static T Pick<T>(T visible, params T[] pool) => Seed == 0 ? visible : pool[Rng.Next(pool.Length)];
 
     // 11부: 멈출 수 있는 코드를 감시 타이머 아래에서 실행한다.
+    // 본문 스레드는 우선순위를 높여 둔다. PC가 바빠도 정상 코드가 감시 시간 안에 끝나게 하려는 것뿐이다.
     // timeoutMs 안에 끝나지 않으면 [FAIL] 응답 없음을 출력하고 false를 돌려준다. (랩이 정말 영원히 멈추지는 않게)
     // 디버거가 붙어 있으면 실패로 끝내지 않고 계속 기다린다. 그때 디버그 → 모두 중단으로 멈춘 곳을 보면 된다.
     public static bool FinishesWithin(string what, Action body, int timeoutMs = 2000)
     {
-        var worker = new Thread(() => body()) { IsBackground = true, Name = $"랩 본문 ({what})" };
+        var worker = new Thread(() => body()) { IsBackground = true, Name = $"랩 본문 ({what})", Priority = ThreadPriority.Highest };
         worker.Start();
         if (worker.Join(timeoutMs))
             return true;

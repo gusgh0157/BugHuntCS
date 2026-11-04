@@ -23,6 +23,8 @@ public static class Lab88
     }
 
     // 로딩이 끝날 때까지 기다린다. 기다리는 동안 몇 번 확인했는지 센다(로딩 아이콘 회전에 쓴다).
+    // (AggressiveOptimization: 게임이 한참 돈 뒤처럼 처음부터 최적화된 코드로 실행한다. Release 에서만 효과가 있다)
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveOptimization)]
     static long WaitForLoading(Loader loader)
     {
         long spins = 0;
@@ -35,7 +37,7 @@ public static class Lab88
     {
         int assets = Pick(20, 5, 40);
         var loader = new Loader();
-        var loadingThread = new Thread(() => loader.LoadAll(assets)) { IsBackground = true, Name = "로딩 스레드" };
+        var loadingThread = new Thread(() => loader.LoadAll(assets)) { IsBackground = true, Name = "로딩 스레드", Priority = ThreadPriority.Highest };
         loadingThread.Start();
 
         long spins = 0;
