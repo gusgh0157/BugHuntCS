@@ -18,18 +18,24 @@ public static class Lab66
 
     public static void Run()
     {
-        const int HitsPerMember = 500_000;
+        const int HitsPerMember = 2_000_000;
         string[] party = ["Kael", "Mira", "Doran", "Selene"];
         var meter = new DamageMeter();
+        if (Environment.ProcessorCount < 2)
+        {
+            Skip("CPU 코어가 하나라 스레드가 동시에 돌지 않는다");
+            return;
+        }
 
         // 파티원마다 전투 기록 처리 스레드를 하나씩 두고, 다 준비되면 동시에 시작한다.
+        // (우선순위를 높여 두는 것은 PC가 바빠도 네 스레드가 정말 동시에 돌게 하려는 것뿐이다)
         using var startTogether = new Barrier(party.Length);
         Thread[] workers = party.Select(member => new Thread(() =>
         {
             startTogether.SignalAndWait();
             for (int i = 0; i < HitsPerMember; i++)
                 meter.Record(10);
-        }) { Name = $"Combat log: {member}" }).ToArray();
+        }) { Name = $"Combat log: {member}", Priority = ThreadPriority.Highest }).ToArray();
 
         foreach (Thread worker in workers) worker.Start();
         foreach (Thread worker in workers) worker.Join();

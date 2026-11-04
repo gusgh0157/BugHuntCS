@@ -121,7 +121,7 @@ Parallel.ForEach(Files, file =>
 int thisSlot = slot;
 hotkeys[key] = () => CastSlot(thisSlot);
 ```
-**教訓:** C# のラムダは変数を**参照で**キャプチャする。`foreach` の変数は C# 9 から周回ごとに新しい変数で安全だが、`for` の変数は違う。ローカルウィンドウでラムダの `this` を展開すると `<>c__DisplayClass` が見え、オブジェクト ID で三つのラムダが同じキャプチャオブジェクトを共有しているのを確認できる。
+**教訓:** C# のラムダは変数を**参照で**キャプチャする。`foreach` の変数は C# 5 から周回ごとに新しい変数で安全だが、`for` の変数は違う。ローカルウィンドウでラムダの `this` を展開すると `<>c__DisplayClass` が見え、オブジェクト ID で三つのラムダが同じキャプチャオブジェクトを共有しているのを確認できる。
 
 ## Lab 10 — LINQ の遅延実行が二回列挙される
 ```
@@ -130,7 +130,7 @@ hotkeys[key] = () => CastSlot(thisSlot);
 本当の原因:     Select(...) は結果のリストではなく「クエリ」を返す。列挙するたびに Send がまた実行される
 ```
 **修正:** 副作用のあるクエリは即座に実体化する。`.Select(...).ToList()`。もっとよいのは Select の中で副作用を出さず、対象のリストを作ってから `foreach` で送ること。
-**教訓:** `IEnumerable<T>` の変数は**リストではなく作り方**かもしれない。デバッガーの「結果の表示」も列挙を実行して状態を変える。
+**教訓:** `IEnumerable<T>` の変数は**リストではなく作り方**かもしれない。デバッガーの「結果ビュー」も列挙を実行して状態を変える。
 
 ## Lab 11 — readonly struct フィールドの防御的コピー
 ```
@@ -364,7 +364,7 @@ public override int GetHashCode() => Id.GetHashCode();
 
 ## Lab 30 — ToList() なしで残した「スナップショット」
 ```
-Enter の _roster:      WhereListIterator (ウォッチで「結果の表示」を押さないと中身が出ない)
+Enter の _roster:      WhereListIterator (ウォッチで「結果ビュー」を押さないと中身が出ない)
 m => m.Online のブレークポイント:  Enter でも、RewardRecipients でも引っかかる
 本当の原因:  _roster は入場したときの名簿ではなく「接続中の人」という条件だ。報酬を渡すとき列挙すると、そのときのギルドを改めて絞り、
            出た人は外れ、あとで入った人(Newbie を含む)が入る。
@@ -405,7 +405,7 @@ savedHashes:                     前回のセッションの値(このラボで�
 本当の原因:  enum は名前の付いた整数にすぎず、どんな整数でもキャストできる(例外なし)。
            switch の _ => 100 が「知らない値」まで Common として扱う。
 ```
-**修正:** 知らない値には重みを与えません(`_ => 0`)。または受け取るときに `Enum.IsDefined` で弾いてスキップするか、`_ => throw new ArgumentOutOfRangeException(...)`。
+**修正:** 知らない値には重みを与えません(`_ => 0`)。または受け取るときに `Enum.IsDefined` で先に弾いてスキップします。`_ => throw new ArgumentOutOfRangeException(...)` はこうして先に弾くときだけ使います(今の `Run` は `Weight` を先に呼ぶので、throw だけに変えるとコード 9 で落ちます)。
 **教訓:** 外から来た整数(パケット、セーブ、設定)を enum に変えるときは範囲の検査が必要です。似た罠: `default(Rarity)` は最初のメンバー(0)なので「未指定」が黙って `Common` になります。0 には `None`/`Unknown` を置くのが安全です。`[Flags]` enum で `x.HasFlag(None)` は常に `true` です。
 
 ## Lab 34 — 値で渡した struct のカーソルは外で進まない
@@ -437,7 +437,7 @@ gate.Set() の行での i:                  for を回し終えたあとなの�
            タスクは gate のためループが終わったあとに動くので、すべて最後の値(範囲外)を見る。
 ```
 **修正:** 反復ごとにコピーを作ります(`int piece = i;` のあと `piece` をキャプチャ)。または `foreach (int piece in Enumerable.Range(0, pieces))`、`Parallel.For`。
-**教訓:** C# 9 から `foreach` の反復変数は反復ごとに新しく作られますが、`for` の変数は違います。このラボの `gate` は「タスクが遅れて始まる」状況を決定的にしたもので、実際にはスレッドプールの状態によって時々だけ間違います。同じ根の別の罠に `list.ForEach(async x => ...)` があります。`ForEach` は `Action<T>` しか受け取らないのでラムダが `async void` になり、待つことができず例外も捕まりません(8部の非同期の例外処理を参照)。
+**教訓:** C# 5 から `foreach` の反復変数は反復ごとに新しく作られますが、`for` の変数は違います。このラボの `gate` は「タスクが遅れて始まる」状況を決定的にしたもので、実際にはスレッドプールの状態によって時々だけ間違います。同じ根の別の罠に `list.ForEach(async x => ...)` があります。`ForEach` は `Action<T>` しか受け取らないのでラムダが `async void` になり、待つことができず例外も捕まりません(8部の非同期の例外処理を参照)。
 
 ## Lab 37 — お金を `double` で足し、`Math.Round` の既定の丸めを使う
 ```
@@ -461,10 +461,10 @@ FireSkill.Damage のブレークポイント:   TotalDamage では止まらな�
 F11 (s.Damage(attack)):    Skill.Damage に入る
 ウォッチ s.GetType():        FireSkill   (静的な型は Skill)
 本当の原因:  FireSkill・IceSkill の Damage が override ではなく new。基底メソッドを上書きせず、同じ名前の新しいメソッドを作った。
-           Skill 型の変数で呼ぶと Skill.Damage が呼ばれる。new を消すと CS0108 警告が出るので、誰かが new で抑え込んだもの。
+           Skill 型の変数で呼ぶと Skill.Damage が呼ばれる。new を消すと CS0114 警告が出るので、誰かが new で抑え込んだもの。
 ```
 **修正:** 二つの派生クラスとも `public override int Damage(int attack)`。
-**教訓:** CS0108(「隠します。意図したものなら new を使ってください」)はたいてい `override` を抜かしたという意味です。`new` は基底クラスを変えられないのに同じ名前がどうしても必要な、まれな場合にだけ使います。炎スキルだけ直すと隠しケース(氷スキル)で引っかかります。
+**教訓:** CS0114(「継承されたメンバーを隠します。オーバーライドするなら override を、そうでなければ new を追加してください」)はたいてい `override` を抜かしたという意味です。`new` は基底クラスを変えられないのに同じ名前がどうしても必要な、まれな場合にだけ使います。炎スキルだけ直すと隠しケース(氷スキル)で引っかかります。
 
 ## Lab 39 — シグネチャの違うメソッドの代わりにインターフェースの既定実装が呼ばれる
 ```
@@ -539,7 +539,7 @@ return 500; のブレークポイント:   止まらない
 ウォッチ killed is Enemy:       true   (ボスも Enemy)
 ウォッチ killed is BossEnemy:   true
 本当の原因:  if (killed is Enemy) が最初の分岐なのでボス・精鋭もすべて 10G。あとの else if 二つには届かない。
-           同じ順序を switch 式で書くと CS8120(「すでに前の case が処理」)でコンパイルできないが、if/else if にはそのチェックがない。
+           同じ順序を switch 式で書くと CS8510(switch 文なら CS8120、「すでに前で処理」)でコンパイルできないが、if/else if にはそのチェックがない。
 ```
 **修正:** 一番派生した型から検査する (ボス → 精鋭 → 一般の敵)。もっとよい方法は `switch` 式で書いてコンパイラに順序を検査させるか、`Unit` に `virtual int KillReward` を置いて型チェック自体をなくすこと。
 **教訓:** ボスの分岐だけ上に上げると隠しケース(精鋭が混ざったウェーブ)で引っかかります。
@@ -600,7 +600,7 @@ using var reader = new StreamReader(stream);
 本当の原因:  Path.Combine は後ろの引数がルートパスなら前の引数をすべて捨てる(ドキュメントに書かれた動作、例外なし)。
            古いインストールから持ってきたプロフィールの Folder が絶対パスなので、セーブルートの外に保存され、バックアップがセーブルートだけを走査して抜けた。
 ```
-**修正:** 外から来た値はフォルダー名としてだけ使う: `Path.Combine(saveRoot, Path.GetFileName(profile.Folder))`。または `Path.IsPathRooted`、`..` を含めば拒否し、合わせたあと `Path.GetFullPath(結果)` がセーブルートの中か確認。
+**修正:** 外から来た値はフォルダー名としてだけ使う: `Path.Combine(saveRoot, Path.GetFileName(profile.Folder))`。合わせたあと `Path.GetFullPath(結果)` がセーブルートの中かもう一度確認すると安全。(`Path.IsPathRooted`、`..` を含めば拒否するやり方はこのゲームには合わない: 取り込んだプロフィールのセーブが抜けて判定で引っかかる。)
 **教訓:** ユーザー入力、セーブファイル、サーバーの応答、圧縮ファイル内の名前を `Path.Combine` にそのまま入れるとパスの脱出(path traversal)になります。`Path.Join` は前を捨てませんが、見当違いのパスを作るだけで検証の代わりにはなりません。
 
 ## Lab 50 — バイトを UTF-8 でだけデコード: BOM と CP949
@@ -1296,7 +1296,7 @@ finally
 ```
 Debug:     正常 (待ちながら数億回確認)
 Release:   応答なし。止まった瞬間 loader.Done == True、読んだアセット 20個 (ローディングはもう終わっている!)
-逆アセンブリ (Release、WaitForLoading のループ):
+逆アセンブル (Release、WaitForLoading のループ):
     Done をループに入る前に一度だけ読み、ループの中では spins++ とジャンプだけを繰り返す
 本当の原因:  JIT 最適化が「ループの中で誰も Done を書かない」と見て読みをループの外に出した。
            別のスレッドが Done = true を書いてもこのループは永遠に見ない。Debug は最適化を切るので毎回メモリから読む。

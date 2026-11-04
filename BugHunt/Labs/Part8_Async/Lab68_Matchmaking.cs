@@ -8,8 +8,13 @@ public static class Lab68
 {
     const int Regions = 20;
 
+    // 지역 서버에 보낸 매칭 요청 수와, 플레이어가 취소를 누른 순간의 요청 수
+    static int requestsSent;
+    static int requestsAtCancel;
+
     static async Task SearchRegionAsync(int region, CancellationToken token = default)
     {
+        Interlocked.Increment(ref requestsSent);
         await Task.Delay(50, token);   // 지역 서버에 매칭 요청
     }
 
@@ -27,6 +32,7 @@ public static class Lab68
     {
         using var cancel = new CancellationTokenSource();
         cancel.CancelAfter(cancelAfter);   // 플레이어가 취소 버튼을 누른다
+        cancel.Token.Register(() => Volatile.Write(ref requestsAtCancel, Volatile.Read(ref requestsSent)));
         try
         {
             return await FindMatchAsync(cancel.Token);
@@ -39,13 +45,17 @@ public static class Lab68
 
     public static void Run()
     {
+        requestsSent = 0;
+        requestsAtCancel = -1;
         var watch = Stopwatch.StartNew();
         string result = MatchmakingScreenAsync(TimeSpan.FromMilliseconds(150)).GetAwaiter().GetResult();
         watch.Stop();
 
-        Console.WriteLine($"  결과: {result}, 걸린 시간 {watch.ElapsedMilliseconds}ms");
+        int afterCancel = requestsAtCancel < 0 ? 0 : requestsSent - requestsAtCancel;
+        Console.WriteLine($"  결과: {result}, 걸린 시간 {watch.ElapsedMilliseconds}ms, 매칭 요청 {requestsSent}번 (취소 뒤 {afterCancel}번)");
         Expect("매칭 결과", "취소됨", result);
-        Expect("취소 후 0.5초 안에 로비로 돌아옴", true, watch.ElapsedMilliseconds < 650);
+        // 시간이 아니라 요청 수로 본다: PC가 바빠 느려져도 판정이 같다. 취소와 거의 동시에 나간 요청 하나는 봐준다
+        ExpectAtMost("취소 뒤 새로 보낸 매칭 요청 수", 1, afterCancel);
     }
 }
 

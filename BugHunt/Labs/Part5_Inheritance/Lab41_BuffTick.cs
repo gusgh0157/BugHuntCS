@@ -88,7 +88,7 @@ public static partial class Lab41
 // [JA]   - foreach (ref Buff buff in buffs.AsSpan()) buff.Tick();
 // [JA]   - ジェネリック制約でボックス化なしに: static void TickAll<T>(Span<T> items) where T : ITickable { foreach (ref T it in items) it.Tick(); }
 // [JA]   - そもそも変化するデータなら class にする。
-// [JA] ラボ20(List<struct> インデクサーのコピー)と同じ根です。今回はインターフェイスへの変換がコピーを作りました。
+// [JA] ラボ 25(List<struct> インデクサーのコピー)と同じ根です。今回はインターフェイスへの変換がコピーを作りました。
 #endregion
 
 #region 채점용 숨은 테스트 / 採点用の隠しテスト

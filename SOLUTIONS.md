@@ -119,7 +119,7 @@ Parallel.ForEach(Files, file =>
 int thisSlot = slot;
 hotkeys[key] = () => CastSlot(thisSlot);
 ```
-**교훈:** C#의 람다는 변수를 **참조로** 캡처한다. `foreach` 변수는 C# 9부터 바퀴마다 새 변수라 안전하지만, `for`의 변수는 아니다. 지역 창에서 람다의 `this`를 펼쳐 보면 `<>c__DisplayClass`가 보이고, 개체 ID로 세 람다가 같은 캡처 객체를 공유하는 것을 확인할 수 있다.
+**교훈:** C#의 람다는 변수를 **참조로** 캡처한다. `foreach` 변수는 C# 5부터 바퀴마다 새 변수라 안전하지만, `for`의 변수는 아니다. 지역 창에서 람다의 `this`를 펼쳐 보면 `<>c__DisplayClass`가 보이고, 개체 ID로 세 람다가 같은 캡처 객체를 공유하는 것을 확인할 수 있다.
 
 ## Lab 10 — LINQ 지연 실행이 두 번 열거됨
 ```
@@ -403,7 +403,7 @@ savedHashes:                     지난 세션 값(이 랩에서는 고정된 �
 진짜 원인:  enum은 이름 붙은 정수일 뿐이라 어떤 정수든 캐스트된다(예외 없음).
            switch의 _ => 100 이 "모르는 값"까지 Common 취급한다.
 ```
-**수정:** 모르는 값에는 가중치를 주지 않습니다(`_ => 0`). 또는 받을 때 `Enum.IsDefined`로 걸러 건너뛰거나 `_ => throw new ArgumentOutOfRangeException(...)`.
+**수정:** 모르는 값에는 가중치를 주지 않습니다(`_ => 0`). 또는 받을 때 `Enum.IsDefined`로 먼저 걸러 건너뜁니다. `_ => throw new ArgumentOutOfRangeException(...)`은 이렇게 먼저 거를 때만 씁니다 (지금 `Run`은 `Weight`를 먼저 부르므로 throw만 바꾸면 코드 9에서 죽습니다).
 **교훈:** 바깥에서 들어온 정수(패킷, 세이브, 설정)를 enum으로 바꿀 때는 범위 검사가 필요합니다. 비슷한 함정: `default(Rarity)`는 첫 멤버(0)라서 "지정 안 함"이 조용히 `Common`이 되므로, 0에는 `None`/`Unknown`을 두는 것이 안전합니다. `[Flags]` enum에서 `x.HasFlag(None)`은 항상 `true`입니다.
 
 ## Lab 34 — 값으로 넘긴 struct 커서는 바깥에서 진행되지 않음
@@ -435,7 +435,7 @@ gate.Set() 줄에서 i:                   for를 다 돈 뒤라 이미 5(= piece
            작업은 gate 때문에 루프가 끝난 뒤에 돌므로 모두 마지막 값(범위 밖)을 본다.
 ```
 **수정:** 반복마다 복사본을 만듭니다(`int piece = i;` 후 `piece` 캡처). 또는 `foreach (int piece in Enumerable.Range(0, pieces))`, `Parallel.For`.
-**교훈:** C# 9부터 `foreach`의 반복 변수는 반복마다 새로 만들어지지만, `for`의 변수는 아닙니다. 이 랩의 `gate`는 "작업이 늦게 시작하는" 상황을 결정적으로 만든 것이며, 실제로는 스레드 풀 상태에 따라 가끔만 틀립니다. 같은 뿌리의 다른 함정으로 `list.ForEach(async x => ...)`가 있습니다. `ForEach`는 `Action<T>`만 받으므로 람다가 `async void`가 되어 기다릴 수 없고 예외도 잡히지 않습니다(8부 비동기 예외 처리 참고).
+**교훈:** C# 5부터 `foreach`의 반복 변수는 반복마다 새로 만들어지지만, `for`의 변수는 아닙니다. 이 랩의 `gate`는 "작업이 늦게 시작하는" 상황을 결정적으로 만든 것이며, 실제로는 스레드 풀 상태에 따라 가끔만 틀립니다. 같은 뿌리의 다른 함정으로 `list.ForEach(async x => ...)`가 있습니다. `ForEach`는 `Action<T>`만 받으므로 람다가 `async void`가 되어 기다릴 수 없고 예외도 잡히지 않습니다(8부 비동기 예외 처리 참고).
 
 ## Lab 37 — 돈을 `double`로 더하고 `Math.Round`의 기본 반올림을 씀
 ```
@@ -459,10 +459,10 @@ FireSkill.Damage 중단점:   TotalDamage 에서는 안 멈춤 (Run 의 기대�
 F11 (s.Damage(attack)):    Skill.Damage 로 들어감
 조사식 s.GetType():        FireSkill   (정적 형식은 Skill)
 진짜 원인:  FireSkill·IceSkill 의 Damage 가 override 가 아니라 new. 기반 메서드를 덮어쓰지 않고 같은 이름의 새 메서드를 만들었다.
-           Skill 형식의 변수로 부르면 Skill.Damage 가 불린다. new 를 지우면 CS0108 경고가 나서 누군가 new 로 눌러 둔 것.
+           Skill 형식의 변수로 부르면 Skill.Damage 가 불린다. new 를 지우면 CS0114 경고가 나서 누군가 new 로 눌러 둔 것.
 ```
 **수정:** 두 파생 클래스 모두 `public override int Damage(int attack)`.
-**교훈:** CS0108("숨깁니다. 의도한 것이면 new 를 쓰세요")은 대개 `override`를 빠뜨렸다는 뜻입니다. `new`는 기반 클래스를 바꿀 수 없는데 같은 이름이 꼭 필요한 드문 경우에만 씁니다. 불 스킬만 고치면 숨은 케이스(얼음 스킬)에서 걸립니다.
+**교훈:** CS0114("상속된 멤버를 숨깁니다. 재정의하려면 override 를, 아니면 new 를 추가하세요")는 대개 `override`를 빠뜨렸다는 뜻입니다. `new`는 기반 클래스를 바꿀 수 없는데 같은 이름이 꼭 필요한 드문 경우에만 씁니다. 불 스킬만 고치면 숨은 케이스(얼음 스킬)에서 걸립니다.
 
 ## Lab 39 — 시그니처가 다른 메서드 대신 인터페이스 기본 구현이 불림
 ```
@@ -537,7 +537,7 @@ return 500; 중단점:   안 멈춤
 조사식 killed is Enemy:       true   (보스도 Enemy)
 조사식 killed is BossEnemy:   true
 진짜 원인:  if (killed is Enemy) 가 첫 분기라서 보스·정예도 모두 10G. 뒤의 else if 두 개는 닿을 수 없다.
-           같은 순서를 switch 식으로 쓰면 CS8120("이미 앞의 case 가 처리")으로 컴파일이 안 되지만, if/else if 에는 그런 검사가 없다.
+           같은 순서를 switch 식으로 쓰면 CS8510(switch 문이면 CS8120, "이미 앞에서 처리")으로 컴파일이 안 되지만, if/else if 에는 그런 검사가 없다.
 ```
 **수정:** 가장 파생된 형식부터 검사한다 (보스 → 정예 → 일반 적). 더 나은 방법은 `switch` 식으로 써서 컴파일러가 순서를 검사하게 하거나, `Unit`에 `virtual int KillReward`를 둬서 형식 검사 자체를 없애는 것.
 **교훈:** 보스 분기만 위로 올리면 숨은 케이스(정예가 섞인 웨이브)에서 걸립니다.
@@ -598,7 +598,7 @@ using var reader = new StreamReader(stream);
 진짜 원인:  Path.Combine 은 뒤 인자가 루트 경로면 앞의 인자를 전부 버린다(문서에 적힌 동작, 예외 없음).
            옛 설치에서 가져온 프로필의 Folder 가 절대 경로라 세이브 루트 밖에 저장됐고, 백업이 세이브 루트만 훑어 빠졌다.
 ```
-**수정:** 바깥에서 온 값은 폴더 이름으로만 쓴다: `Path.Combine(saveRoot, Path.GetFileName(profile.Folder))`. 또는 `Path.IsPathRooted`, `..` 포함이면 거부하고, 합친 뒤 `Path.GetFullPath(결과)`가 세이브 루트 안인지 확인.
+**수정:** 바깥에서 온 값은 폴더 이름으로만 쓴다: `Path.Combine(saveRoot, Path.GetFileName(profile.Folder))`. 합친 뒤 `Path.GetFullPath(결과)`가 세이브 루트 안인지 한 번 더 확인하면 안전합니다. (`Path.IsPathRooted`, `..` 포함이면 거부하는 방법은 이 게임에서는 맞지 않습니다: 가져온 프로필의 세이브가 빠져 판정에서 걸립니다.)
 **교훈:** 사용자 입력, 세이브 파일, 서버 응답, 압축 파일 안의 이름을 `Path.Combine`에 그대로 넣으면 경로 탈출(path traversal)이 됩니다. `Path.Join`은 앞을 버리지 않지만 엉뚱한 경로를 만들 뿐 검증을 대신하지 않습니다.
 
 ## Lab 50 — 바이트를 UTF-8로만 디코딩: BOM과 CP949

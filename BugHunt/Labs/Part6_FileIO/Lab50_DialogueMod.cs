@@ -4,13 +4,13 @@ namespace BugHunt;
 
 // 모드 제작자가 만든 NPC 대사 파일(한 줄에 "키=대사")을 읽는다. 모드 제작자마다 다른 편집기로 저장해서 인코딩이 제각각이다.
 // 어떤 모드는 첫 대사가 "없음"이 되고, 어떤 모드는 한글이 전부 깨진다.
-// 이 랩은 %TEMP%\BugHunt\Lab50_DialogueMod 아래에만 쓰고, 끝나면 지운다.
+// 이 랩은 %TEMP%\BugHunt\Lab50_DialogueMod_<프로세스 ID> 아래에만 쓰고, 끝나면 지운다.
 // [JA] MOD 製作者が作った NPC のセリフファイル(1行に「キー=セリフ」)を読みます。製作者ごとに別のエディターで保存したので、エンコーディングがばらばらです。
 // [JA] ある MOD は最初のセリフが「なし」になり、ある MOD はハングルがすべて文字化けします。
-// [JA] このラボは %TEMP%\BugHunt\Lab50_DialogueMod の下にだけ書き込み、終わったら削除します。
+// [JA] このラボは %TEMP%\BugHunt\Lab50_DialogueMod_<プロセス ID> の下にだけ書き込み、終わったら削除します。
 public static partial class Lab50
 {
-    static readonly string Root = Path.Combine(Path.GetTempPath(), "BugHunt", "Lab50_DialogueMod");
+    static readonly string Root = Path.Combine(Path.GetTempPath(), "BugHunt", $"Lab50_DialogueMod_{Environment.ProcessId}");
 
     // 대사 파일을 읽어 키 → 대사 표를 만든다. (모드 무결성 검사 때문에 바이트로 먼저 읽는다)
     static Dictionary<string, string> LoadDialogue(string path)

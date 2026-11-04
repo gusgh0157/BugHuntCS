@@ -10,7 +10,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <!-- 빌드를 막아서 일단 꺼 둔 경고들 -->
     <NoWarn>$(NoWarn);CA2200</NoWarn>
-    <!-- 문화권 랩(15)이 de-DE 같은 문화권을 쓸 수 있어야 한다. -->
+    <!-- 문화권 랩(16)이 de-DE 같은 문화권을 쓸 수 있어야 한다. -->
     <InvariantGlobalization>false</InvariantGlobalization>
     <!-- 10부(unsafe와 네이티브 메모리)가 포인터와 함수 포인터를 쓴다. -->
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

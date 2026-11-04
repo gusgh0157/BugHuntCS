@@ -10,7 +10,8 @@ public static partial class Lab82
     static unsafe (int Stored, int GuardAfter) Fill(int[] incoming)
     {
         // 한 덩어리를 잡아 앞 4칸은 점수 버퍼, 바로 뒤 1칸은 가드(경계 표시)로 쓴다.
-        Span<int> block = stackalloc int[5];
+        // 가드 뒤의 여유 칸은 넘쳐 쓴 값이 이 덩어리 밖(스택의 다른 값)까지 가지 않게 하는 실습용 안전장치다.
+        Span<int> block = stackalloc int[4 + 1 + 8];
         Span<int> scores = block[..4];
         block[4] = Guard;
 

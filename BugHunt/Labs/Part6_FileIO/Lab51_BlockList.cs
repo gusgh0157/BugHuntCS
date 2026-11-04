@@ -1,12 +1,12 @@
 namespace BugHunt;
 
 // 차단 목록 파일(한 줄에 이름 하나)을 읽어 그 플레이어의 귓속말을 막는다. 운영자가 Windows 메모장으로 고친 뒤부터 아무도 차단되지 않는다.
-// 이 랩은 %TEMP%\BugHunt\Lab51_BlockList 아래에만 쓰고, 끝나면 지운다.
+// 이 랩은 %TEMP%\BugHunt\Lab51_BlockList_<프로세스 ID> 아래에만 쓰고, 끝나면 지운다.
 // [JA] ブロックリストファイル(1行に名前一つ)を読み、そのプレイヤーのささやきをブロックします。運営者が Windows のメモ帳で編集してから、誰もブロックされなくなりました。
-// [JA] このラボは %TEMP%\BugHunt\Lab51_BlockList の下にだけ書き込み、終わったら削除します。
+// [JA] このラボは %TEMP%\BugHunt\Lab51_BlockList_<プロセス ID> の下にだけ書き込み、終わったら削除します。
 public static partial class Lab51
 {
-    static readonly string Root = Path.Combine(Path.GetTempPath(), "BugHunt", "Lab51_BlockList");
+    static readonly string Root = Path.Combine(Path.GetTempPath(), "BugHunt", $"Lab51_BlockList_{Environment.ProcessId}");
 
     static HashSet<string> LoadBlockList(string path)
     {

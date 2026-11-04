@@ -17,7 +17,11 @@ public static partial class Lab08
         int amount = Pick(Amounts[0], Amounts[1..]);
         var label = new DamageLabel(amount);
 
-        string text = label.ToString();
+        // 라벨은 스택이 작은(256KB) 화면 갱신 스레드에서 만든다. (스택이 작으면 넘칠 때 빨리 넘쳐 채점이 오래 걸리지 않는다)
+        string text = "";
+        var ui = new Thread(() => text = label.ToString(), maxStackSize: 256 * 1024) { Name = "UI 갱신" };
+        ui.Start();
+        ui.Join();
         Console.WriteLine($"  라벨: {text}");
         Expect("피해 표시", $"{amount} 피해", text);
     }

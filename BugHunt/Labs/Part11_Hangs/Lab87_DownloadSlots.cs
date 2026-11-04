@@ -14,7 +14,7 @@ public static class Lab87
         // 서버에서 파일 하나를 받는다. 이 함수에는 버그가 없다.
         async Task<byte[]> FetchAsync(string file)
         {
-            await Task.Delay(10);
+            await Task.Yield();   // 서버 응답은 다른 스레드에서 온다
             if (broken.Contains(file))
                 throw new HttpRequestException($"{file}: 503 Service Unavailable");
             return new byte[1024];

@@ -22,6 +22,7 @@ public static class Lab27
 
         bool finished = FinishesWithin("처치 기록 집계", () =>
         {
+            // (전투 스레드 우선순위를 높여 두는 것은 PC가 바빠도 스레드들이 정말 동시에 돌게 하려는 것뿐이다)
             using var go = new ManualResetEventSlim();
             var threads = new List<Thread>();
             for (int w = 0; w < workers; w++)
@@ -41,7 +42,7 @@ public static class Lab27
                         lock (errors)
                             errors.Add($"전투 스레드 {worker}: {ex.GetType().Name}");
                     }
-                }) { IsBackground = true, Name = $"전투 스레드 {w}" };
+                }) { IsBackground = true, Name = $"전투 스레드 {w}", Priority = ThreadPriority.Highest };
                 threads.Add(t);
                 t.Start();
             }

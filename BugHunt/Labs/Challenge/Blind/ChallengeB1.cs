@@ -21,7 +21,7 @@ public static class ChallengeB1
                     _tiles = tiles;
                     Monitor.Pulse(_gate);
                 }
-            }) { IsBackground = true, Name = $"로더 ({region})" };
+            }) { IsBackground = true, Name = $"로더 ({region})", Priority = ThreadPriority.Highest };
             worker.Start();
         }
 
@@ -35,7 +35,7 @@ public static class ChallengeB1
         }
     }
 
-    static void PrepareScreen() => Thread.Sleep(300);   // 화면 준비 (UI 배치, 셰이더 예열)
+    static void PrepareScreen() => Thread.Sleep(100);   // 화면 준비 (UI 배치, 셰이더 예열)
 
     public static void Run()
     {

@@ -73,10 +73,10 @@ public static partial class Lab44
 
 #region 힌트 2 / ヒント 2
 // BossEnemy 는 Enemy 를 상속합니다. 그래서 보스는 killed is Enemy 도 true 입니다. 첫 if 가 모든 적을 가져가고, 뒤의 else if 두 개는 영원히 닿지 않습니다.
-// 같은 코드를 switch 식/패턴으로 쓰면 컴파일러가 "이 case 는 이미 앞의 case 가 처리한다"는 오류(CS8120)를 내 줍니다. if/else if 사슬에는 그런 검사가 없습니다.
+// 같은 코드를 switch 로 쓰면 컴파일러가 "이 경우는 이미 앞에서 처리한다"는 오류를 내 줍니다 (switch 식은 CS8510, switch 문은 CS8120). if/else if 사슬에는 그런 검사가 없습니다.
 //
 // [JA] BossEnemy は Enemy を継承しています。そのためボスは killed is Enemy も true です。最初の if がすべての敵を持っていき、後ろの else if 二つには永遠に届きません。
-// [JA] 同じコードを switch 式/パターンで書くと、コンパイラが「この case はすでに前の case が処理している」というエラー(CS8120)を出してくれます。if/else if の連鎖にはそういう検査がありません。
+// [JA] 同じコードを switch で書くと、コンパイラが「このケースはすでに前で処理されている」というエラーを出してくれます (switch 式は CS8510、switch 文は CS8120)。if/else if の連鎖にはそういう検査がありません。
 #endregion
 
 #region 힌트 3 / ヒント 3
