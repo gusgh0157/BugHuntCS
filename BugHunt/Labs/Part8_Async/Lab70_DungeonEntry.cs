@@ -13,9 +13,8 @@ public static class Lab70
     static async Task LoadDungeonAsync(Kind kind, CancellationToken token)
     {
         if (kind == Kind.Normal)
-            await Task.Delay(10, token);
-        else
-            await Task.Delay(Timeout.Infinite, token);   // 응답 없는 서버, 또는 플레이어가 취소할 때까지 로딩 중
+            return;   // 서버가 바로 응답한다
+        await Task.Delay(Timeout.Infinite, token);   // 응답 없는 서버, 또는 플레이어가 취소할 때까지 로딩 중
     }
 
     static async Task<string> TryEnterAsync(Kind kind, CancellationToken userCancel)
@@ -36,10 +35,11 @@ public static class Lab70
     static async Task<string> EnterAsync(string name, Kind kind)
     {
         using var userCancel = new CancellationTokenSource();
+        Task<string> entering = TryEnterAsync(kind, userCancel.Token);
         if (kind == Kind.UserCancels)
-            userCancel.CancelAfter(30);   // 로딩 중에 취소 버튼을 누른다
+            userCancel.Cancel();   // 로딩 중에 취소 버튼을 누른다
 
-        string result = await TryEnterAsync(kind, userCancel.Token);
+        string result = await entering;
         if (result == "시간 초과")
         {
             Console.WriteLine($"  {name}: 던전 서버가 대답하지 않습니다. 예비 채널로 다시 시도");
