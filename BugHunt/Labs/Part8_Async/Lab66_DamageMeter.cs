@@ -18,7 +18,7 @@ public static class Lab66
 
     public static void Run()
     {
-        const int HitsPerMember = 500_000;
+        const int HitsPerMember = 2_000_000;
         string[] party = ["Kael", "Mira", "Doran", "Selene"];
         var meter = new DamageMeter();
         if (Environment.ProcessorCount < 2)
