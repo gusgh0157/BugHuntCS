@@ -374,6 +374,8 @@ static class Program
 
         var watch = Stopwatch.StartNew();
         using Process p = Process.Start(psi)!;
+        // 랩 프로세스는 우선순위를 한 단계 높여 돌린다. PC가 바빠도 결과(특히 스택 오버플로 같은 크래시 처리)가 제한 시간 안에 나오게 하려는 것뿐이다
+        try { p.PriorityClass = ProcessPriorityClass.AboveNormal; } catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception) { }
         p.StandardInput.Close();
         Task<string> stdout = p.StandardOutput.ReadToEndAsync();
         Task<string> stderr = p.StandardError.ReadToEndAsync();
@@ -382,6 +384,9 @@ static class Program
             p.Kill(entireProcessTree: true);
             p.WaitForExit();
             CollectMissing(stderr.Result);
+            // 스택 오버플로는 이미 넘친 뒤 런타임이 스택을 찍는 데 PC가 바쁘면 오래 걸릴 수 있다. 넘쳤다면 멈춤이 아니라 크래시다
+            if (stderr.Result.StartsWith("Stack overflow.", StringComparison.Ordinal))
+                return ("CRASH", "Stack overflow.", watch.ElapsedMilliseconds);
             return ("TIMEOUT", Text.F("{0} ms 안에 끝나지 않아 강제 종료", timeoutMs), watch.ElapsedMilliseconds);
         }
         p.WaitForExit();
