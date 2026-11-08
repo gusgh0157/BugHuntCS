@@ -11,9 +11,9 @@ public static class ChallengeB4
         public bool Down { get; set; }
     }
 
-    sealed class Archer(int n) : Unit($"궁수{n}", 3);
-    sealed class Knight(int n) : Unit($"기사{n}", 5);
-    sealed class Healer(int n) : Unit($"치유사{n}", 2);
+    sealed class Archer(int n) : Unit(Text.F("궁수{0}", n), 3);
+    sealed class Knight(int n) : Unit(Text.F("기사{0}", n), 5);
+    sealed class Healer(int n) : Unit(Text.F("치유사{0}", n), 2);
 
     static Unit[] Recruit(string kind, int size) => kind switch
     {

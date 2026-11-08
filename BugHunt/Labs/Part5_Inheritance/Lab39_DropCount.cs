@@ -16,7 +16,7 @@ public static partial class Lab39
 
     sealed class Slime : IDropSource
     {
-        public string Name => "슬라임";
+        public string Name => Text.T("슬라임");
     }
 
     // 보스: 기본 드롭 + 운 10당 1개. 정예 보스는 1개 더.
@@ -42,8 +42,8 @@ public static partial class Lab39
         int baseDrops = Pick(3, 2, 6);
 
         var slime = new Slime();
-        var boss = new Boss("화염 군주", baseDrops);
-        var elite = new Elite("정예 궁수");
+        var boss = new Boss(Text.T("화염 군주"), baseDrops);
+        var elite = new Elite(Text.T("정예 궁수"));
 
         // 기대값: 몬스터 형식으로 직접 부른 값
         int expectedBoss = boss.DropCount(luck);

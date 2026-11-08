@@ -17,8 +17,8 @@ public static class Lab19
 
     public static void Run()
     {
-        CharacterPreset kael = Customize(Warrior, "Kael의 전사", "Whirlwind");
-        CharacterPreset mira = Customize(Warrior, "Mira의 전사", "Taunt");
+        CharacterPreset kael = Customize(Warrior, Text.T("Kael의 전사"), "Whirlwind");
+        CharacterPreset mira = Customize(Warrior, Text.T("Mira의 전사"), "Taunt");
 
         Console.WriteLine($"  {Warrior.Name}: {string.Join(", ", Warrior.Skills)}");
         Console.WriteLine($"  {kael.Name}: {string.Join(", ", kael.Skills)}");

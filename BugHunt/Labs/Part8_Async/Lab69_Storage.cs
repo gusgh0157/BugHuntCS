@@ -64,8 +64,8 @@ public static class Lab69
 
     public static void Run()
     {
-        string[] items = ["철광석", "회복 물약", "영웅의 증표", "용의 비늘"];
-        string bound = Pick("영웅의 증표", "철광석", "회복 물약", "용의 비늘");
+        string[] items = [Text.T("철광석"), Text.T("회복 물약"), Text.T("영웅의 증표"), Text.T("용의 비늘")];
+        string bound = Pick(Text.T("영웅의 증표"), Text.T("철광석"), Text.T("회복 물약"), Text.T("용의 비늘"));
         var bag = new Dictionary<string, int>();
         foreach (string item in items)
             bag[item] = Pick(3, 1, 20);

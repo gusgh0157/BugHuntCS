@@ -84,10 +84,10 @@ public static partial class Lab54
 {
     static readonly (string, string, int, bool)[] Notices =
     [
-        ("이번 주 레이드는 토요일 9시", "길드장 아린", 3, true),
-        ("창고 정리 부탁드립니다", "부길드장 케인", 1, false),
-        ("신규 길드원 환영회", "총무 미라", 2, true),
-        ("길드 전쟁 참가 신청", "길드장 아린", 5, false),
+        (Text.T("이번 주 레이드는 토요일 9시"), Text.T("길드장 아린"), 3, true),
+        (Text.T("창고 정리 부탁드립니다"), Text.T("부길드장 케인"), 1, false),
+        (Text.T("신규 길드원 환영회"), Text.T("총무 미라"), 2, true),
+        (Text.T("길드 전쟁 참가 신청"), Text.T("길드장 아린"), 5, false),
     ];
 }
 #endregion

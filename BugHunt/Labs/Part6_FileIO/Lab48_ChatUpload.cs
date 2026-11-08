@@ -55,16 +55,16 @@ public static partial class Lab48
 
             using var logger = new ChatLogger(path);
             for (int i = 1; i <= before; i++)
-                logger.Write(senders[i % senders.Length], $"메시지 {i}");
+                logger.Write(senders[i % senders.Length], Text.F("메시지 {0}", i));
 
             string[] uploaded = Upload(path);
 
             // 신고 뒤에도 채팅은 계속된다.
             for (int i = 1; i <= after; i++)
-                logger.Write(senders[i % senders.Length], $"신고 뒤 메시지 {i}");
+                logger.Write(senders[i % senders.Length], Text.F("신고 뒤 메시지 {0}", i));
 
             Expect("업로드한 줄 수", before, uploaded.Length);
-            Expect("업로드한 마지막 줄", $"[{senders[before % senders.Length]}] 메시지 {before}", uploaded.Length > 0 ? uploaded[^1] : "");
+            Expect("업로드한 마지막 줄", $"[{senders[before % senders.Length]}] " + Text.F("메시지 {0}", before), uploaded.Length > 0 ? uploaded[^1] : "");
         }
         finally
         {

@@ -96,10 +96,10 @@ public static partial class Lab44
 {
     static readonly (string Kind, string Name)[][] Waves =
     [
-        [("enemy", "고블린"), ("enemy", "고블린"), ("boss", "고블린 왕")],
-        [("enemy", "늑대"), ("elite", "우두머리 늑대"), ("villager", "양치기")],
-        [("elite", "정예 기사"), ("boss", "타락한 군주"), ("enemy", "해골 병사")],
-        [("villager", "상인"), ("elite", "정예 궁수"), ("elite", "정예 궁수"), ("enemy", "도적")],
+        [("enemy", Text.T("고블린")), ("enemy", Text.T("고블린")), ("boss", Text.T("고블린 왕"))],
+        [("enemy", Text.T("늑대")), ("elite", Text.T("우두머리 늑대")), ("villager", Text.T("양치기"))],
+        [("elite", Text.T("정예 기사")), ("boss", Text.T("타락한 군주")), ("enemy", Text.T("해골 병사"))],
+        [("villager", Text.T("상인")), ("elite", Text.T("정예 궁수")), ("elite", Text.T("정예 궁수")), ("enemy", Text.T("도적"))],
     ];
 }
 #endregion

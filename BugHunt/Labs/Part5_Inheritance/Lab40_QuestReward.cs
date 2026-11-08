@@ -86,6 +86,6 @@ public static partial class Lab40
 public static partial class Lab40
 {
     static readonly double[] Rates = [1.5, 2.0, 3.0, 1.25];
-    static readonly string[] Titles = ["늑대 사냥", "약초 수집", "고블린 소탕", "잃어버린 반지", "유적 탐사"];
+    static readonly string[] Titles = [Text.T("늑대 사냥"), Text.T("약초 수집"), Text.T("고블린 소탕"), Text.T("잃어버린 반지"), Text.T("유적 탐사")];
 }
 #endregion

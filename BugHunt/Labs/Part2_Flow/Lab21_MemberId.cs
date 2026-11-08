@@ -40,8 +40,8 @@ public static class Lab21
         if (Seed != 0)
         {
             int count = Pick(3, 2, 6);
-            saved = Enumerable.Range(0, count).Select(i => new Member(Pick(1, 1, 90) + i * 100, $"기존{i}")).Reverse().ToList();
-            recruits = Enumerable.Range(0, Pick(2, 1, 5)).Select(i => $"신입{i}").ToArray();
+            saved = Enumerable.Range(0, count).Select(i => new Member(Pick(1, 1, 90) + i * 100, Text.F("기존{0}", i))).Reverse().ToList();
+            recruits = Enumerable.Range(0, Pick(2, 1, 5)).Select(i => Text.F("신입{0}", i)).ToArray();
         }
 
         var roster = new GuildRoster(saved);

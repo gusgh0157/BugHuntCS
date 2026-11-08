@@ -29,7 +29,7 @@ public static partial class Lab55
 
     public static void Run()
     {
-        var hero = new Character { Name = Pick("아린", "케인", "미라", "도란"), Gold = Pick(1500, 1, 99_999) };
+        var hero = new Character { Name = Pick(Text.T("아린"), Text.T("케인"), Text.T("미라"), Text.T("도란")), Gold = Pick(1500, 1, 99_999) };
         int levels = Pick(4, 1, 30);
         for (int i = 0; i < levels; i++)
             hero.LevelUp();

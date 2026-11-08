@@ -48,9 +48,9 @@ public static partial class Lab42
 
     public static void Run()
     {
-        var units = new List<Unit> { new Knight("기사 로한", Pick(7, 1, 20)) };
+        var units = new List<Unit> { new Knight(Text.T("기사 로한"), Pick(7, 1, 20)) };
         if (Seed != 0)
-            units.Add(new Mage("마법사 이린", Pick(9, 1, 20)));
+            units.Add(new Mage(Text.T("마법사 이린"), Pick(9, 1, 20)));
 
         foreach (Unit unit in units)
         {

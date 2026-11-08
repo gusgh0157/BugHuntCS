@@ -40,14 +40,14 @@ public static partial class Lab45
     public static void Run()
     {
         int size = Pick(6, 3, 10);
-        string weaponName = Pick("나무 검", "녹슨 단검", "견습생 지팡이", "사냥용 활");
+        string weaponName = Pick(Text.T("나무 검"), Text.T("녹슨 단검"), Text.T("견습생 지팡이"), Text.T("사냥용 활"));
         int potions = Pick(2, 1, 3);
 
         Item[] bag = CreateBag(new Weapon(weaponName, 5), size);
         Console.WriteLine($"  가방 {size}칸, 첫 칸: {bag[0].Name}");
 
         for (int i = 0; i < potions; i++)
-            Put(bag, new Potion("회복 물약", 30));
+            Put(bag, new Potion(Text.T("회복 물약"), 30));
 
         int filled = bag.Count(slot => slot != null);
         Console.WriteLine($"  채워진 칸: {filled}");

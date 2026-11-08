@@ -99,10 +99,10 @@ public static partial class Lab57
 {
     static readonly string[][] Rosters =
     [
-        ["아린", "케인", "미라"],
-        ["도란", "리라", "오렌", "케인"],
-        ["미라", "아린"],
-        ["케인", "도란", "리라", "아린", "오렌"],
+        [Text.T("아린"), Text.T("케인"), Text.T("미라")],
+        [Text.T("도란"), Text.T("리라"), Text.T("오렌"), Text.T("케인")],
+        [Text.T("미라"), Text.T("아린")],
+        [Text.T("케인"), Text.T("도란"), Text.T("리라"), Text.T("아린"), Text.T("오렌")],
     ];
 }
 #endregion

@@ -43,7 +43,7 @@ public static class Lab80
 
     public static void Run()
     {
-        string[] pool = ["안녕하세요", "GG", "보스 잡으러 갈 사람", "ㅋㅋㅋ", "Need healer!", "내일 8시 레이드"];
+        string[] pool = [Text.T("안녕하세요"), "GG", Text.T("보스 잡으러 갈 사람"), Text.T("ㅋㅋㅋ"), "Need healer!", Text.T("내일 8시 레이드")];
         int count = Pick(3, 2, 6);
         ushort firstSeq = (ushort)Pick(41, 1, 60000);
 

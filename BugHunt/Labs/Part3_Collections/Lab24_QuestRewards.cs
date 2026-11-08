@@ -19,7 +19,7 @@ public static class Lab24
     public static void Run()
     {
         int count = Pick(4, 3, 9);
-        Stage[] stages = [.. Enumerable.Range(1, count).Select(i => new Stage($"{i}단계", Pick(i * 100, 10, 500), 60))];
+        Stage[] stages = [.. Enumerable.Range(1, count).Select(i => new Stage(Text.F("{0}단계", i), Pick(i * 100, 10, 500), 60))];
 
         // 플레이어는 아직 퀘스트를 다 깨지 않았다. 지금까지 깬 단계의 클리어 시간(초)
         int cleared = Pick(3, 1, count - 1);
