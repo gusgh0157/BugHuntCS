@@ -12,7 +12,7 @@ public static class Lab62
         {
             await Task.Delay(50);   // 디스크에 쓰는 척
             if (slot == "checkpoint_3")
-                throw new IOException($"{slot}: 디스크 공간이 부족합니다");
+                throw new IOException(Text.F("{0}: 디스크 공간이 부족합니다", slot));
             Interlocked.Increment(ref SavedCount);
             Console.WriteLine($"  {slot} 저장 완료");
         }

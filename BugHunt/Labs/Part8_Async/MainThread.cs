@@ -38,7 +38,7 @@ public sealed class MainThread : SynchronizationContext
     public override void Post(SendOrPostCallback d, object? state) => _queue.Add(() => d(state));
 
     public override void Send(SendOrPostCallback d, object? state) =>
-        throw new NotSupportedException("이 예제에서는 Send 를 쓰지 않는다.");
+        throw new NotSupportedException(Text.T("이 예제에서는 Send 를 쓰지 않는다."));
 
     public override SynchronizationContext CreateCopy() => this;
 

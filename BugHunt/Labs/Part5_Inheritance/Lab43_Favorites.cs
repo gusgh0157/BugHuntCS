@@ -26,7 +26,7 @@ public static partial class Lab43
 
         public override int GetHashCode() => Id;
 
-        public override string ToString() => $"{Name}(품질 {Quality})";
+        public override string ToString() => $"{Name}({Text.T("품질")} {Quality})";
     }
 
     public static void Run()

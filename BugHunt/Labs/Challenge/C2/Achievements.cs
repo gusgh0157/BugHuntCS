@@ -48,7 +48,7 @@ public sealed class AchievementStore(ProgressServer server)
     public int Add(string questId, int amount)
     {
         if (_progress == null)
-            throw new InvalidOperationException("진행도를 아직 불러오지 않았다");
+            throw new InvalidOperationException(Text.T("진행도를 아직 불러오지 않았다"));
         int now = _progress.GetValueOrDefault(questId) + amount;
         _progress[questId] = now;
         server.Write(questId, now);

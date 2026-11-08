@@ -28,7 +28,7 @@ public static partial class Lab50
         return table;
     }
 
-    static string Lookup(Dictionary<string, string> table, string key) => table.TryGetValue(key, out string? s) ? s : "(없음)";
+    static string Lookup(Dictionary<string, string> table, string key) => table.TryGetValue(key, out string? s) ? s : Text.T("(없음)");
 
     public static void Run()
     {

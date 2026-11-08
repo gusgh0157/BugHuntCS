@@ -12,7 +12,7 @@ public static class Lab09
     };
 
     static string CastSlot(int slot) =>
-        SkillBar.TryGetValue(slot, out string? skill) ? skill : "(빈 슬롯)";
+        SkillBar.TryGetValue(slot, out string? skill) ? skill : Text.T("(빈 슬롯)");
 
     static Dictionary<ConsoleKey, Func<string>> BindHotkeys()
     {

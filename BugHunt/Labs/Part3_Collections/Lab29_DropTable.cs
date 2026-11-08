@@ -12,7 +12,7 @@ public static class Lab29
         {
             string[] parts = line.Split('=');
             if (parts.Length != 2 || !int.TryParse(parts[1], out int weight))
-                throw new FormatException($"드롭 테이블 줄이 이상하다: \"{line}\"");
+                throw new FormatException(Text.F("드롭 테이블 줄이 이상하다: \"{0}\"", line));
             yield return new Drop(parts[0].Trim(), weight);
         }
     }

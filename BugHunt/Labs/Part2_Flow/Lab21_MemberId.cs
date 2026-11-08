@@ -28,7 +28,7 @@ public static class Lab21
             return member.Id;
         }
 
-        public string Whisper(int id, string text) => $"{_members.First(m => m.Id == id).Name}에게: {text}";
+        public string Whisper(int id, string text) => $"{_members.First(m => m.Id == id).Name}{Text.T("에게")}: {text}";
 
         public IEnumerable<int> Ids => _members.Select(m => m.Id);
     }
@@ -49,12 +49,12 @@ public static class Lab21
         foreach (string name in recruits)
         {
             int id = roster.Recruit(name);
-            string reply = roster.Whisper(id, "어서 오세요!");
+            string reply = roster.Whisper(id, Text.T("어서 오세요!"));
             Console.WriteLine($"  {name} 가입, 번호 {id} → {reply}");
             replies.Add(reply);
         }
 
-        Expect("환영 귓속말을 받은 사람", string.Join(", ", recruits.Select(n => $"{n}에게: 어서 오세요!")), string.Join(", ", replies));
+        Expect("환영 귓속말을 받은 사람", string.Join(", ", recruits.Select(n => $"{n}{Text.T("에게")}: {Text.T("어서 오세요!")}")), string.Join(", ", replies));
         Expect("번호가 겹치지 않음", true, roster.Ids.Distinct().Count() == roster.Ids.Count());
     }
 }
