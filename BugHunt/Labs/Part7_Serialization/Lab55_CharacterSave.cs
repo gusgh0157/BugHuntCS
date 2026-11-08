@@ -25,7 +25,7 @@ public static partial class Lab55
 
     static string Save(Character c) => JsonSerializer.Serialize(c, Options);
 
-    static Character Load(string json) => JsonSerializer.Deserialize<Character>(json, Options) ?? throw new FormatException("빈 세이브");
+    static Character Load(string json) => JsonSerializer.Deserialize<Character>(json, Options) ?? throw new FormatException(Text.T("빈 세이브"));
 
     public static void Run()
     {

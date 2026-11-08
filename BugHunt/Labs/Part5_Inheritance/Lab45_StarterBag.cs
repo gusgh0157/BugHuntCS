@@ -32,7 +32,7 @@ public static partial class Lab45
     static void Put(Item[] bag, Item item)
     {
         int slot = Array.FindIndex(bag, s => s is null);
-        if (slot < 0) throw new InvalidOperationException("가방이 꽉 찼다");
+        if (slot < 0) throw new InvalidOperationException(Text.T("가방이 꽉 찼다"));
         bag[slot] = item;
         Console.WriteLine($"  {slot}번 칸에 {item.Name} 넣음");
     }

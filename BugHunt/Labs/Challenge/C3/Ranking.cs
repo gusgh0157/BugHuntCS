@@ -7,7 +7,7 @@ public sealed class RankEntry(string name, string guild, int score)
     public int Score { get; } = score;
     public int Rank { get; set; }
 
-    public override string ToString() => $"{Rank}위 {Name} ({Score})";
+    public override string ToString() => $"{Rank}{Text.T("위")} {Name} ({Score})";
 }
 
 // 랭킹 DB. 질의할 때마다 새 결과를 만든다. 느리다고 가정한다.

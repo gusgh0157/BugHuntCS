@@ -28,7 +28,7 @@ public static partial class Lab59
     {
         var serializer = new XmlSerializer(typeof(GameOptions));
         using var reader = new StringReader(xml);
-        return (GameOptions)(serializer.Deserialize(reader) ?? throw new FormatException("빈 옵션"));
+        return (GameOptions)(serializer.Deserialize(reader) ?? throw new FormatException(Text.T("빈 옵션")));
     }
 
     public static void Run()

@@ -98,10 +98,10 @@ Parallel.ForEach(Files, file =>
 ## Lab 8 — `ToString`이 `$"{this}"`로 자기를 불러 무한 재귀
 ```
 호출 스택:  DamageLabel.ToString → DamageLabel.ToString → … (수천 단계)
-진짜 원인:  $"{this} 피해"의 {this}는 this.ToString()을 부른다. 그게 지금 실행 중인 ToString이다.
+진짜 원인:  $"{this} {Text.T("피해")}"의 {this}는 this.ToString()을 부른다. 그게 지금 실행 중인 ToString이다.
            무한 재귀로 스택을 다 쓰면 StackOverflowException으로 프로세스가 즉시 죽는다.
 ```
-**수정:** `ToString`에서 그 객체 자신을 보간하지 말고 필드를 직접 씁니다: `$"{Amount} 피해"`.
+**수정:** `ToString`에서 그 객체 자신을 보간하지 말고 필드를 직접 씁니다: `$"{Amount} {Text.T("피해")}"`.
 **교훈:** `ToString`, `GetHashCode`, `Equals`, 연산자 오버로드, 속성 `get` 안에서 **자기 자신을 다시 부르지** 않도록 조심합니다. 흔한 형태: `ToString`에서 `$"{this}"`, `Equals`에서 `this == other`(→ `==` 연산자가 다시 `Equals`), `get`에서 같은 속성 대입. 랩 5(지갑)의 `set => Gold = ...`도 같은 뿌리입니다. 증상(프로그램이 조용히 사라짐)이 같으면 호출 스택부터 보세요.
 
 ---
@@ -938,11 +938,11 @@ catch (InvalidOperationException ex)   // 서버가 거절함: 가방에 그대�
 ```csharp
 catch (OperationCanceledException) when (userCancel.IsCancellationRequested)
 {
-    return "취소됨";      // 플레이어가 눌렀다
+    return Text.T("취소됨");      // 플레이어가 눌렀다
 }
 catch (OperationCanceledException)
 {
-    return "시간 초과";   // 우리가 건 CancelAfter
+    return "시간 초과";   // 우리가 건 CancelAfter (내부 표시라 Text.T로 번역하지 않는다)
 }
 ```
 시간 초과를 `throw new TimeoutException(...)`으로 바꿔 던지고 `EnterAsync`에서 `catch (TimeoutException)`으로 받아도 된다.

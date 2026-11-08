@@ -34,7 +34,7 @@ public static class Lab71
     static async Task<string> DownloadAsync(Dictionary<string, string?> server, string id)
     {
         await Task.Delay(1);
-        return server[id] ?? throw new IOException($"{id}: 서버 연결이 끊겼습니다");
+        return server[id] ?? throw new IOException(Text.F("{0}: 서버 연결이 끊겼습니다", id));
     }
 
     static async Task<string> ParseHeaderAsync(string text)
@@ -42,7 +42,7 @@ public static class Lab71
         await Task.Yield();
         int bar = text.IndexOf('|');
         if (bar < 0)
-            throw new InvalidDataException($"헤더가 없습니다: \"{text}\"");
+            throw new InvalidDataException(Text.F("헤더가 없습니다: \"{0}\"", text));
         return text[..bar];
     }
 

@@ -100,10 +100,10 @@ Parallel.ForEach(Files, file =>
 ## Lab 8 — `ToString` が `$"{this}"` で自分を呼び無限再帰
 ```
 呼び出し履歴:  DamageLabel.ToString → DamageLabel.ToString → … (数千段)
-本当の原因:  $"{this} 피해" の {this} は this.ToString() を呼ぶ。それが今実行中の ToString。
+本当の原因:  $"{this} {Text.T("피해")}" の {this} は this.ToString() を呼ぶ。それが今実行中の ToString。
            無限再帰でスタックを使い切ると StackOverflowException でプロセスが即死する。
 ```
-**修正:** `ToString` でそのオブジェクト自身を補間せず、フィールドを直接書きます: `$"{Amount} 피해"`。
+**修正:** `ToString` でそのオブジェクト自身を補間せず、フィールドを直接書きます: `$"{Amount} {Text.T("피해")}"`。
 **教訓:** `ToString`、`GetHashCode`、`Equals`、演算子オーバーロード、プロパティの `get` の中で**自分自身を再び呼ばない**よう気をつけます。よくある形: `ToString` で `$"{this}"`、`Equals` で `this == other`(→ `==` 演算子がまた `Equals` を呼ぶ)、`get` で同じプロパティへの代入。ラボ 5(財布)の `set => Gold = ...` も同じ根です。症状(プログラムが静かに消える)が同じなら呼び出し履歴から見てください。
 
 ---
@@ -353,9 +353,9 @@ public override int GetHashCode() => Id.GetHashCode();
 
 ## Lab 29 — yield メソッドの例外は列挙するときに出る
 ```
-例外:        FormatException: 드롭 테이블 줄이 이상하다: "sword=?"
+例外:        FormatException: ドロップテーブルの行がおかしい: "sword=?"
 呼び出し履歴:   <ParseDropTable>d__1.MoveNext() ← Enumerable.Sum ← Lab29.Run   (LoadDropTable はない)
-コンソール:        "고장 난 드롭 테이블, 기본 테이블 사용" が一度も出ない
+コンソール:        "壊れたドロップテーブル、既定のテーブルを使用" が一度も出ない
 本当の原因:  yield return があるメソッドは呼ぶ瞬間に本体を一つも実行しない。LoadDropTable の try は「列挙するオブジェクト」だけ受けてすぐ終わり、
            実際のパース(と例外)はあとで Sum が列挙するときに起きる。
 ```
@@ -851,7 +851,7 @@ static async Task SubmitUnlockedAsync(AchievementServer server, IEnumerable<stri
 ## Lab 65 — `await Task.WhenAll` は最初の例外だけ投げる
 ```
 throw のブレークポイント:  二回引っかかる (sounds.pak、locale.pak)
-catch の中の ex:  IOException "sounds.pak 다운로드 실패" 一つ
+catch の中の ex:  IOException "sounds.pak ダウンロード失敗" 一つ
 downloads[3].Status  Faulted、downloads[3].Exception  locale.pak
 本当の原因:  WhenAll の Task は例外二つを AggregateException で持っているが、await は最初のものだけ取り出して投げる
 ```
@@ -904,8 +904,8 @@ FindMatchAsync フレームの token:   IsCancellationRequested true
 
 ## Lab 69 — 例外を飲み込んで成功を返す
 ```
-段階1のコンソール:  [로그] 창고 업로드 경고: 영웅의 증표: 귀속 아이템은 창고에 넣을 수 없습니다
-             영웅의 증표 보관 완료        ← 失敗したのに「完了」
+段階1のコンソール:  [ログ] 倉庫アップロード警告: 영웅의 증표: 帰属アイテムは倉庫に入れられません
+             영웅의 증표 保管完了        ← 失敗したのに「完了」
 最初の例外で中断(InvalidOperationException) → F10:  catch (Exception) に入ってログだけ出して return true
 本当の原因:  UploadToStorageAsync がすべての例外を捕まえて無条件に true。呼び出し元は「預けた」と信じてバッグから外す。
            症状(アイテムの消失)は段階2でバッグが保存され、段階3で読み直すときに初めて見える
@@ -940,11 +940,11 @@ catch (InvalidOperationException ex)   // サーバーが拒否した: バッグ
 ```csharp
 catch (OperationCanceledException) when (userCancel.IsCancellationRequested)
 {
-    return "취소됨";      // プレイヤーが押した
+    return Text.T("취소됨");      // プレイヤーが押した
 }
 catch (OperationCanceledException)
 {
-    return "시간 초과";   // 自分がかけた CancelAfter
+    return "시간 초과";   // 自分がかけた CancelAfter (内部の目印なので Text.T で翻訳しない)
 }
 ```
 タイムアウトを `throw new TimeoutException(...)` に変えて投げ、`EnterAsync` で `catch (TimeoutException)` で受けてもよい。
@@ -954,7 +954,7 @@ catch (OperationCanceledException)
 
 ## Lab 71 — 捕まえた例外をあとで `throw ex;` で投げ直す
 ```
-リトライのログ:  [재시도 3/3] FormatException: The input string '두백' was not in a correct format.
+リトライのログ:  [再試行 3/3] FormatException: The input string '두백' was not in a correct format.
 レポート:       FormatException @ RetryAsync          ← 型は合っているのに位置がリトライの関数
 最初の例外で中断(FormatException):  呼び出し履歴の一番上の BugHunt フレームは ParseRewardAsync
 オブジェクト ID で同じ例外だと確認し throw last! の行を F10:  StackTrace が RetryAsync から新しく始まる

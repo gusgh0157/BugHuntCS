@@ -21,7 +21,7 @@ public static partial class Lab52
         foreach (Item item in items)
         {
             if (item.Count < 0)
-                throw new InvalidDataException($"손상된 아이템: {item.Name} x{item.Count}");
+                throw new InvalidDataException(Text.F("손상된 아이템: {0} x{1}", item.Name, item.Count));
             writer.WriteLine($"{item.Name}|{item.Count.ToString(CultureInfo.InvariantCulture)}");
         }
     }
@@ -35,7 +35,7 @@ public static partial class Lab52
         return [.. lines.Skip(1).Select(l => l.Split('|')).Select(p => new Item(p[0], int.Parse(p[1], CultureInfo.InvariantCulture)))];
     }
 
-    static string Show(IEnumerable<Item>? items) => items == null ? "(손상됨)" : string.Join(", ", items.Select(i => $"{i.Name} x{i.Count}"));
+    static string Show(IEnumerable<Item>? items) => items == null ? Text.T("(손상됨)") : string.Join(", ", items.Select(i => $"{i.Name} x{i.Count}"));
 
     public static void Run()
     {

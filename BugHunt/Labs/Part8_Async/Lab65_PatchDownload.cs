@@ -11,7 +11,7 @@ public static class Lab65
     {
         await Task.Delay(file.Length * 10);
         if (BrokenOnServer.Contains(file))
-            throw new IOException($"{file} 다운로드 실패 (체크섬 불일치)");
+            throw new IOException(Text.F("{0} 다운로드 실패 (체크섬 불일치)", file));
         return file;
     }
 

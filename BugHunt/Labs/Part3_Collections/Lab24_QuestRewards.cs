@@ -27,7 +27,7 @@ public static class Lab24
         for (int i = 0; i < cleared; i++)
             clearSeconds.Add(Pick(45 + i * 10, 30, 90));
 
-        Console.WriteLine($"  퀘스트 {stages.Length}단계 중 {clearSeconds.Count}단계 클리어: {string.Join(", ", clearSeconds.Select(s => $"{s}초"))}");
+        Console.WriteLine($"  퀘스트 {stages.Length}단계 중 {clearSeconds.Count}단계 클리어: {string.Join(", ", clearSeconds.Select(s => $"{s}{Text.T("초")}"))}");
         int total = Settle(stages, clearSeconds);
         Console.WriteLine($"  중간 정산: {total}G");
 

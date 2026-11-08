@@ -8,18 +8,18 @@ public static class ChallengeB2
 {
     static readonly Dictionary<string, string> Commands = new()
     {
-        ["/QUIT"] = "종료",
-        ["/INVITE"] = "초대",
-        ["/WHISPER"] = "귓속말",
-        ["/LIST"] = "목록",
-        ["/HELP"] = "도움말",
-        ["/MAP"] = "지도",
+        ["/QUIT"] = Text.T("종료"),
+        ["/INVITE"] = Text.T("초대"),
+        ["/WHISPER"] = Text.T("귓속말"),
+        ["/LIST"] = Text.T("목록"),
+        ["/HELP"] = Text.T("도움말"),
+        ["/MAP"] = Text.T("지도"),
     };
 
     static string Handle(string input)
     {
         string key = input.Trim().Split(' ')[0].ToUpper();
-        return Commands.TryGetValue(key, out string? action) ? action : "알 수 없는 명령";
+        return Commands.TryGetValue(key, out string? action) ? action : Text.T("알 수 없는 명령");
     }
 
     public static void Run()

@@ -37,7 +37,7 @@ public static class Lab77
         for (int i = 0; i < buffer.Length - 1; i++)
             sum += buffer[i];
         if (sum != buffer[^1])
-            throw new InvalidDataException($"패킷 {packetId} 체크섬 불일치");
+            throw new InvalidDataException(Text.F("패킷 {0} 체크섬 불일치", packetId));
 
         handle.Free();
         return buffer;

@@ -15,7 +15,7 @@ public static class Lab69
         {
             await Task.Delay(1);   // 네트워크
             if (boundItems.Contains(item))
-                throw new InvalidOperationException($"{item}: 귀속 아이템은 창고에 넣을 수 없습니다");
+                throw new InvalidOperationException(Text.F("{0}: 귀속 아이템은 창고에 넣을 수 없습니다", item));
             Stored[item] = Stored.GetValueOrDefault(item) + count;
         }
 

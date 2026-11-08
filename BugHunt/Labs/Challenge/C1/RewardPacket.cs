@@ -26,7 +26,7 @@ public static class Wire
     public static string Encode(RewardPacket packet) => JsonSerializer.Serialize(packet, Options);
 
     public static RewardPacket Decode(string json) =>
-        JsonSerializer.Deserialize<RewardPacket>(json, Options) ?? throw new FormatException("빈 패킷");
+        JsonSerializer.Deserialize<RewardPacket>(json, Options) ?? throw new FormatException(Text.T("빈 패킷"));
 
     public static string EncodeAck(Guid id) => $"ACK {id}";
 

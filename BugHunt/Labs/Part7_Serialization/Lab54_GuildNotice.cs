@@ -18,7 +18,7 @@ public static partial class Lab54
     static readonly JsonSerializerOptions Options = new() { WriteIndented = false };
 
     static GuildNotice Receive(string json) =>
-        JsonSerializer.Deserialize<GuildNotice>(json, Options) ?? throw new FormatException("빈 공지");
+        JsonSerializer.Deserialize<GuildNotice>(json, Options) ?? throw new FormatException(Text.T("빈 공지"));
 
     public static void Run()
     {

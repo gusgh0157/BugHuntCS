@@ -12,7 +12,7 @@ public static partial class Lab56
     class Reward
     {
         public string Source { get; set; } = "";
-        public virtual string Describe() => "알 수 없는 보상";
+        public virtual string Describe() => Text.T("알 수 없는 보상");
     }
 
     sealed class GoldReward : Reward
@@ -31,7 +31,7 @@ public static partial class Lab56
     sealed class ExpReward : Reward
     {
         public int Points { get; set; }
-        public override string Describe() => $"경험치 {Points}";
+        public override string Describe() => $"{Text.T("경험치")} {Points}";
     }
 
     sealed class Mail
@@ -47,7 +47,7 @@ public static partial class Lab56
     {
         string json = JsonSerializer.Serialize(mail, Options);
         Console.WriteLine($"  서버 저장: {json}");
-        return JsonSerializer.Deserialize<Mail>(json, Options) ?? throw new FormatException("빈 우편");
+        return JsonSerializer.Deserialize<Mail>(json, Options) ?? throw new FormatException(Text.T("빈 우편"));
     }
 
     public static void Run()
@@ -84,7 +84,7 @@ public static partial class Lab56
 // (Newtonsoft.Json 의 TypeNameHandling 과 달리, 형식 이름을 JSON 에 넣어 아무 형식이나 만들게 하는 기능은 보안상 일부러 없습니다.)
 //
 // [JA] System.Text.Json は「宣言された型」でシリアル化します。Attachments は List<Reward> なので各項目を Reward と見なし、Reward にある Source だけを書きます。派生型の Amount や ItemName は抜けます。
-// [JA] 読むときも JSON に「どの派生型か」がないので、すべて Reward として作ります。そのため Describe が基底の「알 수 없는 보상」(不明な報酬)を返します。
+// [JA] 読むときも JSON に「どの派生型か」がないので、すべて Reward として作ります。そのため Describe が基底の「不明な報酬」を返します。
 // [JA] (Newtonsoft.Json の TypeNameHandling と違い、型名を JSON に入れて任意の型を作らせる機能はセキュリティ上わざと用意されていません。)
 #endregion
 

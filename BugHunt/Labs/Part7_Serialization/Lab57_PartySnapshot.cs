@@ -30,7 +30,7 @@ public static partial class Lab57
     {
         string json = JsonSerializer.Serialize(party, Options);
         Console.WriteLine($"  스냅샷: {json}");
-        return JsonSerializer.Deserialize<Party>(json, Options) ?? throw new FormatException("빈 스냅샷");
+        return JsonSerializer.Deserialize<Party>(json, Options) ?? throw new FormatException(Text.T("빈 스냅샷"));
     }
 
     public static void Run()

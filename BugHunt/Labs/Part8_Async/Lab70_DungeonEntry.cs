@@ -24,11 +24,11 @@ public static class Lab70
         try
         {
             await LoadDungeonAsync(kind, timeout.Token);
-            return "입장";
+            return Text.T("입장");
         }
         catch (OperationCanceledException)
         {
-            return "취소됨";   // 플레이어가 취소했다
+            return Text.T("취소됨");   // 플레이어가 취소했다
         }
     }
 
@@ -43,7 +43,7 @@ public static class Lab70
         if (result == "시간 초과")
         {
             Console.WriteLine($"  {name}: 던전 서버가 대답하지 않습니다. 예비 채널로 다시 시도");
-            result = await TryEnterAsync(Kind.Normal, userCancel.Token) + " (예비 채널)";
+            result = await TryEnterAsync(Kind.Normal, userCancel.Token) + " " + Text.T("(예비 채널)");
         }
         return result;
     }
@@ -69,9 +69,9 @@ public static class Lab70
 
         string Expected(Kind kind) => kind switch
         {
-            Kind.Normal => "입장",
-            Kind.UserCancels => "취소됨",
-            _ => "입장 (예비 채널)",
+            Kind.Normal => Text.T("입장"),
+            Kind.UserCancels => Text.T("취소됨"),
+            _ => Text.T("입장") + " " + Text.T("(예비 채널)"),
         };
         Expect("파티원별 입장 결과",
                string.Join(", ", party.Select(p => $"{p.Name} {Expected(p.Kind)}")),
