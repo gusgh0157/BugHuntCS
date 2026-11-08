@@ -942,7 +942,7 @@ catch (OperationCanceledException) when (userCancel.IsCancellationRequested)
 }
 catch (OperationCanceledException)
 {
-    return "시간 초과";   // 우리가 건 CancelAfter (내부 표시라 Text.T로 번역하지 않는다)
+    return "timeout";   // 우리가 건 CancelAfter. 화면에 나오지 않는 내부 표시라 번역하지 않는다 (EnterAsync 가 이 값을 보고 예비 채널로 다시 시도)
 }
 ```
 시간 초과를 `throw new TimeoutException(...)`으로 바꿔 던지고 `EnterAsync`에서 `catch (TimeoutException)`으로 받아도 된다.
