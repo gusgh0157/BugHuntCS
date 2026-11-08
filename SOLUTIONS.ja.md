@@ -605,9 +605,9 @@ using var reader = new StreamReader(stream);
 
 ## Lab 50 — バイトを UTF-8 でだけデコード: BOM と CP949
 ```
-モード A (UTF-8 BOM):  table.Keys.First().Length == firstKey.Length + 1,  最初の文字 '﻿'
-モード B (CP949):      bytes のかな(韓国語で実行したならハングル)が2バイトずつ。UTF8.GetString の結果に '�'(�)
-モード C (UTF-8):      正常
+MOD A (UTF-8 BOM):  table.Keys.First().Length == firstKey.Length + 1,  最初の文字 '﻿'
+MOD B (CP949):      bytes のかな(韓国語で実行したならハングル)が2バイトずつ。UTF8.GetString の結果に '�'(�)
+MOD C (UTF-8):      正常
 本当の原因:  Encoding.UTF8.GetString は BOM を消さず(U+FEFF として残る)、不正なバイトは例外なしに � に変える。
            File.ReadAllText/StreamReader は BOM を処理するが、バイトを直接デコードするとそうではない。
 ```
