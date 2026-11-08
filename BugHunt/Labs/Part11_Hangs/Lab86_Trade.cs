@@ -39,8 +39,8 @@ public static class Lab86
         bool done = FinishesWithin("동시 거래", () =>
         {
             using var go = new ManualResetEventSlim();
-            var a = new Thread(() => { go.Wait(); Transfer(kael, mira, kaelGives); }) { IsBackground = true, Name = "거래: Kael → Mira" };
-            var b = new Thread(() => { go.Wait(); Transfer(mira, kael, miraGives); }) { IsBackground = true, Name = "거래: Mira → Kael" };
+            var a = new Thread(() => { go.Wait(); Transfer(kael, mira, kaelGives); }) { IsBackground = true, Name = Text.T("거래: Kael → Mira") };
+            var b = new Thread(() => { go.Wait(); Transfer(mira, kael, miraGives); }) { IsBackground = true, Name = Text.T("거래: Mira → Kael") };
             a.Start();
             b.Start();
             go.Set();

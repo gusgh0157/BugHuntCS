@@ -37,7 +37,7 @@ public static class Lab88
     {
         int assets = Pick(20, 5, 40);
         var loader = new Loader();
-        var loadingThread = new Thread(() => loader.LoadAll(assets)) { IsBackground = true, Name = "로딩 스레드", Priority = ThreadPriority.Highest };
+        var loadingThread = new Thread(() => loader.LoadAll(assets)) { IsBackground = true, Name = Text.T("로딩 스레드"), Priority = ThreadPriority.Highest };
         loadingThread.Start();
 
         long spins = 0;
@@ -71,7 +71,7 @@ public static class Lab88
 // "랩 본문" 스레드의 WaitForLoading 에서 디버그 → 창 → 디스어셈블리(Ctrl+Alt+D)를 열어 보세요.
 // 루프 안에 loader.Done 을 메모리에서 읽는 명령이 있나요? (Release 에서는 지역 창 값도 "최적화되었습니다"로 보일 수 있습니다)
 //
-// [JA] 「랩 본문」(ラボ本体)スレッドの WaitForLoading で デバッグ → ウィンドウ → 逆アセンブル(Ctrl+Alt+D)を開いてみてください。
+// [JA] 「ラボ本体」スレッドの WaitForLoading で デバッグ → ウィンドウ → 逆アセンブル(Ctrl+Alt+D)を開いてみてください。
 // [JA] ループの中に loader.Done をメモリから読む命令はありますか? (Release ではローカル ウィンドウの値も「最適化されています」と表示されることがあります)
 #endregion
 

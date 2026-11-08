@@ -59,7 +59,7 @@ public static class LabKit
     // 디버거가 붙어 있으면 실패로 끝내지 않고 계속 기다린다. 그때 디버그 → 모두 중단으로 멈춘 곳을 보면 된다.
     public static bool FinishesWithin(string what, Action body, int timeoutMs = 2000)
     {
-        var worker = new Thread(() => body()) { IsBackground = true, Name = $"랩 본문 ({what})", Priority = ThreadPriority.Highest };
+        var worker = new Thread(() => body()) { IsBackground = true, Name = Text.F("랩 본문 ({0})", what), Priority = ThreadPriority.Highest };
         worker.Start();
         if (worker.Join(timeoutMs))
             return true;

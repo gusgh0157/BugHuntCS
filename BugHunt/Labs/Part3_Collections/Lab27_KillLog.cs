@@ -42,7 +42,7 @@ public static class Lab27
                         lock (errors)
                             errors.Add($"전투 스레드 {worker}: {ex.GetType().Name}");
                     }
-                }) { IsBackground = true, Name = $"전투 스레드 {w}", Priority = ThreadPriority.Highest };
+                }) { IsBackground = true, Name = Text.F("전투 스레드 {0}", w), Priority = ThreadPriority.Highest };
                 threads.Add(t);
                 t.Start();
             }

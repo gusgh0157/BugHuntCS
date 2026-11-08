@@ -21,7 +21,7 @@ public static class ChallengeB1
                     _tiles = tiles;
                     Monitor.Pulse(_gate);
                 }
-            }) { IsBackground = true, Name = $"로더 ({region})", Priority = ThreadPriority.Highest };
+            }) { IsBackground = true, Name = Text.F("로더 ({0})", region), Priority = ThreadPriority.Highest };
             worker.Start();
         }
 
