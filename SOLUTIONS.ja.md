@@ -944,7 +944,7 @@ catch (OperationCanceledException) when (userCancel.IsCancellationRequested)
 }
 catch (OperationCanceledException)
 {
-    return "시간 초과";   // 自分がかけた CancelAfter (内部の目印なので Text.T で翻訳しない)
+    return "timeout";   // 自分がかけた CancelAfter。画面に出ない内部の目印なので翻訳しない (EnterAsync がこの値を見て予備チャンネルで再試行する)
 }
 ```
 タイムアウトを `throw new TimeoutException(...)` に変えて投げ、`EnterAsync` で `catch (TimeoutException)` で受けてもよい。

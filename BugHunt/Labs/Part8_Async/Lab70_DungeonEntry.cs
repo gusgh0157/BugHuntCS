@@ -40,7 +40,7 @@ public static class Lab70
             userCancel.Cancel();   // 로딩 중에 취소 버튼을 누른다
 
         string result = await entering;
-        if (result == "시간 초과")
+        if (result == "timeout")
         {
             Console.WriteLine($"  {name}: 던전 서버가 대답하지 않습니다. 예비 채널로 다시 시도");
             result = await TryEnterAsync(Kind.Normal, userCancel.Token) + " " + Text.T("(예비 채널)");
