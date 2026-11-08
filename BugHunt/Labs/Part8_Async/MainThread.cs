@@ -19,7 +19,7 @@ public sealed class MainThread : SynchronizationContext
 
     public MainThread()
     {
-        _thread = new Thread(Loop) { Name = "Main Thread (게임 루프)", IsBackground = true };
+        _thread = new Thread(Loop) { Name = Text.T("Main Thread (게임 루프)"), IsBackground = true };
         _thread.Start();
     }
 

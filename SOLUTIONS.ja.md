@@ -595,7 +595,7 @@ using var reader = new StreamReader(stream);
 
 ## Lab 49 — `Path.Combine` の二番目の引数が絶対パス
 ```
-コンソール:      "저장 →" の三行のうち一つだけ ...\old-install\saves\mira
+コンソール:      "を保存 →" の三行のうち一つだけ ...\old-install\saves\mira
 ウォッチ:    Path.Combine(saveRoot, profile.Folder) == profile.Folder,  Path.IsPathRooted(profile.Folder) == true
 本当の原因:  Path.Combine は後ろの引数がルートパスなら前の引数をすべて捨てる(ドキュメントに書かれた動作、例外なし)。
            古いインストールから持ってきたプロフィールの Folder が絶対パスなので、セーブルートの外に保存され、バックアップがセーブルートだけを走査して抜けた。
@@ -626,7 +626,7 @@ else
 
 ## Lab 51 — `\n` でだけ切って `\r` と空項目が残る
 ```
-コンソール "읽은 항목":   "Kael\r"、"Mira\r"、"Doran\r"、""
+コンソール "読んだ項目":   "Kael\r"、"Mira\r"、"Doran\r"、""
 ウォッチ:            text.Contains('\r') == true
 本当の原因:  メモ帳は CRLF で保存する。Split('\n') は各項目の末尾に '\r' を残し、末尾の改行のあとに空文字列をもう一つ作る。
 ```
@@ -820,7 +820,7 @@ static async Task<int> AutoSaveAsync(SaveSystem saves, string[] checkpoints)
 ## Lab 63 — `.Result` デッドロック
 ```
 すべて中断 → 並列スタック:
-    Main Thread (게임 루프):  Task.Result → ... → Lab63.OnEnterLoadingScreen  (詰まっている)
+    Main Thread (ゲームループ):  Task.Result → ... → Lab63.OnEnterLoadingScreen  (詰まっている)
 タスクウィンドウ:     LoadAssetsAsync  待機中 (最初の await のあと続ける順番を待っている)
 main.PendingCount:  1  ← LoadAssetsAsync の残りがメインスレッドのキューに並んでいる
 本当の原因:  メインスレッドが .Result で詰まっているのに、await の残りはそのメインスレッドでしか実行できない
@@ -884,7 +884,7 @@ catch (Exception)
 
 ## Lab 67 — ConfigureAwait(false) のあとでメインスレッド専用のオブジェクトを触る
 ```
-RefreshHudAsync の最初の行:  スレッド = Main Thread (게임 루프)、SynchronizationContext.Current = MainThread
+RefreshHudAsync の最初の行:  スレッド = Main Thread (ゲームループ)、SynchronizationContext.Current = MainThread
 hud.SetGold の行:         スレッド = .NET TP Worker、SynchronizationContext.Current = null
 本当の原因:  ConfigureAwait(false) のせいで await のあとがメインスレッドに戻らない
 ```
@@ -1226,7 +1226,7 @@ camera.Zoom = target;
 
 ## Lab 85 — ループができた親の鎖
 ```
-加入申請:  "승인"
+加入申請:  "承認"
 すべて中断 → Leader() の g:  Dawn → Ember → Frost → Gale → Dawn → ...   (オブジェクト ID がまた出る)
 本当の原因:  JoinUnder は parent.Parent == this (A↔B、長さ2のループ)だけを防ぐ。
            Dawn ← Ember ← Frost ← Gale の鎖で Dawn が Gale の下に入ると長さ4のループができ、Leader() が永遠に回る。
@@ -1248,8 +1248,8 @@ public bool JoinUnder(Guild parent)
 ## Lab 86 — ロックの順序が食い違ったデッドロック
 ```
 並列スタック:
-    거래: Kael → Mira   Monitor.Enter ← Transfer(from=Kael, to=Mira)   lock (to.Sync) の行で待機
-    거래: Mira → Kael   Monitor.Enter ← Transfer(from=Mira, to=Kael)   lock (to.Sync) の行で待機
+    取引: Kael → Mira   Monitor.Enter ← Transfer(from=Kael, to=Mira)   lock (to.Sync) の行で待機
+    取引: Mira → Kael   Monitor.Enter ← Transfer(from=Mira, to=Kael)   lock (to.Sync) の行で待機
 本当の原因:  一方のスレッドは Kael を握って Mira を、もう一方は Mira を握って Kael を待つ。
 ```
 **修正:** すべての所で同じ順序でロックする。
