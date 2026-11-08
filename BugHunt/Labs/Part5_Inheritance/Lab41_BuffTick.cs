@@ -33,9 +33,9 @@ public static partial class Lab41
         int turns = Pick(3, 2, 6);
         Buff[] buffs =
         [
-            new("공격력 증가", Pick(2, 1, turns)),
-            new("방어력 증가", Pick(5, turns + 1, turns + 4)),
-            new("신속", Pick(3, 1, turns)),
+            new(Text.T("공격력 증가"), Pick(2, 1, turns)),
+            new(Text.T("방어력 증가"), Pick(5, turns + 1, turns + 4)),
+            new(Text.T("신속"), Pick(3, 1, turns)),
         ];
 
         int[] expectedTurns = [.. buffs.Select(b => b.Turns - turns)];

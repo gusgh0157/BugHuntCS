@@ -6,7 +6,7 @@ namespace BugHunt;
 // 어떤 모드는 첫 대사가 "없음"이 되고, 어떤 모드는 한글이 전부 깨진다.
 // 이 랩은 %TEMP%\BugHunt\Lab50_DialogueMod_<프로세스 ID> 아래에만 쓰고, 끝나면 지운다.
 // [JA] MOD 製作者が作った NPC のセリフファイル(1行に「キー=セリフ」)を読みます。製作者ごとに別のエディターで保存したので、エンコーディングがばらばらです。
-// [JA] ある MOD は最初のセリフが「なし」になり、ある MOD はハングルがすべて文字化けします。
+// [JA] ある MOD は最初のセリフが「なし」になり、ある MOD はセリフがすべて文字化けします。
 // [JA] このラボは %TEMP%\BugHunt\Lab50_DialogueMod_<プロセス ID> の下にだけ書き込み、終わったら削除します。
 public static partial class Lab50
 {
@@ -53,7 +53,7 @@ public static partial class Lab50
             File.WriteAllText(modC, content, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
             string firstKey = lines[0].Key, lastKey = lines[^1].Key;
-            foreach ((string name, string path) in new[] { ("모드 A (UTF-8 BOM)", modA), ("모드 B (CP949)", modB), ("모드 C (UTF-8)", modC) })
+            foreach ((string name, string path) in new[] { (Text.T("모드 A (UTF-8 BOM)"), modA), (Text.T("모드 B (CP949)"), modB), (Text.T("모드 C (UTF-8)"), modC) })
             {
                 Dictionary<string, string> table = LoadDialogue(path);
                 Console.WriteLine($"  {name}: {firstKey} = {Lookup(table, firstKey)} / {lastKey} = {Lookup(table, lastKey)}");
@@ -88,7 +88,7 @@ public static partial class Lab50
 //
 // [JA] MOD A: UTF-8 の BOM(EF BB BF)は Encoding.UTF8.GetString が消してくれません。文字 U+FEFF として残り、最初のキーの前に付きます。テキストビジュアライザーでは見えない文字です。
 // [JA]         (File.ReadAllText と StreamReader は BOM を自動で処理しますが、バイトを直接デコードするとそうはなりません。)
-// [JA] MOD B: CP949 はハングル1文字が2バイト、UTF-8 は3バイトです。CP949 のバイトを UTF-8 として読むと不正なバイト列になり U+FFFD(�)に置き換わります。例外は出ません。
+// [JA] MOD B: CP949 はハングルもかなも1文字が2バイト、UTF-8 は3バイトです。CP949 のバイトを UTF-8 として読むと不正なバイト列になり U+FFFD(�)に置き換わります。例外は出ません。
 #endregion
 
 #region 힌트 3 / ヒント 3
@@ -114,10 +114,10 @@ public static partial class Lab50
 {
     static readonly (string Key, string Line)[][] Scripts =
     [
-        [("greet", "어서 오게, 모험가여."), ("quest", "북쪽 숲의 늑대를 잡아 주게."), ("bye", "조심해서 가게.")],
-        [("hello", "길드에 온 걸 환영하네."), ("rank", "자네 등급은 아직 청동이군."), ("farewell", "다음 의뢰도 부탁하네.")],
-        [("open", "물건 보고 가세요!"), ("sale", "오늘만 물약 반값이에요."), ("close", "또 오세요.")],
-        [("intro", "이 탑은 백 층이다."), ("warn", "위로 갈수록 몬스터가 강해진다."), ("hint", "열쇠는 오십 층에 있다."), ("end", "행운을 빈다.")],
+        [("greet", Text.T("어서 오게, 모험가여.")), ("quest", Text.T("북쪽 숲의 늑대를 잡아 주게.")), ("bye", Text.T("조심해서 가게."))],
+        [("hello", Text.T("길드에 온 걸 환영하네.")), ("rank", Text.T("자네 등급은 아직 청동이군.")), ("farewell", Text.T("다음 의뢰도 부탁하네."))],
+        [("open", Text.T("물건 보고 가세요!")), ("sale", Text.T("오늘만 물약 반값이에요.")), ("close", Text.T("또 오세요."))],
+        [("intro", Text.T("이 탑은 백 층이다.")), ("warn", Text.T("위로 갈수록 몬스터가 강해진다.")), ("hint", Text.T("열쇠는 오십 층에 있다.")), ("end", Text.T("행운을 빈다."))],
     ];
 }
 #endregion

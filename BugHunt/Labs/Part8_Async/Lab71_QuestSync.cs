@@ -73,20 +73,20 @@ public static class Lab71
     {
         var server = new Dictionary<string, string?>
         {
-            ["q1"] = "늑대 사냥|120",
-            ["q2"] = "약초 채집|80",
-            ["q3"] = "광산 정찰|두백",
+            ["q1"] = Text.T("늑대 사냥") + "|120",
+            ["q2"] = Text.T("약초 채집") + "|80",
+            ["q3"] = Text.T("광산 정찰") + "|" + Text.T("두백"),
         };
         string broken = "q3";
         string expected = "FormatException @ ParseRewardAsync";
         if (Seed != 0)
         {
-            server["q3"] = "광산 정찰|200";
+            server["q3"] = Text.T("광산 정찰") + "|200";
             broken = Pick("q1", "q1", "q2", "q3");
             (server[broken], expected) = Pick(1, 1, 2) switch   // 숨은 케이스는 기본 케이스와 다른 곳에서 실패한다
             {
-                0 => ((string?)"고장 난 데이터|??", "FormatException @ ParseRewardAsync"),
-                1 => ("헤더 없는 데이터", "InvalidDataException @ ParseHeaderAsync"),
+                0 => ((string?)(Text.T("고장 난 데이터") + "|??"), "FormatException @ ParseRewardAsync"),
+                1 => (Text.T("헤더 없는 데이터"), "InvalidDataException @ ParseHeaderAsync"),
                 _ => (null, "IOException @ DownloadAsync"),
             };
         }

@@ -24,13 +24,13 @@ public static partial class Lab47
         try
         {
             int count = Pick(120, 60, 400);
-            string[] attackers = ["기사", "궁수", "마법사", "도적"];
+            string[] attackers = [Text.T("기사"), Text.T("궁수"), Text.T("마법사"), Text.T("도적")];
             var lines = new List<string>();
             for (int i = 1; i <= count; i++)
-                lines.Add($"[{i:0000}] {attackers[i % attackers.Length]}의 공격: 피해 {Pick(17 * i % 100, 1, 999)}");
+                lines.Add($"[{i:0000}] " + Text.F("{0}의 공격: 피해 {1}", attackers[i % attackers.Length], Pick(17 * i % 100, 1, 999)));
             // 줄 길이 합이 우연히 버퍼 크기의 배수가 되지 않게 한 줄 더
             if (lines.Sum(l => l.Length + 2) % 1024 == 0)
-                lines.Add("[끝] 전투 종료");
+                lines.Add(Text.T("[끝] 전투 종료"));
 
             SaveLog(path, lines);
             string[] read = File.ReadAllLines(path);

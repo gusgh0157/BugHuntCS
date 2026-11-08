@@ -101,10 +101,10 @@ public static partial class Lab38
 {
     static readonly (string Kind, string Name)[][] Compositions =
     [
-        [("basic", "베기"), ("fire", "화염구"), ("basic", "찌르기")],
-        [("basic", "베기"), ("ice", "서리창"), ("fire", "화염구")],
-        [("ice", "눈보라"), ("ice", "서리창")],
-        [("fire", "화염구"), ("basic", "베기"), ("ice", "빙결"), ("fire", "용의 숨결")],
+        [("basic", Text.T("베기")), ("fire", Text.T("화염구")), ("basic", Text.T("찌르기"))],
+        [("basic", Text.T("베기")), ("ice", Text.T("서리창")), ("fire", Text.T("화염구"))],
+        [("ice", Text.T("눈보라")), ("ice", Text.T("서리창"))],
+        [("fire", Text.T("화염구")), ("basic", Text.T("베기")), ("ice", Text.T("빙결")), ("fire", Text.T("용의 숨결"))],
     ];
 }
 #endregion

@@ -19,7 +19,7 @@ public static partial class Lab49
     {
         string dir = SaveDir(saveRoot, profile);
         Directory.CreateDirectory(dir);
-        File.WriteAllText(Path.Combine(dir, "slot1.sav"), $"{profile.Name}의 세이브");
+        File.WriteAllText(Path.Combine(dir, "slot1.sav"), Text.F("{0}의 세이브", profile.Name));
         Console.WriteLine($"  {profile.Name} 저장 → {dir}");
     }
 

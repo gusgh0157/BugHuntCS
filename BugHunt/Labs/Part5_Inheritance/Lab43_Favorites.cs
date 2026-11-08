@@ -36,7 +36,7 @@ public static partial class Lab43
         if (lootQuality == quality) lootQuality = lootQuality % 5 + 1;
         (int Id, string Name) kind = Pick(Kinds[0], Kinds[1..]);
 
-        var bag = new List<ItemStack> { new(kind.Id, kind.Name, quality), new(99, "횃불", 1) };
+        var bag = new List<ItemStack> { new(kind.Id, kind.Name, quality), new(99, Text.T("횃불"), 1) };
         var favorites = new HashSet<IItem> { bag[0] };
 
         var loot = new ItemStack(kind.Id, kind.Name, lootQuality);
@@ -91,6 +91,6 @@ public static partial class Lab43
 // [JA] 隠しケースは別のアイテム種類と品質の組み合わせで検査します。favorites を HashSet<ItemStack> に変える修正は通りますが、別の IItem 実装が入るとまた壊れるので勧めません。
 public static partial class Lab43
 {
-    static readonly (int Id, string Name)[] Kinds = [(7, "강철 검"), (12, "회복 물약"), (31, "마나 결정"), (45, "가죽 장갑")];
+    static readonly (int Id, string Name)[] Kinds = [(7, Text.T("강철 검")), (12, Text.T("회복 물약")), (31, Text.T("마나 결정")), (45, Text.T("가죽 장갑"))];
 }
 #endregion

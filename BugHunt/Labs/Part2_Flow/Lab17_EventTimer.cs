@@ -24,7 +24,7 @@ public static class Lab17
         TimeZoneInfo seoul = TimeZoneInfo.FindSystemTimeZoneById("Korea Standard Time");
 
         // 서버 기준(UTC) 11월 3일 15:00 에 끝난다. 서울로는 11월 4일 자정.
-        var halloween = new LimitedEvent("할로윈 사냥", new DateTime(2026, 11, 3, 15, 0, 0, DateTimeKind.Utc));
+        var halloween = new LimitedEvent(Text.T("할로윈 사냥"), new DateTime(2026, 11, 3, 15, 0, 0, DateTimeKind.Utc));
 
         // 지금은 UTC 12:00, 서울로는 밤 9시.
         var clock = new PlayerClock(new DateTime(2026, 11, 3, 12, 0, 0, DateTimeKind.Utc), seoul);

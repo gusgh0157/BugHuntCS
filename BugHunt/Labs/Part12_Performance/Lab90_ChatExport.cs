@@ -17,7 +17,7 @@ public static class Lab90
     public static void Run()
     {
         string[] senders = ["Kael", "Mira", "Doran", "Lia"];
-        string[] texts = ["ㅎㅇ", "보스 가자", "포션 있음?", "2시 방향 집결", "ㄱㄱ", "수고하셨습니다"];
+        string[] texts = [Text.T("ㅎㅇ"), Text.T("보스 가자"), Text.T("포션 있음?"), Text.T("2시 방향 집결"), Text.T("ㄱㄱ"), Text.T("수고하셨습니다")];
         int count = Pick(3_000, 2_000, 5_000);
         var lines = new List<ChatLine>();
         for (int i = 0; i < count; i++)

@@ -83,10 +83,10 @@ public static partial class Lab34
 {
     static readonly string[][] Teams =
     [
-        ["기사", "궁수", "마법사"],
-        ["전사", "도적"],
-        ["성기사", "흑마법사", "사냥꾼", "음유시인"],
-        ["광전사", "주술사", "암살자"],
+        [Text.T("기사"), Text.T("궁수"), Text.T("마법사")],
+        [Text.T("전사"), Text.T("도적")],
+        [Text.T("성기사"), Text.T("흑마법사"), Text.T("사냥꾼"), Text.T("음유시인")],
+        [Text.T("광전사"), Text.T("주술사"), Text.T("암살자")],
     ];
 }
 #endregion

@@ -53,7 +53,7 @@ public static partial class Lab56
     public static void Run()
     {
         Reward[] attachments = Pick(Bundles[0], Bundles[1..]);
-        var mail = new Mail { To = "아린", Attachments = [.. attachments] };
+        var mail = new Mail { To = Text.T("아린"), Attachments = [.. attachments] };
         Console.WriteLine($"  보낸 첨부: {string.Join(", ", mail.Attachments.Select(r => r.Describe()))}");
 
         Mail received = RoundTrip(mail);
@@ -115,10 +115,10 @@ public static partial class Lab56
 {
     static readonly Reward[][] Bundles =
     [
-        [new GoldReward { Amount = 500, Source = "주간 퀘스트" }, new ItemReward { ItemName = "회복 물약", Count = 3, Source = "주간 퀘스트" }],
-        [new ExpReward { Points = 1200, Source = "이벤트" }, new GoldReward { Amount = 50, Source = "출석" }],
-        [new ItemReward { ItemName = "용의 비늘", Count = 1, Source = "레이드" }, new ExpReward { Points = 300, Source = "레이드" }, new GoldReward { Amount = 999, Source = "레이드" }],
-        [new ExpReward { Points = 75, Source = "튜토리얼" }],
+        [new GoldReward { Amount = 500, Source = Text.T("주간 퀘스트") }, new ItemReward { ItemName = Text.T("회복 물약"), Count = 3, Source = Text.T("주간 퀘스트") }],
+        [new ExpReward { Points = 1200, Source = Text.T("이벤트") }, new GoldReward { Amount = 50, Source = Text.T("출석") }],
+        [new ItemReward { ItemName = Text.T("용의 비늘"), Count = 1, Source = Text.T("레이드") }, new ExpReward { Points = 300, Source = Text.T("레이드") }, new GoldReward { Amount = 999, Source = Text.T("레이드") }],
+        [new ExpReward { Points = 75, Source = Text.T("튜토리얼") }],
     ];
 }
 #endregion

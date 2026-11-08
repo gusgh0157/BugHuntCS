@@ -25,7 +25,7 @@
 
 **추적 방법:**
 - 서버 `Transmit`과 수신함 `Receive`에 추적점(tracepoint)을 겁니다: `{outgoing.Packet.Id}` / `{packet.Id}`. 보낸 번호와 받은 번호가 한 번도 같지 않습니다.
-- `Wire.Decode`에 `json.Contains("전설 망토")` 조건부 중단점을 겁니다. 지역 창에서 `json`의 `"id"`와 결과 `packet.Id`를 비교하면, 회선은 멀쩡하고 역직렬화에서 번호가 바뀝니다.
+- `Wire.Decode`에 `json.Contains("Yuna")` 조건부 중단점을 겁니다(아이템 이름은 JSON 에서 `\uXXXX` 로 이스케이프되므로 ASCII 인 멤버 이름으로 거릅니다). 지역 창에서 `json`의 `"id"`와 결과 `packet.Id`를 비교하면, 회선은 멀쩡하고 역직렬화에서 번호가 바뀝니다.
 - 서버 패킷에 개체 ID(`$1`)를 만들어 두면, 재전송은 항상 같은 개체(`$1`)를 보냅니다. 따라서 번호는 서버에서 바뀌지 않습니다.
 
 **수정:** 역직렬화할 수 있게 연다: `public Guid Id { get; init; } = Guid.NewGuid();` (또는 `[JsonInclude]`, 생성자 매개변수)

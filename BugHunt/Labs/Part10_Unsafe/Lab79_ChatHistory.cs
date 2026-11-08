@@ -22,7 +22,7 @@ public static class Lab79
     public static void Run()
     {
         string[] senders = ["Kael", "Mira", "Doran", "Lia", "Sven"];
-        string[] texts = ["안녕", "보스 어디야?", "2시 방향", "포션 남는 사람", "ㄱㄱ", "잠깐만 기다려 줘", "길드전 8시"];
+        string[] texts = [Text.T("안녕"), Text.T("보스 어디야?"), Text.T("2시 방향"), Text.T("포션 남는 사람"), Text.T("ㄱㄱ"), Text.T("잠깐만 기다려 줘"), Text.T("길드전 8시")];
 
         int count = Pick(4, 3, 8);
         var expected = new List<string>();

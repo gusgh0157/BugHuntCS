@@ -19,7 +19,7 @@ public static class Lab95
 
     public static void Run()
     {
-        string[] commands = ["/roll 20", "/roll ㅋㅋㅋ", "/roll", "/roll 6", "/roll 백", "/roll 1d6", "/roll 100"];
+        string[] commands = ["/roll 20", Text.T("/roll ㅋㅋㅋ"), "/roll", "/roll 6", Text.T("/roll 백"), "/roll 1d6", "/roll 100"];
         int count = Pick(20_000, 10_000, 30_000);
         int offset = Pick(0, 0, commands.Length - 1);
         ParseRollMax("/roll x");   // 처음 한 번만 드는 비용 빼기

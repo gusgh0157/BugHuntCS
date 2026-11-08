@@ -100,28 +100,28 @@ public static partial class Lab58
     static readonly (string, bool)[][] Batches =
     [
         [
-            ("""{"item":"회복 물약","count":3}""", true),
-            ("""{"item":"마나 물약"}""", false),
-            ("""{"item":"화살","count":null}""", false),
-            ("""{"item":"철광석","count":12}""", true),
+            ($$"""{"item":"{{Text.T("회복 물약")}}","count":3}""", true),
+            ($$"""{"item":"{{Text.T("마나 물약")}}"}""", false),
+            ($$"""{"item":"{{Text.T("화살")}}","count":null}""", false),
+            ($$"""{"item":"{{Text.T("철광석")}}","count":12}""", true),
         ],
         [
-            ("""{"item":"용의 비늘","count":1}""", true),
+            ($$"""{"item":"{{Text.T("용의 비늘")}}","count":1}""", true),
             ("""{"item":null,"count":5}""", false),
             ("""{"count":2}""", false),
-            ("""{"item":"빵"}""", false),
+            ($$"""{"item":"{{Text.T("빵")}}"}""", false),
         ],
         [
-            ("""{"item":"화살","count":99}""", true),
+            ($$"""{"item":"{{Text.T("화살")}}","count":99}""", true),
             ("""{"count":7}""", false),
-            ("""{"item":"마나 물약","count":4}""", true),
+            ($$"""{"item":"{{Text.T("마나 물약")}}","count":4}""", true),
         ],
         [
             ("""{"item":null,"count":1}""", false),
-            ("""{"item":"회복 물약","count":2}""", true),
-            ("""{"item":"철광석","count":null}""", false),
-            ("""{"item":"빵","count":6}""", true),
-            ("""{"item":"영웅의 증표"}""", false),
+            ($$"""{"item":"{{Text.T("회복 물약")}}","count":2}""", true),
+            ($$"""{"item":"{{Text.T("철광석")}}","count":null}""", false),
+            ($$"""{"item":"{{Text.T("빵")}}","count":6}""", true),
+            ($$"""{"item":"{{Text.T("영웅의 증표")}}"}""", false),
         ],
     ];
 }

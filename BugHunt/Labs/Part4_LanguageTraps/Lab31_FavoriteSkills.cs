@@ -20,7 +20,7 @@ public static partial class Lab31
         // 세이브 파일에 저장된 즐겨찾기 해시 (지난 세션의 GetHashCode 결과)
         HashSet<int> savedHashes = [.. favorites.Select(OldSessionHash)];
 
-        string[] allSkills = ["화염구", "서리창", "치유", "축복", "질풍베기", "대지분쇄", "그림자 일격"];
+        string[] allSkills = [Text.T("화염구"), Text.T("서리창"), Text.T("치유"), Text.T("축복"), Text.T("질풍베기"), Text.T("대지분쇄"), Text.T("그림자 일격")];
         // 이번 세션: 스킬 이름의 해시로 즐겨찾기인지 판정한다.
         string[] starred = [.. allSkills.Where(s => savedHashes.Contains(s.GetHashCode()))];
 
@@ -41,8 +41,8 @@ public static partial class Lab31
 // starred 계산 줄에서 멈추고 조사식에 넣어 보세요: "화염구".GetHashCode() 와 savedHashes 의 첫 값.
 // 프로그램을 멈추고 다시 F5 로 실행한 뒤 같은 조사식을 보세요. "화염구".GetHashCode() 값이 실행할 때마다 다릅니다.
 //
-// [JA] starred を計算する行で止めてウォッチに入れてみてください: "화염구".GetHashCode() と savedHashes の最初の値。
-// [JA] プログラムを止めてもう一度 F5 で実行し、同じウォッチを見てください。"화염구".GetHashCode() の値が実行ごとに違います。
+// [JA] starred を計算する行で止めてウォッチに入れてみてください: "ファイアボール".GetHashCode() と savedHashes の最初の値。
+// [JA] プログラムを止めてもう一度 F5 で実行し、同じウォッチを見てください。"ファイアボール".GetHashCode() の値が実行ごとに違います。
 #endregion
 
 #region 힌트 2 / ヒント 2
@@ -51,7 +51,7 @@ public static partial class Lab31
 // 그래서 지난 세션이 저장한 해시와 이번 세션이 계산한 해시가 영영 맞지 않습니다. 예외도 경고도 없습니다.
 //
 // [JA] .NET Core 以降、string.GetHashCode はセキュリティ(ハッシュ DoS 対策)のためプロセスごとにランダムなシードを使います。
-// [JA] 同じプロセスの中では安定していますが、プログラムを再起動すると "화염구" のハッシュがまったく変わります。
+// [JA] 同じプロセスの中では安定していますが、プログラムを再起動すると "ファイアボール" のハッシュがまったく変わります。
 // [JA] そのため前回のセッションが保存したハッシュと今回計算したハッシュが永遠に一致しません。例外も警告もありません。
 #endregion
 
@@ -74,10 +74,10 @@ public static partial class Lab31
 {
     static readonly string[][] Sets =
     [
-        ["화염구", "치유", "질풍베기"],
-        ["서리창", "축복"],
-        ["대지분쇄", "그림자 일격", "화염구", "치유"],
-        ["축복", "질풍베기", "서리창"],
+        [Text.T("화염구"), Text.T("치유"), Text.T("질풍베기")],
+        [Text.T("서리창"), Text.T("축복")],
+        [Text.T("대지분쇄"), Text.T("그림자 일격"), Text.T("화염구"), Text.T("치유")],
+        [Text.T("축복"), Text.T("질풍베기"), Text.T("서리창")],
     ];
 }
 #endregion

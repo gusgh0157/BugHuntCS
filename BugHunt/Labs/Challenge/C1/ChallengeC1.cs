@@ -7,13 +7,13 @@ public static class ChallengeC1
     public static void Run()
     {
         string[] party = ["Kael", "Mira", "Doran", "Yuna"];
-        string[] loot = ["전설 망토", "용의 비늘", "고대 금화", "회복 물약", "마나 결정", "흑요석 반지"];
+        string[] loot = [Text.T("전설 망토"), Text.T("용의 비늘"), Text.T("고대 금화"), Text.T("회복 물약"), Text.T("마나 결정"), Text.T("흑요석 반지")];
 
         // 드롭 목록: 기본 케이스는 화면에 보이는 그대로. 숨은 케이스는 무작위(같은 사람에게 같은 아이템이 두 번 떨어지기도 한다)
         var drops = new List<(string Member, string Item)>
         {
-            ("Kael", "전설 망토"), ("Mira", "용의 비늘"), ("Doran", "고대 금화"),
-            ("Yuna", "회복 물약"), ("Mira", "마나 결정"), ("Kael", "흑요석 반지"),
+            ("Kael", Text.T("전설 망토")), ("Mira", Text.T("용의 비늘")), ("Doran", Text.T("고대 금화")),
+            ("Yuna", Text.T("회복 물약")), ("Mira", Text.T("마나 결정")), ("Kael", Text.T("흑요석 반지")),
         };
         if (Seed != 0)
         {

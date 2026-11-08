@@ -39,7 +39,7 @@ public static class ChallengeB1
 
     public static void Run()
     {
-        string[] all = ["초원", "사막", "설원", "화산"];
+        string[] all = [Text.T("초원"), Text.T("사막"), Text.T("설원"), Text.T("화산")];
         string[] regions = all[..Pick(1, 3, 4)];
         int total = 0;
         bool finished = FinishesWithin("지역 불러오기", () =>

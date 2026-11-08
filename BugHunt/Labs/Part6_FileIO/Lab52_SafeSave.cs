@@ -43,7 +43,7 @@ public static partial class Lab52
         string path = Path.Combine(Root, "inventory.sav");
         try
         {
-            string[] names = ["철광석", "회복 물약", "마나 물약", "용의 비늘", "화살", "빵"];
+            string[] names = [Text.T("철광석"), Text.T("회복 물약"), Text.T("마나 물약"), Text.T("용의 비늘"), Text.T("화살"), Text.T("빵")];
             int n = Pick(4, 3, names.Length);
             List<Item> good = [.. names.Take(n).Select((name, i) => new Item(name, Pick(5 * (i + 1), 1, 99)))];
 

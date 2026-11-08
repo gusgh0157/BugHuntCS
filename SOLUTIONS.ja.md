@@ -378,7 +378,7 @@ m => m.Online のブレークポイント:  Enter でも、RewardRecipients で�
 
 ## Lab 31 — `string.GetHashCode` を保存して次の実行で比べる
 ```
-ウォッチ "화염구".GetHashCode():   実行ごとに違う値 (例: 1182412346 → -503617214)
+ウォッチ "ファイアボール".GetHashCode():   実行ごとに違う値 (例: 1182412346 → -503617214)
 savedHashes:                     前回のセッションの値(このラボでは固定の安定ハッシュで代用)
 本当の原因:  .NET Core 以降、文字列のハッシュはプロセスごとにランダムなシードを使う(ハッシュ衝突攻撃の防止)。
            ハッシュは同じプロセス内の Dictionary/HashSet のための値で、保存したり送ったりする識別子ではない。
@@ -605,9 +605,9 @@ using var reader = new StreamReader(stream);
 
 ## Lab 50 — バイトを UTF-8 でだけデコード: BOM と CP949
 ```
-モード A (UTF-8 BOM):  table.Keys.First().Length == firstKey.Length + 1,  最初の文字 '﻿'
-モード B (CP949):      bytes のハングルが2バイトずつ。UTF8.GetString の結果に '�'(�)
-モード C (UTF-8):      正常
+MOD A (UTF-8 BOM):  table.Keys.First().Length == firstKey.Length + 1,  最初の文字 '﻿'
+MOD B (CP949):      bytes のかな(韓国語で実行したならハングル)が2バイトずつ。UTF8.GetString の結果に '�'(�)
+MOD C (UTF-8):      正常
 本当の原因:  Encoding.UTF8.GetString は BOM を消さず(U+FEFF として残る)、不正なバイトは例外なしに � に変える。
            File.ReadAllText/StreamReader は BOM を処理するが、バイトを直接デコードするとそうではない。
 ```
@@ -685,7 +685,7 @@ Title の set のブレークポイント:  Deserialize の間に呼ばれない
 
 ## Lab 55 — フィールドと `private set` は往復しない
 ```
-セーブファイル:   {"name":"아린","level":5}      ← gold がない
+セーブファイル:   {"name":"アリン","level":5}    ← gold がない
 Level の private set のブレークポイント:   Load の間に呼ばれない
 本当の原因:  Gold はフィールド。System.Text.Json は既定で public プロパティだけ扱う → 保存から抜ける。
            Level は public get なので保存はされるが set が private なので読むとき飛ばす → 初期値 1。
@@ -695,7 +695,7 @@ Level の private set のブレークポイント:   Load の間に呼ばれな�
 
 ## Lab 56 — ポリモーフィズムの情報がなく派生型が基底型で戻ってくる
 ```
-サーバー保存:    {"to":"아린","attachments":[{"source":"주간 퀘스트"},{"source":"주간 퀘스트"}]}   ← amount、itemName がない
+サーバー保存:    {"to":"アリン","attachments":[{"source":"ウィークリークエスト"},{"source":"ウィークリークエスト"}]}   ← amount、itemName がない
 ウォッチ received.Attachments[0].GetType():   Lab56+Reward
 本当の原因:  List<Reward> の項目を宣言型 Reward でシリアル化して派生型のプロパティが抜け、
            JSON に型の識別子がないので読むときもすべて Reward で作る。
@@ -725,8 +725,8 @@ Restore のあと:   restored.Leader と restored.Members[0] のオブジェク�
 
 ## Lab 58 — 欠落(missing)、null、0 を区別できない
 ```
-{"item":"마나 물약"}              → 受信 "마나 물약 x0"     (count なし → int 既定値 0、例外なし)
-{"item":"화살","count":null}      → 拒否                    (int に null → JsonException)
+{"item":"マナポーション"}          → 受信 "マナポーション x0" (count なし → int 既定値 0、例外なし)
+{"item":"矢","count":null}        → 拒否                    (int に null → JsonException)
 {"item":null,"count":5}  (隠し)   → 受信 "(null) x5"        (string は null を受けられる)
 本当の原因:  System.Text.Json は JSON にないプロパティを触らない。nullable 注釈(string は null でない)も既定では検査しない。
 ```
@@ -780,7 +780,7 @@ LINQ to XML なら `XNamespace q = "urn:bughunt:quests";` そして `root.Elemen
 ## Lab 61 — 文字列連結で作った XML のエスケープ漏れ
 ```
 (受信側) 読めないメッセージを破棄: Name cannot begin with the '3' character, hexadecimal value 0x33. Line 1, position N.
-送った XML:   <invite guild="불꽃 연대" from="케인"><message>레이드 같이 가요 <3</message></invite>
+送った XML:   <invite guild="炎の連隊" from="ケイン"><message>レイド一緒に行こう <3</message></invite>
 本当の原因:  BuildInvite がユーザー入力をそのまま XML の文法の中に入れる。< と & はテキストで、" は属性値で文書を壊す。
            受け取る側は XmlException を飲み込んで「届かない」にした。
 ```
@@ -904,8 +904,8 @@ FindMatchAsync フレームの token:   IsCancellationRequested true
 
 ## Lab 69 — 例外を飲み込んで成功を返す
 ```
-段階1のコンソール:  [ログ] 倉庫アップロード警告: 영웅의 증표: 帰属アイテムは倉庫に入れられません
-             영웅의 증표 保管完了        ← 失敗したのに「完了」
+段階1のコンソール:  [ログ] 倉庫アップロード警告: 英雄の証: 帰属アイテムは倉庫に入れられません
+             英雄の証 保管完了          ← 失敗したのに「完了」
 最初の例外で中断(InvalidOperationException) → F10:  catch (Exception) に入ってログだけ出して return true
 本当の原因:  UploadToStorageAsync がすべての例外を捕まえて無条件に true。呼び出し元は「預けた」と信じてバッグから外す。
            症状(アイテムの消失)は段階2でバッグが保存され、段階3で読み直すときに初めて見える
@@ -924,7 +924,7 @@ catch (InvalidOperationException ex)   // サーバーが拒否した: バッグ
 }
 ```
 他の例外(ネットワーク切断、コードのバグ)は捕まえず上に送る。そこで捕まえるかは、それを処理できる側が決める。
-**偽の修正:** `if (item == "영웅의 증표") return false;` のように見えているアイテムだけ塞ぐと基本ケースは通るが、隠しケースは別のアイテムが束縛(귀속)なので失敗する。`catch (Exception)` をそのままにして `return false` にだけ変えると、このラボは通るが、コードのバグまで「保管失敗」に変えてしまう同じ匂いが残る。
+**偽の修正:** `if (item == Text.T("영웅의 증표")) return false;`(日本語では "英雄の証") のように見えているアイテムだけ塞ぐと基本ケースは通るが、隠しケースは別のアイテムが束縛(귀속)なので失敗する。`catch (Exception)` をそのままにして `return false` にだけ変えると、このラボは通るが、コードのバグまで「保管失敗」に変えてしまう同じ匂いが残る。
 **教訓:** `catch (Exception) { ログ }` のあとに成功値を返すと、失敗が**別の段階の別の症状**に変わって現れる。ログ一行は処理ではない。捕まえる例外は絞り、失敗は戻り値か例外で呼び出し元に知らせる。
 
 ## Lab 70 — タイムアウトを「ユーザーがキャンセルした」として処理
@@ -954,7 +954,7 @@ catch (OperationCanceledException)
 
 ## Lab 71 — 捕まえた例外をあとで `throw ex;` で投げ直す
 ```
-リトライのログ:  [再試行 3/3] FormatException: The input string '두백' was not in a correct format.
+リトライのログ:  [再試行 3/3] FormatException: The input string '二百' was not in a correct format.
 レポート:       FormatException @ RetryAsync          ← 型は合っているのに位置がリトライの関数
 最初の例外で中断(FormatException):  呼び出し履歴の一番上の BugHunt フレームは ParseRewardAsync
 オブジェクト ID で同じ例外だと確認し throw last! の行を F10:  StackTrace が RetryAsync から新しく始まる
@@ -1129,7 +1129,7 @@ F5:                 PlayBeat の _onBeat(beat) の行で止まる
 
 ## Lab 79 — ArrayPool に返却した配列を Memory で使い続ける
 ```
-history.Add のブレークポイントごとの history[0]:  "[Kael] 안녕" → 次のメッセージで上書きされた値 → ...   ← 毎回変わる
+history.Add のブレークポイントごとの history[0]:  "[Kael] やあ" → 次のメッセージで上書きされた値 → ...   ← 毎回変わる
 オブジェクト ID:   FormatMessage の buffer が毎回同じ $1
 本当の原因:  Return(buffer) のあとも buffer.AsMemory(...) を返して記録に残す。
            同じスレッドでまた Rent すると、今返したその配列が出てきて、新しいメッセージが古い記録の上に上書きされる。
