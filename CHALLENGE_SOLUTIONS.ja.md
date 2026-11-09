@@ -88,11 +88,47 @@
 - ウォッチに `$1.Count` を入れてフレンド画面を通ってみてください。24 が 5 に変わります。誰が変えたかは `List<T>.RemoveAll` に関数ブレークポイントをかければすぐ出ます(条件: `this == $1`)。
 - データブレークポイント: ある `RankEntry` の `Rank` プロパティの後ろのフィールドをウォッチで選び、「値が変わったら中断」をかけます(.NET Core 3 以上、VS 2019 16.x 以上)。
 
-**修正:** キャッシュの結果を誰も直せなくする。
-- `Top` が `IReadOnlyList<RankEntry>` を返し、`RankEntry.Rank` を `init` にする。そうすればコンパイラが書き換える所をすべて見つけてくれる。
-- フレンド画面は新しいリストを作る: `service.Top(region).Where(r => friends.Contains(r.Name)).Select((r, i) => $"{i + 1}. {r.Name}")`
-- `RankFilters` のように「受けたものを直してそのまま返す」ヘルパーは名前が嘘をつく。LINQ の `Where` と同じ名前なのに動作が逆だ。
+**修正:** キャッシュの結果を誰も直せなくする。三つを一緒に適用しないとコンパイルできない(`Rank` を `init` に変えた瞬間に `RankFilters` がコンパイルできなくなるので消す必要があり、そうするとフレンド画面も書き直すことになる)。
+1. `Ranking.cs`: `RankEntry.Rank` を `init` にし、`Top` は `IReadOnlyList<RankEntry>` を返して、順位はソートした順に**新しい項目を作りながら**決める。
+```csharp
+public sealed class RankEntry(string name, string guild, int score)
+{
+    public string Name { get; } = name;
+    public string Guild { get; } = guild;
+    public int Score { get; } = score;
+    public int Rank { get; init; }   // 作るときだけ決める
 
+    public override string ToString() => $"{Rank}{Text.T("위")} {Name} ({Score})";
+}
+
+public sealed class RankingService(RankingDatabase db)
+{
+    readonly Dictionary<string, IReadOnlyList<RankEntry>> _cache = [];
+
+    public IReadOnlyList<RankEntry> Top(string region)
+    {
+        if (!_cache.TryGetValue(region, out IReadOnlyList<RankEntry>? ranks))
+        {
+            List<RankEntry> rows = db.QuerySeason(region);
+            rows.Sort((a, b) => b.Score != a.Score ? b.Score.CompareTo(a.Score) : string.CompareOrdinal(a.Name, b.Name));
+            ranks = rows.Select((r, i) => new RankEntry(r.Name, r.Guild, r.Score) { Rank = i + 1 }).ToList();
+            _cache[region] = ranks;
+        }
+        return ranks;
+    }
+
+    public void Invalidate(string region) => _cache.Remove(region);
+}
+```
+2. `Ranking.cs`: `RankFilters` クラスをそのすぐ上の説明コメントごと丸ごと消す。「受けたものを直してそのまま返す」ヘルパーは名前が嘘をつく(LINQ の `Where` と同じ名前なのに動作が逆だ)。
+3. `Screens.cs`: フレンド画面はキャッシュに触れずに新しいリストを作る。`GuildRankingScreen` と `WeeklyRewardMailer` は `IReadOnlyList` でもそのままコンパイルできる。
+```csharp
+public sealed class FriendRankingScreen(RankingService service)
+{
+    public List<string> Show(string region, IReadOnlySet<string> friends) =>
+        service.Top(region).Where(r => friends.Contains(r.Name)).Select((r, i) => $"{i + 1}. {r.Name}").ToList();
+}
+```
 **教訓:** キャッシュは同じオブジェクトを複数の人に配る仕組みです。配ったオブジェクトが変更可能なら、一つの画面のミスが時間と場所を越えて別の画面の症状として現れます。症状が出た画面でキャッシュを空にするのはその画面だけを直します。キャッシュが返すものは不変にするか、コピーで渡します (ラボ 19 の浅いコピー、30 のクエリとスナップショット)。
 
 **カテゴリ:** キャッシュ + 共有された変更可能な状態 (2部の浅いコピー、3部のコンテナ)
@@ -148,7 +184,22 @@
 原因:   StartAutoSave のローカル変数 timer 以外に Timer をつかむものがない。メソッドが終わると回収の対象になり、
         GC が回るとファイナライザーがタイマーを止める。(System.Threading.Timer はコールバックが生きていても Timer オブジェクトがないと止まる)
 ```
-**修正:** タイマーをフィールドに保存し、終わるとき `Dispose` する。(`PeriodicTimer` と `async` ループもよい)
+**修正:** タイマーをローカル変数ではなくフィールドに保存し、終わるとき `Dispose` する。`StartAutoSave` の中で `using var timer` に変えるのは逆方向だ(メソッドが終わった瞬間にタイマーが止まる)。
+```csharp
+    static int _saves;
+    static Timer? _autoSave;   // フィールドがつかんでいる間は GC の対象にならない
+
+    static void StartAutoSave(int intervalMs)
+    {
+        _autoSave = new Timer(_ => Interlocked.Increment(ref _saves), null, intervalMs, intervalMs);
+        Console.WriteLine($"  자동 저장 시작 ({intervalMs}ms마다)");
+    }
+
+    // Run の最後の行 (if/else の後)
+        _autoSave?.Dispose();
+        _autoSave = null;
+```
+(`PeriodicTimer` と `async` ループもよい。)
 
 **カテゴリ:** 9部リソースとメモリ (GC とオブジェクトの寿命)
 
@@ -170,7 +221,19 @@
 原因:   Parallel.ForEach は Action<T> を受け取る。async ラムダは async void になり、最初の await ですぐ「終わった」と戻る。
         ForEach は何も待たずに終わり、メールはそのあと届く。例外が出るとプロセスが死ぬ(ラボ 62)
 ```
-**修正:** `await Parallel.ForEachAsync(players, async (p, ct) => await server.SendAsync(p))` または `await Task.WhenAll(players.Select(server.SendAsync))`
+**修正:** `Action<T>` ではなく待てる API で送る。`SendCompensation` を `async Task` を返す `SendCompensationAsync` に変え(`Run` の呼び出しも一緒に直す)、`Parallel.ForEachAsync` を `await` する。`Run` は採点ツールが呼ぶ同期メソッドなので最後まで待つ必要がある(コンソールアプリには `SynchronizationContext` がないので、ここで `GetAwaiter().GetResult()` でブロックしてもラボ 63 のようなデッドロックは起きない)。
+```csharp
+    static async Task SendCompensationAsync(MailServer server, IEnumerable<string> players)
+    {
+        await Parallel.ForEachAsync(players, async (player, ct) => await server.SendAsync(player));
+        Console.WriteLine("  보상 우편 발송 완료");
+    }
+
+    // Run
+        SendCompensationAsync(server, players).GetAwaiter().GetResult();
+        Expect("'발송 완료' 시점에 도착한 우편", count, server.Delivered);
+```
+または `await Task.WhenAll(players.Select(server.SendAsync));` で全部起動して一度に待つ。
 
 **偽の修正:** `Thread.Sleep(500)` を入れると、往復がもっと長くかかる隠しケースでまた足りません。
 

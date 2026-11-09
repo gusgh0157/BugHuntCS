@@ -70,19 +70,19 @@ PrintPlayer(player);
 本当の原因:  catch (FormatException) は AggregateException と型が違うので捕まらない。
            その上、失敗後に残ったファイルを処理しないこともあるので「ファイル一つだけ飛ばす」ができていない
 ```
-**修正:** ファイル一つ単位で捕まえる。
+**修正:** ファイル一つ単位で捕まえる。`Run` の外側の `try`/`catch (FormatException)` は消し(もう何も捕まえない)、`Parallel.ForEach` の呼び出しを下のものに置き換える。ラムダの中で `skipped++` をそのまま使うとスレッド競合が起きるので `Interlocked.Increment` で数える(ラボ 66 参照)。
 ```csharp
-Parallel.ForEach(Files, file =>
-{
-    try { loaded.Add(Parse(file.Key, file.Value)); }
-    catch (FormatException ex)
-    {
-        Console.WriteLine($"  고장 난 파일 건너뜀: {file.Key} ({ex.Message})");
-        Interlocked.Increment(ref skipped);
-    }
-});
+        Parallel.ForEach(Files, file =>
+        {
+            try { loaded.Add(Parse(file.Key, file.Value)); }
+            catch (FormatException ex)
+            {
+                Console.WriteLine($"  고장 난 파일 건너뜀: {file.Key} ({ex.Message})");
+                Interlocked.Increment(ref skipped);
+            }
+        });
 ```
-(`skipped++` をそのままにするとスレッド競合が起きる。ラボ 66 参照。)さらに `int.TryParse` で例外なしに処理することもできる。
+さらに `Parse` で `int.TryParse` を使って例外なしに処理することもできる。
 **教訓:** 並列 API(`Parallel`、`Task.Wait`、`Task.Result`)は例外を **AggregateException で包む**。例外設定ウィンドウの first chance 中断で、本当の throw 地点(作業スレッド)をすぐ見られる。
 
 ## Lab 7 — `throw ex;` がスタックトレースを上書きする
@@ -92,7 +92,15 @@ Parallel.ForEach(Files, file =>
 本当の原因:      throw ex; は例外を「新しく投げた」ようにスタックトレースをこの行から始め直す
 隠した警告:      BugHunt.csproj の <NoWarn>CA2200</NoWarn>
 ```
-**修正:** `throw;`、そして `NoWarn` から CA2200 を消す。情報を足したいなら `throw new SaveLoadException($"슬롯 {index + 1}", ex);` のように**内部例外で包む**。
+**修正:** `LoadSlot` の `catch` の中の `throw ex;` を `throw;` に変える。そのあと `BugHunt.csproj` の `<NoWarn>$(NoWarn);CA2200</NoWarn>` の行を消す。順序が大事だ: このリポジトリは警告をエラーとして扱うので(`TreatWarningsAsErrors`)、`throw ex;` が残ったまま先に `NoWarn` を消すとビルドが失敗する。`throw ex;` を使うラボはこのラボだけなので、直したあとなら `NoWarn` を消してもビルドはきれいなままだ。(`NoWarn` をそのままにしても採点は通るが、それでは次に誰かがまた `throw ex;` を書いてもコンパイラが知らせてくれない。)
+```csharp
+        catch (Exception ex)
+        {
+            Console.WriteLine($"  슬롯 {index + 1} 손상: {ex.GetType().Name}");
+            throw;   // 元のスタックトレースをそのままにして投げ直す
+        }
+```
+情報を足したいなら `throw new SaveLoadException($"슬롯 {index + 1}", ex);` のように**内部例外で包む**(このラボにはそのような例外型がないので自分で作る必要がある)。
 **教訓:** スタックトレースは例外が**最後に throw された所**から記録される。投げ直すときは `throw;`。警告を切ると、その警告が守っていたバグも一緒に隠れる。
 
 ---
@@ -383,7 +391,16 @@ savedHashes:                     前回のセッションの値(このラボで�
 本当の原因:  .NET Core 以降、文字列のハッシュはプロセスごとにランダムなシードを使う(ハッシュ衝突攻撃の防止)。
            ハッシュは同じプロセス内の Dictionary/HashSet のための値で、保存したり送ったりする識別子ではない。
 ```
-**修正:** ハッシュではなく**スキル名(または固定の Id)**そのものを保存して比べます。ハッシュがどうしても必要なら FNV-1a、`XxHash64`(`System.IO.Hashing`)、SHA-256 のような**定義が固定されたハッシュ**を自分で使います。このラボではセーブ側が安定ハッシュ(`OldSessionHash`)で保存されているので、比較も `OldSessionHash(s)` で行えば通ります。
+**修正:** ハッシュではなく**スキル名(または固定の Id)**そのものを保存して比べます。このラボではセーブ側がすでに安定ハッシュ(`OldSessionHash`)で保存されているので、比べる側も同じ関数を使えば通ります。`Run` で `starred` を作る行一つだけが変わります。
+```csharp
+        string[] starred = [.. allSkills.Where(s => savedHashes.Contains(OldSessionHash(s)))];
+```
+名前を保存する方向に直すなら、`savedHashes` の代わりに名前の集合を使います(そうすると `OldSessionHash` は使われなくなるので消してもかまいません)。
+```csharp
+        HashSet<string> savedNames = [.. favorites];
+        string[] starred = [.. allSkills.Where(savedNames.Contains)];
+```
+ハッシュがどうしても必要なら FNV-1a、`XxHash64`(`System.IO.Hashing`)、SHA-256 のような**定義が固定されたハッシュ**を自分で使います。
 **教訓:** `GetHashCode` の契約は「同じプロセスで、同じ値なら同じハッシュ」だけです。プロセス、マシン、.NET のバージョンを越えた瞬間に意味がなくなります。`HashCode.Combine` も同じ理由で実行ごとに違います。
 
 ## Lab 32 — `a + b ?? 0` は `(a + b) ?? 0`
@@ -473,12 +490,21 @@ F11 (monster.DropCount):   IDropSource.DropCount の既定実装 (=> 1) に入�
 本当の原因:  Boss.DropCount(int, bool = false)、Elite.DropCount(long) はインターフェースの int DropCount(int) とシグネチャが違うので
            実装と認められない。インターフェースに既定実装があるのでコンパイルエラーも警告もない。
 ```
-**修正:** シグネチャをインターフェースとまったく同じにする。
+**修正:** シグネチャをインターフェースの `int DropCount(int luck)` とまったく同じにする。`Boss` は省略可能な引数 `bool elite = false` とそれを使っていた `(elite ? 1 : 0)` を消し、`Elite` は `long` を `int` に変える。二つのクラスの上のコメント(「精鋭ボスは1個多い」「運は long で受け取る」)も変わったコードに合わせて直す。
 ```csharp
-public int DropCount(int luck) => baseDrops + luck / 10;      // Boss
-public int DropCount(int luck) => 2 + luck / 20;              // Elite
+    sealed class Boss(string name, int baseDrops) : IDropSource
+    {
+        public string Name => name;
+        public int DropCount(int luck) => baseDrops + luck / 10;
+    }
+
+    sealed class Elite(string name) : IDropSource
+    {
+        public string Name => name;
+        public int DropCount(int luck) => 2 + luck / 20;
+    }
 ```
-精鋭ボスのような変形はコンストラクターの引数か別のオーバーロードで受け取る。
+精鋭ボスのような変形はコンストラクターの引数(`bool elite`)か別のオーバーロードで受け取り、サーバーの `long` の運の値はインターフェースを呼ぶ前に `int` に変換する。
 **教訓:** 省略可能な引数を付けたり引数の型を広げたり(`int` → `long`)すると、呼ぶ側のコードはそっくりでも**別のメソッド**です。既定実装(DIM)のあるインターフェースは「実装を抜かしてもコンパイルできる」という危険を一緒に持ち込みます。既定実装を一時的に消してみると、実装が抜けたクラスがコンパイルエラーで表に出ます。
 
 ## Lab 40 — 明示的インターフェース実装が違う値を返す
@@ -513,11 +539,33 @@ Knight.MaxHp のブレークポイント (最初に止まる):   armor == 0、ba
 本当の原因:  生成の順序は派生フィールドの初期化子 → 基底コンストラクター → 派生コンストラクター本体。
            基底コンストラクターが呼んだ仮想メソッドはすでに Knight.MaxHp に行くが、armor は派生コンストラクター本体でやっと入る。
 ```
-**修正:** 基底コンストラクターが必要な値を引数で受け取る。
+**修正:** 基底コンストラクターが最大 HP を引数で受け取り、仮想呼び出し `Hp = MaxHp();` をなくす。派生コンストラクターは自分のフィールドの値で計算した最大 HP を `base(...)` に渡す。`MaxHp()` のオーバーライドとフィールド初期化子はそのまま残す。
 ```csharp
-protected Unit(string name, int maxHp) { Name = name; Hp = maxHp; }
-public Knight(string name, int armor) : base(name, 100 + armor * 10) { this.armor = armor; }
-public Mage(string name, int wisdom) : base(name, 60 + wisdom * 5) { this.wisdom = wisdom; }
+    abstract class Unit
+    {
+        public string Name { get; }
+        public int Hp { get; protected set; }
+
+        protected Unit(string name, int maxHp)
+        {
+            Name = name;
+            Hp = maxHp;   // 派生クラスが計算して渡した値。仮想呼び出しがない
+        }
+
+        public abstract int MaxHp();
+    }
+
+    // Knight
+        public Knight(string name, int armor) : base(name, 100 + armor * 10)
+        {
+            this.armor = armor;
+        }
+
+    // Mage
+        public Mage(string name, int wisdom) : base(name, 60 + wisdom * 5)
+        {
+            this.wisdom = wisdom;
+        }
 ```
 または HP を満たすのを生成が終わったあとの `Spawn()` の段階に移す。
 **教訓:** コンストラクターで仮想メソッドを呼ぶと、派生クラスがまだ準備できていないオブジェクトを見ます(CA2214)。フィールド初期化子(`baseHp = 100`)は基底コンストラクターより**先に**、コンストラクター本体は**あとに**実行されるという違いが症状を紛らわしくします。`Knight` コンストラクターの終わりで `Hp` を入れ直す修正は隠しケース(魔法使い)で引っかかります。
@@ -586,10 +634,26 @@ first chance:  IOException: The process cannot access the file '...chat.log' bec
 本当の原因:  ChatLogger の StreamWriter(append) は FileAccess.Write + FileShare.Read で開いている。
            File.ReadAllLines は FileAccess.Read + FileShare.Read で開く。つまり「他人が書いていれば拒否」。「別のプロセス」は実はこのプロセス。
 ```
-**修正:** 読む側が書き込みの共有を許す。
+**修正:** 読む側が書き込みの共有を許す。`Upload` の `File.ReadAllLines(path)` は共有モードを選べないので、`FileStream` を自分で開いて `StreamReader` で行を読む。
 ```csharp
-using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-using var reader = new StreamReader(stream);
+    static string[] Upload(string path)
+    {
+        try
+        {
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var reader = new StreamReader(stream);
+            var lines = new List<string>();
+            while (reader.ReadLine() is { } line)
+                lines.Add(line);
+            Console.WriteLine($"  업로드: {lines.Count}줄");
+            return [.. lines];
+        }
+        catch (IOException ex)
+        {
+            Console.WriteLine($"  업로드 실패: {ex.Message}");
+            return [];
+        }
+    }
 ```
 **教訓:** 二つのハンドルが共存するには、互いの `FileAccess` が相手の `FileShare` に入っていなければなりません。書く側は `AutoFlush` や `Flush` もしないと、読む側が最新の内容を見られません。アップロードの前にロガーを閉じる修正も動きますが、通報中に来たチャットを逃すことがあります。`catch (IOException)` が失敗を「0 行」に変えたのもラボ 69(例外を飲み込んで成功を返す)と同じ匂いです。Linux/macOS は共有モードを強制しないので、このラボは `SKIP` します。
 
@@ -1173,7 +1237,31 @@ Checksum の最初の行を F10:  プログラムが消える。[FAIL] も例外
 本当の原因:  stackalloc byte[n] はスタックに n バイトを取る。スタックはふつう 1 MB 固定なので、
            数百万バイトを取ると StackOverflowException。この例外は catch で捕まえられずプロセスを即座に終わらせる。
 ```
-**修正:** `stackalloc` のサイズは小さく固定された上限(例: 1024 バイト)の中でだけ使い、大きい入力はヒープ(`ArrayPool<byte>` や `new byte[n]`)で処理します。`const int StackCap = 1024;` のあと `packet.Length <= StackCap` のときだけ `stackalloc`、そうでなければ `ArrayPool<byte>.Shared.Rent(...)` のあと `finally` で `Return`。
+**修正:** `stackalloc` のサイズは小さく固定された上限(`StackCap`)の中でだけ使い、大きい入力はヒープ(`ArrayPool<byte>`)から借ります。`Checksum` を丸ごと置き換え、`using System.Buffers;` を追加します。
+```csharp
+using System.Buffers;
+// Lab81
+    const int StackCap = 1024;   // スタックに取ってよい最大サイズ
+
+    static long Checksum(byte[] packet)
+    {
+        byte[]? rented = packet.Length <= StackCap ? null : ArrayPool<byte>.Shared.Rent(packet.Length);
+        try
+        {
+            Span<byte> scratch = rented is null ? stackalloc byte[StackCap] : rented;
+            scratch = scratch[..packet.Length];
+            packet.CopyTo(scratch);
+            long sum = 0;
+            foreach (byte b in scratch) sum += b;
+            return sum;
+        }
+        finally
+        {
+            if (rented is not null) ArrayPool<byte>.Shared.Return(rented);
+        }
+    }
+```
+(単に `Span<byte> scratch = packet.Length <= StackCap ? stackalloc byte[StackCap] : new byte[packet.Length];` でヒープに取ってもかまいません。`OutOfMemoryException` は捕まえられる例外です。)
 **教訓:** `stackalloc` のサイズは**必ずコンパイル時に分かる小さい上限**の中に収めてください。入力・反復回数・再帰の深さのいずれであれ、スタックを無制限に使えばオーバーフローです。ヒープの `OutOfMemoryException` はまだ捕まえられますが、スタックオーバーフローは捕まえられません。
 
 ## Lab 82 — `unsafe` ポインターの書き込みがバッファを越えて隣のメモリを上書きする
