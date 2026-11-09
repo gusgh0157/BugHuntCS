@@ -9,7 +9,7 @@ public static class ChallengeB5
     static void StartAutoSave(int intervalMs)
     {
         var timer = new Timer(_ => Interlocked.Increment(ref _saves), null, intervalMs, intervalMs);
-        Console.WriteLine($"  자동 저장 시작 ({intervalMs}ms마다)");
+        Console.WriteLine(Text.L($"  자동 저장 시작 ({intervalMs}ms마다)", $"  オートセーブ開始 ({intervalMs}ms ごと)"));
     }
 
     // 게임 한 프레임: 이것저것 만들고 버린다. 가끔 GC 가 돈다.
@@ -34,17 +34,17 @@ public static class ChallengeB5
 
         // 자동 저장이 wanted 번 될 때까지 게임을 계속한다.
         int frames = 0;
-        if (FinishesWithin($"자동 저장 {wanted}번", () =>
+        if (FinishesWithin(Text.L($"자동 저장 {wanted}번", $"オートセーブ {wanted} 回"), () =>
             {
                 while (Volatile.Read(ref _saves) < wanted)
                     PlayFrame(++frames);
             }))
         {
             int saves = Volatile.Read(ref _saves);
-            Console.WriteLine($"  {frames}프레임 동안 저장 {saves}번");
-            Expect($"저장 횟수가 {wanted}번 이상", true, saves >= wanted);
+            Console.WriteLine(Text.L($"  {frames}프레임 동안 저장 {saves}번", $"  {frames} フレームの間に保存 {saves} 回"));
+            Expect(Text.L($"저장 횟수가 {wanted}번 이상", $"保存回数が {wanted} 回以上"), true, saves >= wanted);
         }
         else
-            Console.WriteLine($"  (멈춘 순간 {frames}프레임, 저장 {Volatile.Read(ref _saves)}번)");
+            Console.WriteLine(Text.L($"  (멈춘 순간 {frames}프레임, 저장 {Volatile.Read(ref _saves)}번)", $"  (止まった時点で {frames} フレーム、保存 {Volatile.Read(ref _saves)} 回)"));
     }
 }

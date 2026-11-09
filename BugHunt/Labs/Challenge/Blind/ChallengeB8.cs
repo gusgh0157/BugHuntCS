@@ -74,6 +74,6 @@ public static class ChallengeB8
     {
         byte color = (byte)Pick(0x40, 0x10, 0x90);
         uint actual = PreviewChecksum(color);
-        Expect("미리보기 체크섬", Expected(color), actual);
+        Expect(Text.L("미리보기 체크섬", "プレビューのチェックサム"), Expected(color), actual);
     }
 }

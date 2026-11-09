@@ -19,7 +19,7 @@ public static class Lab30
         public void Enter(List<Member> guild)
         {
             _roster = guild.Where(m => m.Online);
-            Console.WriteLine($"  레이드 입장: {string.Join(", ", _roster.Select(m => m.Name))}");
+            Console.WriteLine(Text.L($"  레이드 입장: {string.Join(", ", _roster.Select(m => m.Name))}", $"  レイド入場: {string.Join(", ", _roster.Select(m => m.Name))}"));
         }
 
         public List<string> RewardRecipients() => [.. _roster.Select(m => m.Name)];
@@ -43,11 +43,11 @@ public static class Lab30
         foreach (Member m in guild.Where(m => !m.Online).Skip(1).Take(1))
             m.Online = true;
         guild.Add(new Member("Newbie", true));
-        Console.WriteLine($"  레이드 도중 접속 중: {string.Join(", ", guild.Where(m => m.Online).Select(m => m.Name))}");
+        Console.WriteLine(Text.L($"  레이드 도중 접속 중: {string.Join(", ", guild.Where(m => m.Online).Select(m => m.Name))}", $"  レイド中に接続中: {string.Join(", ", guild.Where(m => m.Online).Select(m => m.Name))}"));
 
         List<string> recipients = raid.RewardRecipients();
-        Console.WriteLine($"  보상 받는 사람: {string.Join(", ", recipients)}");
-        Expect("보상 받는 사람 (입장할 때 명단)", expected, string.Join(", ", recipients));
+        Console.WriteLine(Text.L($"  보상 받는 사람: {string.Join(", ", recipients)}", $"  報酬を受け取る人: {string.Join(", ", recipients)}"));
+        Expect(Text.L("보상 받는 사람 (입장할 때 명단)", "報酬を受け取る人 (入場時の名簿)"), expected, string.Join(", ", recipients));
     }
 }
 

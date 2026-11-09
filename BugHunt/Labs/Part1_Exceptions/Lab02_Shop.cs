@@ -46,7 +46,7 @@ public static class Lab02
     {
         List<CartLine> cart = LoadCart(SavedCart);
         int total = CartTotal(cart);
-        Expect("장바구니 합계 (50x3 + 70x2 + 1200)", 1490, total);
+        Expect(Text.L("장바구니 합계 (50x3 + 70x2 + 1200)", "カートの合計 (50x3 + 70x2 + 1200)"), 1490, total);
     }
 }
 

@@ -52,7 +52,7 @@ public static class Lab01
     public static void Run()
     {
         OpenFriendList();
-        Expect("보여 준 프로필 수", 3, _shown);
+        Expect(Text.L("보여 준 프로필 수", "表示したプロフィール数"), 3, _shown);
     }
 }
 

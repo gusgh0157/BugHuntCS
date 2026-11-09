@@ -28,10 +28,10 @@ public static partial class Lab36
 
         int[] got = [.. downloaded.OrderBy(x => x)];
         int[] expected = [.. Enumerable.Range(0, pieces)];
-        Console.WriteLine($"  조각 {pieces}개, 받은 번호: {string.Join(", ", got)}");
+        Console.WriteLine(Text.L($"  조각 {pieces}개, 받은 번호: {string.Join(", ", got)}", $"  断片 {pieces}個、受け取った番号: {string.Join(", ", got)}"));
 
-        Expect("받은 조각 번호(정렬)", string.Join(",", expected), string.Join(",", got));
-        Expect("모든 조각을 정확히 한 번씩", true, got.SequenceEqual(expected));
+        Expect(Text.L("받은 조각 번호(정렬)", "受け取った断片番号(ソート済み)"), string.Join(",", expected), string.Join(",", got));
+        Expect(Text.L("모든 조각을 정확히 한 번씩", "すべての断片をちょうど一回ずつ"), true, got.SequenceEqual(expected));
     }
 }
 

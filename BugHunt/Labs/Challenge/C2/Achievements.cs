@@ -48,7 +48,7 @@ public sealed class AchievementStore(ProgressServer server)
     public int Add(string questId, int amount)
     {
         if (_progress == null)
-            throw new InvalidOperationException(Text.T("진행도를 아직 불러오지 않았다"));
+            throw new InvalidOperationException(Text.L("진행도를 아직 불러오지 않았다", "進行度をまだ読み込んでいない"));
         int now = _progress.GetValueOrDefault(questId) + amount;
         _progress[questId] = now;
         server.Write(questId, now);
@@ -79,6 +79,6 @@ public sealed class AchievementTracker(AchievementStore store, IReadOnlyDictiona
         int now = store.Add(e.QuestId, e.Amount);
         _handled += 1;
         if (goals.TryGetValue(e.QuestId, out int goal) && now >= goal && store.Unlock(e.QuestId))
-            Console.WriteLine($"  [업적] {e.QuestId} 달성! ({now}/{goal})");
+            Console.WriteLine(Text.L($"  [업적] {e.QuestId} 달성! ({now}/{goal})", $"  [実績] {e.QuestId} 達成! ({now}/{goal})"));
     }
 }

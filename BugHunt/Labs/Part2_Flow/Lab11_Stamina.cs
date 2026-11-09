@@ -36,12 +36,12 @@ public static class Lab11
         for (int i = 0; i < 4; i++)
         {
             bool ok = runner.Sprint();
-            Console.WriteLine($"  달리기 {i + 1}: {(ok ? "성공" : "스태미나 부족")}, 남은 스태미나 {runner.StaminaLeft}");
+            Console.WriteLine(Text.L($"  달리기 {i + 1}: {(ok ? "성공" : "스태미나 부족")}, 남은 스태미나 {runner.StaminaLeft}", $"  ダッシュ {i + 1}: {(ok ? "成功" : "スタミナ不足")}、残りスタミナ {runner.StaminaLeft}"));
             if (ok) sprints++;
         }
 
-        Expect("성공한 달리기 (100 / 30)", 3, sprints);
-        Expect("남은 스태미나", 10, runner.StaminaLeft);
+        Expect(Text.L("성공한 달리기 (100 / 30)", "成功したダッシュ (100 / 30)"), 3, sprints);
+        Expect(Text.L("남은 스태미나", "残りスタミナ"), 10, runner.StaminaLeft);
     }
 }
 

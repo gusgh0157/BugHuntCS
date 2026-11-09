@@ -23,7 +23,7 @@ public static partial class Lab61
         }
         catch (XmlException ex)
         {
-            Console.WriteLine($"  (받는 쪽) 읽을 수 없는 메시지를 버림: {ex.Message}");
+            Console.WriteLine(Text.L($"  (받는 쪽) 읽을 수 없는 메시지를 버림: {ex.Message}", $"  (受信側) 読めないメッセージを破棄: {ex.Message}"));
             return null;
         }
     }
@@ -35,15 +35,15 @@ public static partial class Lab61
         foreach ((string guild, string from, string message) in invites)
         {
             string xml = BuildInvite(guild, from, message);
-            Console.WriteLine($"  보냄: {xml}");
+            Console.WriteLine(Text.L($"  보냄: {xml}", $"  送信: {xml}"));
             var got = Receive(xml);
             if (got is { } g)
             {
                 arrived++;
-                Expect($"{guild} 초대장 내용", $"{guild}|{from}|{message}", $"{g.Guild}|{g.From}|{g.Message}");
+                Expect(Text.L($"{guild} 초대장 내용", $"{guild} の招待状の内容"), $"{guild}|{from}|{message}", $"{g.Guild}|{g.From}|{g.Message}");
             }
         }
-        Expect("도착한 초대장 수", invites.Length, arrived);
+        Expect(Text.L("도착한 초대장 수", "届いた招待状の数"), invites.Length, arrived);
     }
 }
 
@@ -89,10 +89,10 @@ public static partial class Lab61
 {
     static readonly (string, string, string)[][] Invites =
     [
-        [(Text.T("새벽의 검"), Text.T("아린"), Text.T("같이 레이드 가요!")), (Text.T("불꽃 연대"), Text.T("케인"), Text.T("레이드 같이 가요 <3"))],
-        [(Text.T("검 & 방패"), Text.T("미라"), Text.T("주말 공성전 함께해요")), (Text.T("고요한 숲"), Text.T("도란"), Text.T("환영합니다"))],
-        [(Text.T("\"전설\" 길드"), Text.T("리라"), Text.T("초보 환영 & 친목")), (Text.T("별빛"), Text.T("오렌"), Text.T("A<B 이면 가입!"))],
-        [(Text.T("늑대 무리"), Text.T("케인 \"대장\""), "1 < 2 & 3 > 2"), (Text.T("평화"), Text.T("아린"), Text.T("안녕하세요"))],
+        [(Text.L("새벽의 검", "暁の剣"), Text.L("아린", "アリン"), Text.L("같이 레이드 가요!", "一緒にレイド行こう!")), (Text.L("불꽃 연대", "炎の連隊"), Text.L("케인", "ケイン"), Text.L("레이드 같이 가요 <3", "レイド一緒に行こう <3"))],
+        [(Text.L("검 & 방패", "剣 & 盾"), Text.L("미라", "ミラ"), Text.L("주말 공성전 함께해요", "週末の攻城戦、一緒にどう")), (Text.L("고요한 숲", "静かな森"), Text.L("도란", "ドラン"), Text.L("환영합니다", "歓迎します"))],
+        [(Text.L("\"전설\" 길드", "\"伝説\" ギルド"), Text.L("리라", "リラ"), Text.L("초보 환영 & 친목", "初心者歓迎 & 交流")), (Text.L("별빛", "星明かり"), Text.L("오렌", "オレン"), Text.L("A<B 이면 가입!", "A<B なら加入!"))],
+        [(Text.L("늑대 무리", "オオカミの群れ"), Text.L("케인 \"대장\"", "ケイン \"隊長\""), "1 < 2 & 3 > 2"), (Text.L("평화", "平和"), Text.L("아린", "アリン"), Text.L("안녕하세요", "こんにちは"))],
     ];
 }
 #endregion

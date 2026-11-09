@@ -21,7 +21,7 @@ public static partial class Lab46
         {
             Directory.CreateDirectory("saves");
             File.WriteAllText(SavePath(slot), gold.ToString(CultureInfo.InvariantCulture));
-            Console.WriteLine($"  저장: {slot} ({gold}G) → {Path.GetFullPath(SavePath(slot))}");
+            Console.WriteLine(Text.L($"  저장: {slot} ({gold}G) → {Path.GetFullPath(SavePath(slot))}", $"  セーブ: {slot} ({gold}G) → {Path.GetFullPath(SavePath(slot))}"));
         }
 
         public int Load(string slot) =>
@@ -47,12 +47,12 @@ public static partial class Lab46
 
             // 플레이어가 "모드 폴더 열기"를 눌렀다. 파일 대화상자가 작업 디렉터리를 바꾼다.
             Environment.CurrentDirectory = otherDir;
-            Console.WriteLine($"  (폴더 열기 → 작업 디렉터리: {Environment.CurrentDirectory})");
+            Console.WriteLine(Text.L($"  (폴더 열기 → 작업 디렉터리: {Environment.CurrentDirectory})", $"  (フォルダーを開く → 作業ディレクトリ: {Environment.CurrentDirectory})"));
 
             int loaded = saves.Load(slot);
-            Console.WriteLine($"  불러오기: {slot} → {loaded}G");
+            Console.WriteLine(Text.L($"  불러오기: {slot} → {loaded}G", $"  ロード: {slot} → {loaded}G"));
 
-            Expect("불러온 골드", gold, loaded);
+            Expect(Text.L("불러온 골드", "ロードしたゴールド"), gold, loaded);
         }
         finally
         {

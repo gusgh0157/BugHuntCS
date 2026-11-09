@@ -37,18 +37,18 @@ public static class Lab88
     {
         int assets = Pick(20, 5, 40);
         var loader = new Loader();
-        var loadingThread = new Thread(() => loader.LoadAll(assets)) { IsBackground = true, Name = Text.T("로딩 스레드"), Priority = ThreadPriority.Highest };
+        var loadingThread = new Thread(() => loader.LoadAll(assets)) { IsBackground = true, Name = Text.L("로딩 스레드", "ローディングスレッド"), Priority = ThreadPriority.Highest };
         loadingThread.Start();
 
         long spins = 0;
-        if (!FinishesWithin("로딩 대기", () => spins = WaitForLoading(loader)))
+        if (!FinishesWithin(Text.L("로딩 대기", "ロード待ち"), () => spins = WaitForLoading(loader)))
         {
-            Console.WriteLine($"  (멈춘 순간 loader.Done = {loader.Done}, 읽은 에셋 {loader.AssetsLoaded}개)");
+            Console.WriteLine(Text.L($"  (멈춘 순간 loader.Done = {loader.Done}, 읽은 에셋 {loader.AssetsLoaded}개)", $"  (止まった時点で loader.Done = {loader.Done}、読み込んだアセット {loader.AssetsLoaded} 個)"));
             return;
         }
 
-        Console.WriteLine($"  로딩 끝: 에셋 {loader.AssetsLoaded}개 (기다리며 {spins:N0}번 확인)");
-        Expect("읽은 에셋 수", assets, loader.AssetsLoaded);
+        Console.WriteLine(Text.L($"  로딩 끝: 에셋 {loader.AssetsLoaded}개 (기다리며 {spins:N0}번 확인)", $"  ロード終了: アセット {loader.AssetsLoaded} 個 (待つ間に {spins:N0} 回確認)"));
+        Expect(Text.L("읽은 에셋 수", "読み込んだアセット数"), assets, loader.AssetsLoaded);
     }
 }
 

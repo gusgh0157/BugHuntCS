@@ -47,14 +47,14 @@ public static class Lab04
     public static void Run()
     {
         Dictionary<string, object> config = ParseConfig(ServerConfig);
-        Console.WriteLine($"  공지: {config["motd"]}");
+        Console.WriteLine(Text.L($"  공지: {config["motd"]}", $"  お知らせ: {config["motd"]}"));
         Party party = CreateParty(config);
 
         string[] friends = ["Kael", "Mira", "Doran", "Selene", "Bram", "Ivy", "Rook", "Tess"];
         foreach (string friend in friends)
             party.Invite(friend);
 
-        Expect("파티 인원 (최대 7명)", 7, party.Members.Count);
+        Expect(Text.L("파티 인원 (최대 7명)", "パーティー人数 (最大 7 人)"), 7, party.Members.Count);
     }
 }
 

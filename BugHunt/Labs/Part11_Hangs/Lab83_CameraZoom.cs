@@ -29,14 +29,14 @@ public static class Lab83
         float target = start + frames * step;
 
         var camera = new Camera { Zoom = start };
-        Console.WriteLine($"  보스 등장! 줌 {start:0.00}x → {target:0.00}x (프레임마다 +{step})");
+        Console.WriteLine(Text.L($"  보스 등장! 줌 {start:0.00}x → {target:0.00}x (프레임마다 +{step})", $"  ボス登場! ズーム {start:0.00}x → {target:0.00}x (フレームごとに +{step})"));
 
-        if (!FinishesWithin("보스 등장 줌 연출", () => ZoomTo(camera, target, step)))
+        if (!FinishesWithin(Text.L("보스 등장 줌 연출", "ボス登場のズーム演出"), () => ZoomTo(camera, target, step)))
             return;
 
-        Console.WriteLine($"  연출 끝: {camera.FramesRendered}프레임, 줌 {camera.Zoom:0.00}x");
-        Expect("연출 프레임 수", frames, camera.FramesRendered);
-        Expect("최종 줌", target, camera.Zoom);
+        Console.WriteLine(Text.L($"  연출 끝: {camera.FramesRendered}프레임, 줌 {camera.Zoom:0.00}x", $"  演出終了: {camera.FramesRendered} フレーム、ズーム {camera.Zoom:0.00}x"));
+        Expect(Text.L("연출 프레임 수", "演出のフレーム数"), frames, camera.FramesRendered);
+        Expect(Text.L("최종 줌", "最終ズーム"), target, camera.Zoom);
     }
 }
 

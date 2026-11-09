@@ -20,15 +20,15 @@ public static partial class Lab31
         // 세이브 파일에 저장된 즐겨찾기 해시 (지난 세션의 GetHashCode 결과)
         HashSet<int> savedHashes = [.. favorites.Select(OldSessionHash)];
 
-        string[] allSkills = [Text.T("화염구"), Text.T("서리창"), Text.T("치유"), Text.T("축복"), Text.T("질풍베기"), Text.T("대지분쇄"), Text.T("그림자 일격")];
+        string[] allSkills = [Text.L("화염구", "ファイアボール"), Text.L("서리창", "フロストランス"), Text.L("치유", "ヒール"), Text.L("축복", "祝福"), Text.L("질풍베기", "疾風斬り"), Text.L("대지분쇄", "大地粉砕"), Text.L("그림자 일격", "シャドウストライク")];
         // 이번 세션: 스킬 이름의 해시로 즐겨찾기인지 판정한다.
         string[] starred = [.. allSkills.Where(s => savedHashes.Contains(s.GetHashCode()))];
 
-        Console.WriteLine($"  저장된 즐겨찾기: {string.Join(", ", favorites)}");
-        Console.WriteLine($"  이번 세션 별표: {(starred.Length == 0 ? "(없음)" : string.Join(", ", starred))}");
+        Console.WriteLine(Text.L($"  저장된 즐겨찾기: {string.Join(", ", favorites)}", $"  保存されたお気に入り: {string.Join(", ", favorites)}"));
+        Console.WriteLine(Text.L($"  이번 세션 별표: {(starred.Length == 0 ? "(없음)" : string.Join(", ", starred))}", $"  今回のセッションの星: {(starred.Length == 0 ? "(なし)" : string.Join(", ", starred))}"));
 
-        Expect("별표가 붙은 스킬 수", favorites.Length, starred.Length);
-        Expect("즐겨찾기 스킬이 전부 별표", true, favorites.All(starred.Contains));
+        Expect(Text.L("별표가 붙은 스킬 수", "星が付いたスキルの数"), favorites.Length, starred.Length);
+        Expect(Text.L("즐겨찾기 스킬이 전부 별표", "お気に入りスキルがすべて星付き"), true, favorites.All(starred.Contains));
     }
 }
 
@@ -74,10 +74,10 @@ public static partial class Lab31
 {
     static readonly string[][] Sets =
     [
-        [Text.T("화염구"), Text.T("치유"), Text.T("질풍베기")],
-        [Text.T("서리창"), Text.T("축복")],
-        [Text.T("대지분쇄"), Text.T("그림자 일격"), Text.T("화염구"), Text.T("치유")],
-        [Text.T("축복"), Text.T("질풍베기"), Text.T("서리창")],
+        [Text.L("화염구", "ファイアボール"), Text.L("치유", "ヒール"), Text.L("질풍베기", "疾風斬り")],
+        [Text.L("서리창", "フロストランス"), Text.L("축복", "祝福")],
+        [Text.L("대지분쇄", "大地粉砕"), Text.L("그림자 일격", "シャドウストライク"), Text.L("화염구", "ファイアボール"), Text.L("치유", "ヒール")],
+        [Text.L("축복", "祝福"), Text.L("질풍베기", "疾風斬り"), Text.L("서리창", "フロストランス")],
     ];
 }
 #endregion

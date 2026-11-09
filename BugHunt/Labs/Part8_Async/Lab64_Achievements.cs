@@ -21,7 +21,7 @@ public static class Lab64
         foreach (string id in unlocked)
         {
             _ = server.SubmitAsync(id);
-            Console.WriteLine($"  업적 전송: {id}");
+            Console.WriteLine(Text.L($"  업적 전송: {id}", $"  実績送信: {id}"));
         }
     }
 
@@ -30,8 +30,8 @@ public static class Lab64
         var server = new AchievementServer();
         SubmitUnlocked(server, ["first_blood", "no_damage", "speed_run"]);
 
-        Console.WriteLine("  결과 화면으로 이동");
-        Expect("서버가 받은 업적 수", 3, server.Received);
+        Console.WriteLine(Text.L("  결과 화면으로 이동", "  結果画面へ移動"));
+        Expect(Text.L("서버가 받은 업적 수", "サーバーが受け取った実績数"), 3, server.Received);
     }
 }
 

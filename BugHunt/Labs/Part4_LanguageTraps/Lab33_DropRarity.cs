@@ -31,16 +31,16 @@ public static partial class Lab33
             totalWeight += w;
             if (Enum.IsDefined(rarity))
                 known++;
-            Console.WriteLine($"  등급 코드 {value} → {rarity} (가중치 {w})");
+            Console.WriteLine(Text.L($"  등급 코드 {value} → {rarity} (가중치 {w})", $"  等級コード {value} → {rarity} (重み {w})"));
         }
 
         // 기대값: 클라이언트가 아는 등급만 가중치를 더한다.
         long expectedWeight = raw.Where(v => Enum.IsDefined((Rarity)v)).Sum(v => (long)Weight((Rarity)v));
         int expectedKnown = raw.Count(v => Enum.IsDefined((Rarity)v));
 
-        Console.WriteLine($"  아는 등급 수: {known} / {raw.Length}, 가중치 합: {totalWeight}");
-        Expect("아는 등급의 가중치만 합산", expectedWeight, totalWeight);
-        Expect("모르는 등급은 드롭 표에 넣지 않음", expectedKnown, known);
+        Console.WriteLine(Text.L($"  아는 등급 수: {known} / {raw.Length}, 가중치 합: {totalWeight}", $"  知っている等級の数: {known} / {raw.Length}、重みの合計: {totalWeight}"));
+        Expect(Text.L("아는 등급의 가중치만 합산", "知っている等級の重みだけを合計"), expectedWeight, totalWeight);
+        Expect(Text.L("모르는 등급은 드롭 표에 넣지 않음", "知らない等級はドロップ表に入れない"), expectedKnown, known);
     }
 }
 

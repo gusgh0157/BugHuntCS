@@ -35,13 +35,13 @@ public static class Lab92
         ItemId.Comparisons = 0;
         List<ItemId> unique = [];
         (_, long ms) = Measure(() => unique = UniqueInOrder(drops));
-        Console.WriteLine($"  전리품 {count:N0}개 → 도감 {unique.Count:N0}종. 비교 {ItemId.Comparisons:N0}번, {ms}ms");
+        Console.WriteLine(Text.L($"  전리품 {count:N0}개 → 도감 {unique.Count:N0}종. 비교 {ItemId.Comparisons:N0}번, {ms}ms", $"  戦利品 {count:N0} 個 → 図鑑 {unique.Count:N0} 種。比較 {ItemId.Comparisons:N0} 回、{ms}ms"));
 
         var seen = new HashSet<int>();
         int[] expected = [.. drops.Where(d => seen.Add(d.Value)).Select(d => d.Value)];
-        Expect("도감 종류 수", expected.Length, unique.Count);
-        Expect("처음 나온 순서대로 등록", true, expected.SequenceEqual(unique.Select(u => u.Value)));
-        ExpectAtMost("전리품 하나당 비교 횟수", 3, ItemId.Comparisons / count);
+        Expect(Text.L("도감 종류 수", "図鑑の種類数"), expected.Length, unique.Count);
+        Expect(Text.L("처음 나온 순서대로 등록", "最初に出た順に登録"), true, expected.SequenceEqual(unique.Select(u => u.Value)));
+        ExpectAtMost(Text.L("전리품 하나당 비교 횟수", "戦利品 1 個あたりの比較回数"), 3, ItemId.Comparisons / count);
     }
 }
 

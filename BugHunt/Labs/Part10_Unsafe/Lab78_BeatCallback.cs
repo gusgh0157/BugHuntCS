@@ -31,7 +31,7 @@ public static unsafe class Lab78
         public void Start()
         {
             NativeAudio.SetBeatCallback(Marshal.GetFunctionPointerForDelegate<BeatCallback>(OnBeat));
-            Console.WriteLine("  오디오 엔진에 박자 콜백 등록");
+            Console.WriteLine(Text.L("  오디오 엔진에 박자 콜백 등록", "  オーディオ エンジンにビート コールバックを登録"));
         }
 
         int OnBeat(int beat)
@@ -51,7 +51,7 @@ public static unsafe class Lab78
         notes.Clear();
         GC.Collect();
         GC.WaitForPendingFinalizers();
-        Console.WriteLine($"  곡 \"{name}\" 로드 완료");
+        Console.WriteLine(Text.L($"  곡 \"{name}\" 로드 완료", $"  曲 \"{name}\" 読み込み完了"));
     }
 
     public static void Run()
@@ -63,10 +63,10 @@ public static unsafe class Lab78
         int beats = Pick(8, 3, 20);
         for (int beat = 1; beat <= beats; beat++)
             NativeAudio.PlayBeat(beat);
-        Console.WriteLine($"  {beats}박자 연주 끝: 점수 {game.Score}, 콤보 {game.Combo}");
+        Console.WriteLine(Text.L($"  {beats}박자 연주 끝: 점수 {game.Score}, 콤보 {game.Combo}", $"  {beats} 拍の演奏終了: スコア {game.Score}、コンボ {game.Combo}"));
 
-        Expect("콤보", beats, game.Combo);
-        Expect("점수", 100 * beats * (beats + 1) / 2, game.Score);
+        Expect(Text.L("콤보", "コンボ"), beats, game.Combo);
+        Expect(Text.L("점수", "スコア"), 100 * beats * (beats + 1) / 2, game.Score);
     }
 }
 

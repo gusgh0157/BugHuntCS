@@ -46,9 +46,11 @@ public static class Lab16
         foreach (string culture in new[] { "ko-KR", "en-US", "de-DE" })
         {
             Options loaded = SaveAndReload(options, culture);
-            Console.WriteLine($"  {culture}: 이동 속도 {loaded.MoveSpeed.ToString(CultureInfo.InvariantCulture)}, " +
-                              $"마우스 감도 {loaded.MouseSensitivity.ToString(CultureInfo.InvariantCulture)}");
-            Expect($"{culture} 플레이어의 이동 속도", 1.5, loaded.MoveSpeed);
+            Console.WriteLine(Text.L($"  {culture}: 이동 속도 {loaded.MoveSpeed.ToString(CultureInfo.InvariantCulture)}, " +
+                                     $"마우스 감도 {loaded.MouseSensitivity.ToString(CultureInfo.InvariantCulture)}",
+                                     $"  {culture}: 移動速度 {loaded.MoveSpeed.ToString(CultureInfo.InvariantCulture)}、" +
+                                     $"マウス感度 {loaded.MouseSensitivity.ToString(CultureInfo.InvariantCulture)}"));
+            Expect(Text.L($"{culture} 플레이어의 이동 속도", $"{culture} のプレイヤーの移動速度"), 1.5, loaded.MoveSpeed);
         }
     }
 }

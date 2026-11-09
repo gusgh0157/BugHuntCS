@@ -61,10 +61,10 @@ public static class Lab73
         GC.Collect();
 
         int alive = windows.Count(w => w.IsAlive);
-        Console.WriteLine($"  닫은 창 50개 중 메모리에 남은 창: {alive}");
-        PauseForTools("지금 진단 도구에서 메모리 스냅샷을 찍거나 dotnet-dump collect 를 해 보세요.");
+        Console.WriteLine(Text.L($"  닫은 창 50개 중 메모리에 남은 창: {alive}", $"  閉じたウィンドウ 50 個のうち、メモリに残ったウィンドウ: {alive}"));
+        PauseForTools(Text.L("지금 진단 도구에서 메모리 스냅샷을 찍거나 dotnet-dump collect 를 해 보세요.", "今、診断ツールでメモリのスナップショットを取るか、dotnet-dump collect を実行してみてください。"));
 
-        Expect("GC 후 남은 전투 기록 창", 0, alive);
+        Expect(Text.L("GC 후 남은 전투 기록 창", "GC 後に残った戦闘ログ ウィンドウ"), 0, alive);
     }
 }
 

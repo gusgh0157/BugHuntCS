@@ -33,9 +33,9 @@ public static partial class Lab82
         int[] incoming = Pick(Feeds[0], Feeds[1..]);
         var (stored, guardAfter) = Fill(incoming);
 
-        Console.WriteLine($"  들어온 콤보 {incoming.Length}개, 버퍼에 담긴 수 {stored}, 가드 0x{guardAfter:X}");
-        Expect("옆 칸(가드) 값이 그대로", Guard, guardAfter);
-        Expect("버퍼 용량(4)을 넘겨 담지 않음", Math.Min(incoming.Length, 4), stored);
+        Console.WriteLine(Text.L($"  들어온 콤보 {incoming.Length}개, 버퍼에 담긴 수 {stored}, 가드 0x{guardAfter:X}", $"  入ってきたコンボ {incoming.Length}個、バッファに入った数 {stored}、ガード 0x{guardAfter:X}"));
+        Expect(Text.L("옆 칸(가드) 값이 그대로", "隣のマス(ガード)の値がそのまま"), Guard, guardAfter);
+        Expect(Text.L("버퍼 용량(4)을 넘겨 담지 않음", "バッファ容量(4)を超えて入れない"), Math.Min(incoming.Length, 4), stored);
     }
 }
 

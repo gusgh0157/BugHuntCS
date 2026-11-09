@@ -41,7 +41,7 @@ public static class Lab87
             }
             catch (HttpRequestException ex)
             {
-                Console.WriteLine($"  실패, 나중에 다시: {ex.Message}");
+                Console.WriteLine(Text.L($"  실패, 나중에 다시: {ex.Message}", $"  失敗、後で再試行: {ex.Message}"));
                 lock (failed)
                     failed.Add(file);
             }
@@ -60,16 +60,16 @@ public static class Lab87
 
         var downloader = new Downloader(maxParallel, broken);
         List<string> failed = [];
-        if (!FinishesWithin("패치 다운로드", () => failed = DownloadAll(downloader, files).GetAwaiter().GetResult()))
+        if (!FinishesWithin(Text.L("패치 다운로드", "パッチ ダウンロード"), () => failed = DownloadAll(downloader, files).GetAwaiter().GetResult()))
         {
-            Console.WriteLine($"  (멈춘 순간 받은 파일 {downloader.Downloaded}개, 빈 슬롯 {downloader.FreeSlots}개)");
+            Console.WriteLine(Text.L($"  (멈춘 순간 받은 파일 {downloader.Downloaded}개, 빈 슬롯 {downloader.FreeSlots}개)", $"  (止まった時点で受信したファイル {downloader.Downloaded} 個、空きスロット {downloader.FreeSlots} 個)"));
             return;
         }
 
-        Console.WriteLine($"  받은 파일 {downloader.Downloaded}개, 실패 {failed.Count}개, 빈 슬롯 {downloader.FreeSlots}개");
-        Expect("받은 파일 수", count - broken.Count, downloader.Downloaded);
-        Expect("실패한 파일 수", broken.Count, failed.Count);
-        Expect("다 끝난 뒤 빈 슬롯", maxParallel, downloader.FreeSlots);
+        Console.WriteLine(Text.L($"  받은 파일 {downloader.Downloaded}개, 실패 {failed.Count}개, 빈 슬롯 {downloader.FreeSlots}개", $"  受信したファイル {downloader.Downloaded} 個、失敗 {failed.Count} 個、空きスロット {downloader.FreeSlots} 個"));
+        Expect(Text.L("받은 파일 수", "受信したファイル数"), count - broken.Count, downloader.Downloaded);
+        Expect(Text.L("실패한 파일 수", "失敗したファイル数"), broken.Count, failed.Count);
+        Expect(Text.L("다 끝난 뒤 빈 슬롯", "すべて終わった後の空きスロット"), maxParallel, downloader.FreeSlots);
     }
 }
 

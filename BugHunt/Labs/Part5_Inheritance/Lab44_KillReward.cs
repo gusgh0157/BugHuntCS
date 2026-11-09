@@ -48,13 +48,13 @@ public static partial class Lab44
         {
             int gold = Reward(u);
             total += gold;
-            Console.WriteLine($"  {u.Name} ({u.GetType().Name}) 처치: {gold}G");
+            Console.WriteLine(Text.L($"  {u.Name} ({u.GetType().Name}) 처치: {gold}G", $"  {u.Name} ({u.GetType().Name}) 討伐: {gold}G"));
         }
 
         int expected = killed.Sum(ExpectedReward);
-        Console.WriteLine($"  처치 보상 합계: {total}G");
+        Console.WriteLine(Text.L($"  처치 보상 합계: {total}G", $"  討伐報酬の合計: {total}G"));
 
-        Expect("처치 보상 합계", expected, total);
+        Expect(Text.L("처치 보상 합계", "討伐報酬の合計"), expected, total);
     }
 }
 
@@ -96,10 +96,10 @@ public static partial class Lab44
 {
     static readonly (string Kind, string Name)[][] Waves =
     [
-        [("enemy", Text.T("고블린")), ("enemy", Text.T("고블린")), ("boss", Text.T("고블린 왕"))],
-        [("enemy", Text.T("늑대")), ("elite", Text.T("우두머리 늑대")), ("villager", Text.T("양치기"))],
-        [("elite", Text.T("정예 기사")), ("boss", Text.T("타락한 군주")), ("enemy", Text.T("해골 병사"))],
-        [("villager", Text.T("상인")), ("elite", Text.T("정예 궁수")), ("elite", Text.T("정예 궁수")), ("enemy", Text.T("도적"))],
+        [("enemy", Text.L("고블린", "ゴブリン")), ("enemy", Text.L("고블린", "ゴブリン")), ("boss", Text.L("고블린 왕", "ゴブリンキング"))],
+        [("enemy", Text.L("늑대", "オオカミ")), ("elite", Text.L("우두머리 늑대", "群れのボスオオカミ")), ("villager", Text.L("양치기", "羊飼い"))],
+        [("elite", Text.L("정예 기사", "精鋭の騎士")), ("boss", Text.L("타락한 군주", "堕ちた君主")), ("enemy", Text.L("해골 병사", "骸骨兵"))],
+        [("villager", Text.L("상인", "商人")), ("elite", Text.L("정예 궁수", "精鋭の弓兵")), ("elite", Text.L("정예 궁수", "精鋭の弓兵")), ("enemy", Text.L("도적", "盗賊"))],
     ];
 }
 #endregion

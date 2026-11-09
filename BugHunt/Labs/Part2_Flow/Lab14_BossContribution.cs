@@ -23,11 +23,11 @@ public static class Lab14
         foreach (Attacker a in party)
         {
             int percent = ContributionPercent(a.Damage, total);
-            Console.WriteLine($"  {a.Name}: 피해 {a.Damage:N0}, 기여도 {percent}%");
+            Console.WriteLine(Text.L($"  {a.Name}: 피해 {a.Damage:N0}, 기여도 {percent}%", $"  {a.Name}: ダメージ {a.Damage:N0}、貢献度 {percent}%"));
             percents.Add(percent);
         }
 
-        Expect("기여도 (Kael, Mira, Doran)", "60, 30, 10", string.Join(", ", percents));
+        Expect(Text.L("기여도 (Kael, Mira, Doran)", "貢献度 (Kael, Mira, Doran)"), "60, 30, 10", string.Join(", ", percents));
     }
 }
 

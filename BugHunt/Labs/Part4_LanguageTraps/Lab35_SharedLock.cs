@@ -40,7 +40,7 @@ public static partial class Lab35
     {
         int repeats = Pick(1, 2, 3, 4);
         int completed = 0;
-        if (!FinishesWithin("자동 저장과 업적 집계가 둘 다 끝남", () =>
+        if (!FinishesWithin(Text.L("자동 저장과 업적 집계가 둘 다 끝남", "オートセーブと実績集計が両方終わる"), () =>
         {
             for (int i = 0; i < repeats; i++)
             {
@@ -60,8 +60,8 @@ public static partial class Lab35
         }, timeoutMs: 3000))
             return;
 
-        Console.WriteLine($"  저장+집계 {completed}회 완료");
-        Expect("저장과 집계가 모두 끝난 횟수", repeats, completed);
+        Console.WriteLine(Text.L($"  저장+집계 {completed}회 완료", $"  保存+集計 {completed}回完了"));
+        Expect(Text.L("저장과 집계가 모두 끝난 횟수", "保存と集計が両方終わった回数"), repeats, completed);
     }
 }
 

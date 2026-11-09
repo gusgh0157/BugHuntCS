@@ -28,7 +28,7 @@ public static class Lab21
             return member.Id;
         }
 
-        public string Whisper(int id, string text) => $"{_members.First(m => m.Id == id).Name}{Text.T("에게")}: {text}";
+        public string Whisper(int id, string text) => $"{_members.First(m => m.Id == id).Name}{Text.L("에게", "へ")}: {text}";
 
         public IEnumerable<int> Ids => _members.Select(m => m.Id);
     }
@@ -40,8 +40,8 @@ public static class Lab21
         if (Seed != 0)
         {
             int count = Pick(3, 2, 6);
-            saved = Enumerable.Range(0, count).Select(i => new Member(Pick(1, 1, 90) + i * 100, Text.F("기존{0}", i))).Reverse().ToList();
-            recruits = Enumerable.Range(0, Pick(2, 1, 5)).Select(i => Text.F("신입{0}", i)).ToArray();
+            saved = Enumerable.Range(0, count).Select(i => new Member(Pick(1, 1, 90) + i * 100, Text.L($"기존{i}", $"古参{i}"))).Reverse().ToList();
+            recruits = Enumerable.Range(0, Pick(2, 1, 5)).Select(i => Text.L($"신입{i}", $"新人{i}")).ToArray();
         }
 
         var roster = new GuildRoster(saved);
@@ -49,13 +49,13 @@ public static class Lab21
         foreach (string name in recruits)
         {
             int id = roster.Recruit(name);
-            string reply = roster.Whisper(id, Text.T("어서 오세요!"));
-            Console.WriteLine($"  {name} 가입, 번호 {id} → {reply}");
+            string reply = roster.Whisper(id, Text.L("어서 오세요!", "ようこそ!"));
+            Console.WriteLine(Text.L($"  {name} 가입, 번호 {id} → {reply}", $"  {name} 加入、番号 {id} → {reply}"));
             replies.Add(reply);
         }
 
-        Expect("환영 귓속말을 받은 사람", string.Join(", ", recruits.Select(n => $"{n}{Text.T("에게")}: {Text.T("어서 오세요!")}")), string.Join(", ", replies));
-        Expect("번호가 겹치지 않음", true, roster.Ids.Distinct().Count() == roster.Ids.Count());
+        Expect(Text.L("환영 귓속말을 받은 사람", "歓迎のささやきを受け取った人"), string.Join(", ", recruits.Select(n => $"{n}{Text.L("에게", "へ")}: {Text.L("어서 오세요!", "ようこそ!")}")), string.Join(", ", replies));
+        Expect(Text.L("번호가 겹치지 않음", "番号が重ならない"), true, roster.Ids.Distinct().Count() == roster.Ids.Count());
     }
 }
 

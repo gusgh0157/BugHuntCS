@@ -36,8 +36,8 @@ public static partial class Lab60
         foreach ((string id, string title, int gold) in quests)
         {
             int found = RewardGold(doc, id);
-            Console.WriteLine($"  {id} {title}: 보상 {found}G");
-            Expect($"{id} 보상 골드", gold, found);
+            Console.WriteLine(Text.L($"  {id} {title}: 보상 {found}G", $"  {id} {title}: 報酬 {found}G"));
+            Expect(Text.L($"{id} 보상 골드", $"{id} の報酬ゴールド"), gold, found);
         }
     }
 }
@@ -94,10 +94,10 @@ public static partial class Lab60
 {
     static readonly (string, string, int)[][] Sets =
     [
-        [("q1", Text.T("늑대 사냥"), 120), ("q2", Text.T("약초 수집"), 80)],
-        [("m7", Text.T("고블린 소탕"), 300), ("m8", Text.T("잃어버린 반지"), 450), ("m9", Text.T("유적 탐사"), 1000)],
-        [("d1", Text.T("일일 출석"), 10)],
-        [("e2", Text.T("할로윈 호박 모으기"), 777), ("e3", Text.T("유령 퇴치"), 666)],
+        [("q1", Text.L("늑대 사냥", "オオカミ狩り"), 120), ("q2", Text.L("약초 수집", "薬草集め"), 80)],
+        [("m7", Text.L("고블린 소탕", "ゴブリン掃討"), 300), ("m8", Text.L("잃어버린 반지", "なくした指輪"), 450), ("m9", Text.L("유적 탐사", "遺跡探索"), 1000)],
+        [("d1", Text.L("일일 출석", "デイリー出席"), 10)],
+        [("e2", Text.L("할로윈 호박 모으기", "ハロウィンかぼちゃ集め"), 777), ("e3", Text.L("유령 퇴치", "幽霊退治"), 666)],
     ];
 }
 #endregion

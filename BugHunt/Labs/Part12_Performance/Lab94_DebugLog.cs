@@ -28,7 +28,7 @@ public static class Lab94
         {
             units[i].X += dx;
             units[i].Y += dy;
-            Log.Debug("프레임 {0}: 유닛 {1} 이동 → ({2}, {3})", frame, units[i].Id, units[i].X, units[i].Y);
+            Log.Debug(Text.L("프레임 {0}: 유닛 {1} 이동 → ({2}, {3})", "フレーム {0}: ユニット {1} 移動 → ({2}, {3})"), frame, units[i].Id, units[i].X, units[i].Y);
         }
     }
 
@@ -48,10 +48,10 @@ public static class Lab94
                 MoveAll(units, 0.5f, 0.25f, frame);
         });
         long calls = (long)count * frames;
-        Console.WriteLine($"  유닛 {count} × {frames}프레임 이동. 로그는 꺼져 있음. 할당 {bytes:N0}바이트 (이동 1회당 {bytes / calls}), {ms}ms");
+        Console.WriteLine(Text.L($"  유닛 {count} × {frames}프레임 이동. 로그는 꺼져 있음. 할당 {bytes:N0}바이트 (이동 1회당 {bytes / calls}), {ms}ms", $"  ユニット {count} × {frames} フレーム移動。ログはオフ。割り当て {bytes:N0} バイト (移動 1 回あたり {bytes / calls})、{ms}ms"));
 
-        Expect("마지막 유닛 위치", $"{count - 1 + frames * 0.5f}, {-(count - 1) + frames * 0.25f}", $"{units[^1].X}, {units[^1].Y}");
-        ExpectAtMost("이동 1회당 할당 (바이트)", 1, bytes / calls);
+        Expect(Text.L("마지막 유닛 위치", "最後のユニットの位置"), $"{count - 1 + frames * 0.5f}, {-(count - 1) + frames * 0.25f}", $"{units[^1].X}, {units[^1].Y}");
+        ExpectAtMost(Text.L("이동 1회당 할당 (바이트)", "移動 1 回あたりの割り当て (バイト)"), 1, bytes / calls);
     }
 }
 

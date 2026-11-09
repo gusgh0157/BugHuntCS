@@ -48,14 +48,14 @@ public static partial class Lab42
 
     public static void Run()
     {
-        var units = new List<Unit> { new Knight(Text.T("기사 로한"), Pick(7, 1, 20)) };
+        var units = new List<Unit> { new Knight(Text.L("기사 로한", "騎士ロハン"), Pick(7, 1, 20)) };
         if (Seed != 0)
-            units.Add(new Mage(Text.T("마법사 이린"), Pick(9, 1, 20)));
+            units.Add(new Mage(Text.L("마법사 이린", "魔法使いイリン"), Pick(9, 1, 20)));
 
         foreach (Unit unit in units)
         {
-            Console.WriteLine($"  {unit.Name} 소환: 현재 체력 {unit.Hp} / 최대 체력 {unit.MaxHp()}");
-            Expect($"{unit.Name} 소환 직후 현재 체력 = 최대 체력", unit.MaxHp(), unit.Hp);
+            Console.WriteLine(Text.L($"  {unit.Name} 소환: 현재 체력 {unit.Hp} / 최대 체력 {unit.MaxHp()}", $"  {unit.Name} 召喚: 現在HP {unit.Hp} / 最大HP {unit.MaxHp()}"));
+            Expect(Text.L($"{unit.Name} 소환 직후 현재 체력 = 최대 체력", $"{unit.Name} 召喚直後の現在HP = 最大HP"), unit.MaxHp(), unit.Hp);
         }
     }
 }

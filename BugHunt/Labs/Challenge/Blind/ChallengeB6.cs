@@ -21,11 +21,11 @@ public static class ChallengeB6
 
     public static void Run()
     {
-        Console.WriteLine($"  난이도 {Balance.Mode}, 적 HP {Balance.EnemyHpPercent}%");
-        Console.WriteLine($"  시작 골드 {Balance.StartingGold}, 물약 {Economy.PotionPrice}골드");
+        Console.WriteLine(Text.L($"  난이도 {Balance.Mode}, 적 HP {Balance.EnemyHpPercent}%", $"  難易度 {Balance.Mode}、敵 HP {Balance.EnemyHpPercent}%"));
+        Console.WriteLine(Text.L($"  시작 골드 {Balance.StartingGold}, 물약 {Economy.PotionPrice}골드", $"  開始ゴールド {Balance.StartingGold}、ポーション {Economy.PotionPrice} ゴールド"));
 
         int baseGold = Balance.Mode switch { Difficulty.Hard => 60, Difficulty.Nightmare => 30, _ => 100 };
-        Expect("시작 골드", baseGold * 3, Balance.StartingGold);
-        Expect("물약 값", 25, Economy.PotionPrice);
+        Expect(Text.L("시작 골드", "開始ゴールド"), baseGold * 3, Balance.StartingGold);
+        Expect(Text.L("물약 값", "ポーションの値段"), 25, Economy.PotionPrice);
     }
 }

@@ -41,9 +41,9 @@ public static class Lab12
 
         Dictionary<string, object> after = Snapshot(settings);
         List<string> changed = ChangedKeys(before, after);
-        Console.WriteLine($"  서버로 보낼 항목: {string.Join(", ", changed)}");
+        Console.WriteLine(Text.L($"  서버로 보낼 항목: {string.Join(", ", changed)}", $"  サーバーに送る項目: {string.Join(", ", changed)}"));
 
-        Expect("바뀐 항목", "volume", string.Join(", ", changed));
+        Expect(Text.L("바뀐 항목", "変わった項目"), "volume", string.Join(", ", changed));
     }
 }
 

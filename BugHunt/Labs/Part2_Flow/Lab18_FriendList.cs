@@ -26,11 +26,11 @@ public static class Lab18
         foreach (string from in requests)
         {
             bool added = friends.Add(new PlayerName(from));
-            Console.WriteLine($"  {from} 의 요청: {(added ? "친구 추가" : "이미 친구")}");
+            Console.WriteLine(Text.L($"  {from} 의 요청: {(added ? "친구 추가" : "이미 친구")}", $"  {from} からの申請: {(added ? "フレンド追加" : "すでにフレンド")}"));
         }
 
-        Expect("친구 수 (Kael, Mira, Doran)", 3, friends.Count);
-        Expect("\"mira\" 가 친구인가", true, friends.Contains(new PlayerName("mira")));
+        Expect(Text.L("친구 수 (Kael, Mira, Doran)", "フレンド数 (Kael, Mira, Doran)"), 3, friends.Count);
+        Expect(Text.L("\"mira\" 가 친구인가", "\"mira\" はフレンドか"), true, friends.Contains(new PlayerName("mira")));
     }
 }
 

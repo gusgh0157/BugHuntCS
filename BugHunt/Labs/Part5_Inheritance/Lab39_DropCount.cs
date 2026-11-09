@@ -16,7 +16,7 @@ public static partial class Lab39
 
     sealed class Slime : IDropSource
     {
-        public string Name => Text.T("슬라임");
+        public string Name => Text.L("슬라임", "スライム");
     }
 
     // 보스: 기본 드롭 + 운 10당 1개. 정예 보스는 1개 더.
@@ -42,19 +42,19 @@ public static partial class Lab39
         int baseDrops = Pick(3, 2, 6);
 
         var slime = new Slime();
-        var boss = new Boss(Text.T("화염 군주"), baseDrops);
-        var elite = new Elite(Text.T("정예 궁수"));
+        var boss = new Boss(Text.L("화염 군주", "炎の君主"), baseDrops);
+        var elite = new Elite(Text.L("정예 궁수", "精鋭の弓兵"));
 
         // 기대값: 몬스터 형식으로 직접 부른 값
         int expectedBoss = boss.DropCount(luck);
         int expectedElite = elite.DropCount(luck);
 
-        Console.WriteLine($"  운 {luck}: 슬라임 {RollDrops(slime, luck)}개, 보스 {RollDrops(boss, luck)}개 (기대 {expectedBoss}), 정예 {RollDrops(elite, luck)}개 (기대 {expectedElite})");
+        Console.WriteLine(Text.L($"  운 {luck}: 슬라임 {RollDrops(slime, luck)}개, 보스 {RollDrops(boss, luck)}개 (기대 {expectedBoss}), 정예 {RollDrops(elite, luck)}개 (기대 {expectedElite})", $"  運 {luck}: スライム {RollDrops(slime, luck)}個、ボス {RollDrops(boss, luck)}個 (期待 {expectedBoss})、精鋭 {RollDrops(elite, luck)}個 (期待 {expectedElite})"));
 
-        Expect("슬라임 드롭 수 (기본 규칙)", 1, RollDrops(slime, luck));
-        Expect($"보스 드롭 수 (운 {luck})", expectedBoss, RollDrops(boss, luck));
+        Expect(Text.L("슬라임 드롭 수 (기본 규칙)", "スライムのドロップ数 (既定の規則)"), 1, RollDrops(slime, luck));
+        Expect(Text.L($"보스 드롭 수 (운 {luck})", $"ボスのドロップ数 (運 {luck})"), expectedBoss, RollDrops(boss, luck));
         if (CheckElite)
-            Expect($"정예 드롭 수 (운 {luck})", expectedElite, RollDrops(elite, luck));
+            Expect(Text.L($"정예 드롭 수 (운 {luck})", $"精鋭のドロップ数 (運 {luck})"), expectedElite, RollDrops(elite, luck));
     }
 }
 

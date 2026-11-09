@@ -33,9 +33,9 @@ public static partial class Lab41
         int turns = Pick(3, 2, 6);
         Buff[] buffs =
         [
-            new(Text.T("공격력 증가"), Pick(2, 1, turns)),
-            new(Text.T("방어력 증가"), Pick(5, turns + 1, turns + 4)),
-            new(Text.T("신속"), Pick(3, 1, turns)),
+            new(Text.L("공격력 증가", "攻撃力アップ"), Pick(2, 1, turns)),
+            new(Text.L("방어력 증가", "防御力アップ"), Pick(5, turns + 1, turns + 4)),
+            new(Text.L("신속", "迅速"), Pick(3, 1, turns)),
         ];
 
         int[] expectedTurns = [.. buffs.Select(b => b.Turns - turns)];
@@ -45,10 +45,10 @@ public static partial class Lab41
             EndTurn(buffs);
 
         foreach (Buff b in buffs)
-            Console.WriteLine($"  {b.Name}: 남은 턴 {b.Turns}{(b.Expired ? " (만료)" : "")}");
+            Console.WriteLine(Text.L($"  {b.Name}: 남은 턴 {b.Turns}{(b.Expired ? " (만료)" : "")}", $"  {b.Name}: 残りターン {b.Turns}{(b.Expired ? " (終了)" : "")}"));
 
-        Expect($"{turns}턴 뒤 만료된 버프 수", expectedExpired, buffs.Count(b => b.Expired));
-        Expect("첫 버프의 남은 턴", expectedTurns[0], buffs[0].Turns);
+        Expect(Text.L($"{turns}턴 뒤 만료된 버프 수", $"{turns}ターン後に切れたバフの数"), expectedExpired, buffs.Count(b => b.Expired));
+        Expect(Text.L("첫 버프의 남은 턴", "最初のバフの残りターン"), expectedTurns[0], buffs[0].Turns);
     }
 }
 

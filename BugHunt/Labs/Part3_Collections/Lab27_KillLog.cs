@@ -20,7 +20,7 @@ public static class Lab27
         var log = new KillLog();
         var errors = new List<string>();
 
-        bool finished = FinishesWithin("처치 기록 집계", () =>
+        bool finished = FinishesWithin(Text.L("처치 기록 집계", "討伐記録の集計"), () =>
         {
             // (전투 스레드 우선순위를 높여 두는 것은 PC가 바빠도 스레드들이 정말 동시에 돌게 하려는 것뿐이다)
             using var go = new ManualResetEventSlim();
@@ -40,9 +40,9 @@ public static class Lab27
                     catch (Exception ex)
                     {
                         lock (errors)
-                            errors.Add($"전투 스레드 {worker}: {ex.GetType().Name}");
+                            errors.Add(Text.L($"전투 스레드 {worker}: {ex.GetType().Name}", $"戦闘スレッド {worker}: {ex.GetType().Name}"));
                     }
-                }) { IsBackground = true, Name = Text.F("전투 스레드 {0}", w), Priority = ThreadPriority.Highest };
+                }) { IsBackground = true, Name = Text.L($"전투 스레드 {w}", $"戦闘スレッド {w}"), Priority = ThreadPriority.Highest };
                 threads.Add(t);
                 t.Start();
             }
@@ -54,11 +54,11 @@ public static class Lab27
             return;
 
         foreach (string error in errors.Distinct())
-            Console.WriteLine($"  예외: {error}");
-        Console.WriteLine($"  처치 기록 {log.Count:N0}건 (전투 스레드 {workers}개 × {killsPerWorker:N0})");
+            Console.WriteLine(Text.L($"  예외: {error}", $"  例外: {error}"));
+        Console.WriteLine(Text.L($"  처치 기록 {log.Count:N0}건 (전투 스레드 {workers}개 × {killsPerWorker:N0})", $"  討伐記録 {log.Count:N0} 件 (戦闘スレッド {workers} 個 × {killsPerWorker:N0})"));
 
-        Expect("집계 중 예외", 0, errors.Count);
-        Expect("처치 기록 수", workers * killsPerWorker, log.Count);
+        Expect(Text.L("집계 중 예외", "集計中の例外"), 0, errors.Count);
+        Expect(Text.L("처치 기록 수", "討伐記録の数"), workers * killsPerWorker, log.Count);
     }
 }
 

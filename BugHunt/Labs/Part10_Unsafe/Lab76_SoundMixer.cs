@@ -38,7 +38,7 @@ public static unsafe class Lab76
             {
                 AudioDevice.Attach(p, Samples.Length);
             }
-            Console.WriteLine("  오디오 장치에 버퍼 연결");
+            Console.WriteLine(Text.L("  오디오 장치에 버퍼 연결", "  オーディオ デバイスにバッファを接続"));
         }
 
         public void SetVolume(short volume) => Array.Fill(Samples, volume);
@@ -52,7 +52,7 @@ public static unsafe class Lab76
             temp.Add(new byte[64]);
         temp.Clear();
         GC.Collect(2, GCCollectionMode.Forced, blocking: true, compacting: true);
-        Console.WriteLine($"  {name} 로드 완료, 힙 정리");
+        Console.WriteLine(Text.L($"  {name} 로드 완료, 힙 정리", $"  {name} 読み込み完了、ヒープを整理"));
     }
 
     public static void Run()
@@ -73,11 +73,11 @@ public static unsafe class Lab76
             LoadLevel(frame == 0 ? "Forest" : "Cave");
             mixer.SetVolume(volumes[frame]);
             mixed[frame] = AudioDevice.MixFrame();
-            Console.WriteLine($"  프레임 {frame}: 볼륨 {volumes[frame]} → 장치가 섞은 값 {mixed[frame]}");
+            Console.WriteLine(Text.L($"  프레임 {frame}: 볼륨 {volumes[frame]} → 장치가 섞은 값 {mixed[frame]}", $"  フレーム {frame}: 音量 {volumes[frame]} → デバイスがミックスした値 {mixed[frame]}"));
         }
 
         for (int frame = 0; frame < volumes.Length; frame++)
-            Expect($"프레임 {frame}에 장치가 읽은 합", volumes[frame] * mixer.Samples.Length, mixed[frame]);
+            Expect(Text.L($"프레임 {frame}에 장치가 읽은 합", $"フレーム {frame} でデバイスが読んだ合計"), volumes[frame] * mixer.Samples.Length, mixed[frame]);
     }
 }
 

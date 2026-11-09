@@ -32,28 +32,28 @@ public static partial class Lab45
     static void Put(Item[] bag, Item item)
     {
         int slot = Array.FindIndex(bag, s => s is null);
-        if (slot < 0) throw new InvalidOperationException(Text.T("가방이 꽉 찼다"));
+        if (slot < 0) throw new InvalidOperationException(Text.L("가방이 꽉 찼다", "バッグがいっぱいです"));
         bag[slot] = item;
-        Console.WriteLine($"  {slot}번 칸에 {item.Name} 넣음");
+        Console.WriteLine(Text.L($"  {slot}번 칸에 {item.Name} 넣음", $"  スロット{slot}に{item.Name}を入れた"));
     }
 
     public static void Run()
     {
         int size = Pick(6, 3, 10);
-        string weaponName = Pick(Text.T("나무 검"), Text.T("녹슨 단검"), Text.T("견습생 지팡이"), Text.T("사냥용 활"));
+        string weaponName = Pick(Text.L("나무 검", "木の剣"), Text.L("녹슨 단검", "さびた短剣"), Text.L("견습생 지팡이", "見習いの杖"), Text.L("사냥용 활", "狩猟用の弓"));
         int potions = Pick(2, 1, 3);
 
         Item[] bag = CreateBag(new Weapon(weaponName, 5), size);
-        Console.WriteLine($"  가방 {size}칸, 첫 칸: {bag[0].Name}");
+        Console.WriteLine(Text.L($"  가방 {size}칸, 첫 칸: {bag[0].Name}", $"  バッグ {size}スロット、最初のスロット: {bag[0].Name}"));
 
         for (int i = 0; i < potions; i++)
-            Put(bag, new Potion(Text.T("회복 물약"), 30));
+            Put(bag, new Potion(Text.L("회복 물약", "回復ポーション"), 30));
 
         int filled = bag.Count(slot => slot != null);
-        Console.WriteLine($"  채워진 칸: {filled}");
+        Console.WriteLine(Text.L($"  채워진 칸: {filled}", $"  埋まったスロット: {filled}"));
 
-        Expect("채워진 칸 수 (무기 1 + 물약)", 1 + potions, filled);
-        Expect("1번 칸은 물약", true, bag[1] is Potion);
+        Expect(Text.L("채워진 칸 수 (무기 1 + 물약)", "埋まったスロット数 (武器 1 + ポーション)"), 1 + potions, filled);
+        Expect(Text.L("1번 칸은 물약", "スロット1はポーション"), true, bag[1] is Potion);
     }
 }
 

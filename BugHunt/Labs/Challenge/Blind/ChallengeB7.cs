@@ -22,7 +22,7 @@ public static class ChallengeB7
         {
             await server.SendAsync(player);
         });
-        Console.WriteLine("  보상 우편 발송 완료");
+        Console.WriteLine(Text.L("  보상 우편 발송 완료", "  補償の郵便 発送完了"));
     }
 
     public static void Run()
@@ -32,6 +32,6 @@ public static class ChallengeB7
         var server = new MailServer(Pick(100, 600, 1000));
 
         SendCompensation(server, players);
-        Expect("'발송 완료' 시점에 도착한 우편", count, server.Delivered);
+        Expect(Text.L("'발송 완료' 시점에 도착한 우편", "「発送完了」の時点で届いた郵便"), count, server.Delivered);
     }
 }

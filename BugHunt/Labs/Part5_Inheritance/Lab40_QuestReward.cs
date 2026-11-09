@@ -37,13 +37,13 @@ public static partial class Lab40
 
         int shown = quests.Sum(q => q.Gold);
         foreach (Quest q in quests)
-            Console.WriteLine($"  {q.Title}: 퀘스트 창 {q.Gold}G");
-        Console.WriteLine($"  이벤트 배율 x{rate}: 퀘스트 창 합계 {shown}G");
+            Console.WriteLine(Text.L($"  {q.Title}: 퀘스트 창 {q.Gold}G", $"  {q.Title}: クエスト画面 {q.Gold}G"));
+        Console.WriteLine(Text.L($"  이벤트 배율 x{rate}: 퀘스트 창 합계 {shown}G", $"  イベント倍率 x{rate}: クエスト画面の合計 {shown}G"));
 
         int paid = Payout(quests);
-        Console.WriteLine($"  정산 지급: {paid}G");
+        Console.WriteLine(Text.L($"  정산 지급: {paid}G", $"  精算の支給: {paid}G"));
 
-        Expect("정산 지급 골드 = 퀘스트 창에 보인 합계", shown, paid);
+        Expect(Text.L("정산 지급 골드 = 퀘스트 창에 보인 합계", "精算の支給ゴールド = クエスト画面に表示された合計"), shown, paid);
     }
 }
 
@@ -86,6 +86,6 @@ public static partial class Lab40
 public static partial class Lab40
 {
     static readonly double[] Rates = [1.5, 2.0, 3.0, 1.25];
-    static readonly string[] Titles = [Text.T("늑대 사냥"), Text.T("약초 수집"), Text.T("고블린 소탕"), Text.T("잃어버린 반지"), Text.T("유적 탐사")];
+    static readonly string[] Titles = [Text.L("늑대 사냥", "オオカミ狩り"), Text.L("약초 수집", "薬草集め"), Text.L("고블린 소탕", "ゴブリン掃討"), Text.L("잃어버린 반지", "なくした指輪"), Text.L("유적 탐사", "遺跡探索")];
 }
 #endregion

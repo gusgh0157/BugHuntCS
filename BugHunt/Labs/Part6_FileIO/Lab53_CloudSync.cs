@@ -43,7 +43,7 @@ public static partial class Lab53
         await FileLock.WaitAsync();
         try { uploaded = await File.ReadAllTextAsync(path); }
         finally { FileLock.Release(); }
-        Console.WriteLine($"  클라우드에 올림: {OneLine(uploaded)}");
+        Console.WriteLine(Text.L($"  클라우드에 올림: {OneLine(uploaded)}", $"  クラウドにアップロード: {OneLine(uploaded)}"));
         return uploaded;
     }
 
@@ -64,9 +64,9 @@ public static partial class Lab53
                 (int Volume, int Sensitivity)[] changes = Pick(Changes[0], Changes[1..]);
                 foreach ((int volume, int sensitivity) in changes)
                 {
-                    Console.WriteLine($"  설정 변경: 볼륨 {volume}, 감도 {sensitivity}");
+                    Console.WriteLine(Text.L($"  설정 변경: 볼륨 {volume}, 감도 {sensitivity}", $"  設定変更: 音量 {volume}、感度 {sensitivity}"));
                     string uploaded = await ApplyAsync(path, volume, sensitivity);
-                    Expect($"클라우드에 올라간 설정 (볼륨 {volume}, 감도 {sensitivity})", OneLine(Format(volume, sensitivity)), OneLine(uploaded));
+                    Expect(Text.L($"클라우드에 올라간 설정 (볼륨 {volume}, 감도 {sensitivity})", $"クラウドにアップロードされた設定 (音量 {volume}、感度 {sensitivity})"), OneLine(Format(volume, sensitivity)), OneLine(uploaded));
                 }
             }
             finally

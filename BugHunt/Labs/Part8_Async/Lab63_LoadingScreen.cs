@@ -29,7 +29,7 @@ public static class Lab63
         {
             await Task.Delay(20);   // 디스크에서 읽는 척
             loaded++;
-            Console.WriteLine($"  {asset} 로드 ({loaded * 100 / Assets.Length}%)");
+            Console.WriteLine(Text.L($"  {asset} 로드 ({loaded * 100 / Assets.Length}%)", $"  {asset} ロード ({loaded * 100 / Assets.Length}%)"));
         }
         return loaded;
     }
@@ -51,13 +51,13 @@ public static class Lab63
         TimeSpan limit = TimeSpan.FromSeconds(IsGrading ? 3 : 30);
         if (!frame.Wait(TimeSpan.FromSeconds(2)))
         {
-            Console.WriteLine($"  ...로딩이 끝나지 않는다. 멈췄다면 지금 디버그 → 모두 중단(Ctrl+Alt+Break)으로 확인해 보세요.");
-            Console.WriteLine($"  ({limit.TotalSeconds:0}초가 지나면 실패로 판정합니다)");
+            Console.WriteLine(Text.L($"  ...로딩이 끝나지 않는다. 멈췄다면 지금 디버그 → 모두 중단(Ctrl+Alt+Break)으로 확인해 보세요.", $"  ...ロードが終わりません。止まっているなら、今 デバッグ → すべて中断(Ctrl+Alt+Break) で確認してみてください。"));
+            Console.WriteLine(Text.L($"  ({limit.TotalSeconds:0}초가 지나면 실패로 판정합니다)", $"  ({limit.TotalSeconds:0} 秒が過ぎたら失敗と判定します)"));
             frame.Wait(limit);
         }
 
-        Expect("로딩 완료", true, frame.IsCompletedSuccessfully);
-        Expect("로드한 에셋 수", Assets.Length, screen.AssetsLoaded);
+        Expect(Text.L("로딩 완료", "ロード完了"), true, frame.IsCompletedSuccessfully);
+        Expect(Text.L("로드한 에셋 수", "ロードしたアセット数"), Assets.Length, screen.AssetsLoaded);
     }
 }
 

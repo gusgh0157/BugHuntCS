@@ -28,13 +28,13 @@ public static class Lab26
         int renamed = Pick(0, 0, count - 1);
         int expectedGold = storage[guilds[renamed]];
         guilds[renamed].Tag = Pick("DWN2", "NEW1", "ZZZZ", "QWER");
-        Console.WriteLine($"  길드 태그 변경: {tags[renamed]} → {guilds[renamed].Tag}");
+        Console.WriteLine(Text.L($"  길드 태그 변경: {tags[renamed]} → {guilds[renamed].Tag}", $"  ギルドタグ変更: {tags[renamed]} → {guilds[renamed].Tag}"));
 
         bool found = storage.TryGetValue(guilds[renamed], out int gold);
-        Console.WriteLine($"  창고 찾기: {(found ? $"{gold}G" : "없음")} (창고 개수 {storage.Count})");
+        Console.WriteLine(Text.L($"  창고 찾기: {(found ? $"{gold}G" : "없음")} (창고 개수 {storage.Count})", $"  倉庫の検索: {(found ? $"{gold}G" : "なし")} (倉庫の数 {storage.Count})"));
 
-        Expect("태그를 바꾼 길드의 창고를 찾음", true, found);
-        Expect("창고 골드", expectedGold, gold);
+        Expect(Text.L("태그를 바꾼 길드의 창고를 찾음", "タグを変えたギルドの倉庫が見つかる"), true, found);
+        Expect(Text.L("창고 골드", "倉庫のゴールド"), expectedGold, gold);
     }
 }
 

@@ -21,8 +21,8 @@ public static partial class Lab32
         {
             int total = TotalDamage(baseDamage, combo);
             int expected = baseDamage + (combo ?? 0);
-            Console.WriteLine($"  기본 {baseDamage}, 콤보 {(combo?.ToString() ?? "없음")} → 총 {total} (기대 {expected})");
-            Expect($"총 피해 (기본 {baseDamage}, 콤보 {(combo?.ToString() ?? "없음")})", expected, total);
+            Console.WriteLine(Text.L($"  기본 {baseDamage}, 콤보 {(combo?.ToString() ?? "없음")} → 총 {total} (기대 {expected})", $"  基本 {baseDamage}、コンボ {(combo?.ToString() ?? "なし")} → 合計 {total} (期待 {expected})"));
+            Expect(Text.L($"총 피해 (기본 {baseDamage}, 콤보 {(combo?.ToString() ?? "없음")})", $"合計ダメージ (基本 {baseDamage}、コンボ {(combo?.ToString() ?? "なし")})"), expected, total);
         }
     }
 }

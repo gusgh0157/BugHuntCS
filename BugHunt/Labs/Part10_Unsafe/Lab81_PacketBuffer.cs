@@ -26,8 +26,8 @@ public static partial class Lab81
         foreach (byte b in packet) expected += b;
 
         long sum = Checksum(packet);
-        Console.WriteLine($"  패킷 {size} 바이트, 체크섬 {sum}");
-        Expect("체크섬", expected, sum);
+        Console.WriteLine(Text.L($"  패킷 {size} 바이트, 체크섬 {sum}", $"  パケット {size} バイト、チェックサム {sum}"));
+        Expect(Text.L("체크섬", "チェックサム"), expected, sum);
     }
 }
 

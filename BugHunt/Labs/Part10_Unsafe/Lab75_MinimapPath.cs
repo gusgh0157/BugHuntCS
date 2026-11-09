@@ -29,7 +29,7 @@ public static unsafe class Lab75
     {
         Span<int> pixels = stackalloc int[256];
         pixels.Fill(-1);
-        Console.WriteLine($"  미니맵 배경 그림 ({pixels.Length}픽셀)");
+        Console.WriteLine(Text.L($"  미니맵 배경 그림 ({pixels.Length}픽셀)", $"  ミニマップの背景を描画 ({pixels.Length}ピクセル)"));
     }
 
     public static void Run()
@@ -43,15 +43,15 @@ public static unsafe class Lab75
         var tiles = new List<int>();
         for (int i = 0; i < length; i++)
             tiles.Add(path[i]);
-        Console.WriteLine($"  경로: {string.Join(" → ", tiles)}");
+        Console.WriteLine(Text.L($"  경로: {string.Join(" → ", tiles)}", $"  経路: {string.Join(" → ", tiles)}"));
 
         var expected = new List<int>();
         for (int tile = start; tile != goal; tile += start < goal ? 1 : -1)
             expected.Add(tile);
         expected.Add(goal);
 
-        Expect("경로 타일 수", expected.Count, length);
-        Expect("경로", string.Join(" → ", expected), string.Join(" → ", tiles));
+        Expect(Text.L("경로 타일 수", "経路のタイル数"), expected.Count, length);
+        Expect(Text.L("경로", "経路"), string.Join(" → ", expected), string.Join(" → ", tiles));
     }
 }
 

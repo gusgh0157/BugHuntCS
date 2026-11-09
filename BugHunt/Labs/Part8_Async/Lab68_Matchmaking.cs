@@ -25,7 +25,7 @@ public static class Lab68
         {
             await SearchRegionAsync(region);
         }
-        return Text.T("매칭 성공");
+        return Text.L("매칭 성공", "マッチング成功");
     }
 
     static async Task<string> MatchmakingScreenAsync(TimeSpan cancelAfter)
@@ -39,7 +39,7 @@ public static class Lab68
         }
         catch (OperationCanceledException)
         {
-            return Text.T("취소됨");
+            return Text.L("취소됨", "キャンセル済み");
         }
     }
 
@@ -52,10 +52,10 @@ public static class Lab68
         watch.Stop();
 
         int afterCancel = requestsAtCancel < 0 ? 0 : requestsSent - requestsAtCancel;
-        Console.WriteLine($"  결과: {result}, 걸린 시간 {watch.ElapsedMilliseconds}ms, 매칭 요청 {requestsSent}번 (취소 뒤 {afterCancel}번)");
-        Expect("매칭 결과", Text.T("취소됨"), result);
+        Console.WriteLine(Text.L($"  결과: {result}, 걸린 시간 {watch.ElapsedMilliseconds}ms, 매칭 요청 {requestsSent}번 (취소 뒤 {afterCancel}번)", $"  結果: {result}、所要時間 {watch.ElapsedMilliseconds}ms、マッチング要求 {requestsSent} 回 (キャンセル後 {afterCancel} 回)"));
+        Expect(Text.L("매칭 결과", "マッチング結果"), Text.L("취소됨", "キャンセル済み"), result);
         // 시간이 아니라 요청 수로 본다: PC가 바빠 느려져도 판정이 같다. 취소와 거의 동시에 나간 요청 하나는 봐준다
-        ExpectAtMost("취소 뒤 새로 보낸 매칭 요청 수", 1, afterCancel);
+        ExpectAtMost(Text.L("취소 뒤 새로 보낸 매칭 요청 수", "キャンセル後に新しく送ったマッチング要求の数"), 1, afterCancel);
     }
 }
 

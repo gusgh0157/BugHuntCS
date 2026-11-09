@@ -13,7 +13,7 @@
 Player? player = FindPlayer(name);
 if (player is null)
 {
-    Console.WriteLine($"  {name}: 없는 플레이어");
+    Console.WriteLine(Text.L($"  {name}: 없는 플레이어", $"  {name}: 存在しないプレイヤー"));
     return;
 }
 PrintPlayer(player);
@@ -75,7 +75,7 @@ PrintPlayer(player);
             try { loaded.Add(Parse(file.Key, file.Value)); }
             catch (FormatException ex)
             {
-                Console.WriteLine($"  고장 난 파일 건너뜀: {file.Key} ({ex.Message})");
+                Console.WriteLine(Text.L($"  고장 난 파일 건너뜀: {file.Key} ({ex.Message})", $"  壊れたファイルを飛ばしました: {file.Key} ({ex.Message})"));
                 Interlocked.Increment(ref skipped);
             }
         });
@@ -94,11 +94,11 @@ PrintPlayer(player);
 ```csharp
         catch (Exception ex)
         {
-            Console.WriteLine($"  슬롯 {index + 1} 손상: {ex.GetType().Name}");
+            Console.WriteLine(Text.L($"  슬롯 {index + 1} 손상: {ex.GetType().Name}", $"  スロット {index + 1} 破損: {ex.GetType().Name}"));
             throw;   // 원래 스택 트레이스를 그대로 둔 채 다시 던진다
         }
 ```
-정보를 덧붙이고 싶다면 `throw new SaveLoadException($"슬롯 {index + 1}", ex);`처럼 **내부 예외로 감싼다**(이 랩에는 그런 예외 형식이 없으므로 직접 만들어야 한다).
+정보를 덧붙이고 싶다면 `throw new SaveLoadException(Text.L($"슬롯 {index + 1}", $"スロット {index + 1}"), ex);`처럼 **내부 예외로 감싼다**(이 랩에는 그런 예외 형식이 없으므로 직접 만들어야 한다).
 **교훈:** 스택 트레이스는 예외가 **마지막으로 throw된 곳**부터 기록된다. 다시 던질 때는 `throw;`. 경고를 끄면 그 경고가 지키던 버그도 함께 숨는다.
 
 ---
@@ -106,10 +106,10 @@ PrintPlayer(player);
 ## Lab 8 — `ToString`이 `$"{this}"`로 자기를 불러 무한 재귀
 ```
 호출 스택:  DamageLabel.ToString → DamageLabel.ToString → … (수천 단계)
-진짜 원인:  $"{this} {Text.T("피해")}"의 {this}는 this.ToString()을 부른다. 그게 지금 실행 중인 ToString이다.
+진짜 원인:  $"{this} {Text.L("피해", "ダメージ")}"의 {this}는 this.ToString()을 부른다. 그게 지금 실행 중인 ToString이다.
            무한 재귀로 스택을 다 쓰면 StackOverflowException으로 프로세스가 즉시 죽는다.
 ```
-**수정:** `ToString`에서 그 객체 자신을 보간하지 말고 필드를 직접 씁니다: `$"{Amount} {Text.T("피해")}"`.
+**수정:** `ToString`에서 그 객체 자신을 보간하지 말고 필드를 직접 씁니다: `$"{Amount} {Text.L("피해", "ダメージ")}"`.
 **교훈:** `ToString`, `GetHashCode`, `Equals`, 연산자 오버로드, 속성 `get` 안에서 **자기 자신을 다시 부르지** 않도록 조심합니다. 흔한 형태: `ToString`에서 `$"{this}"`, `Equals`에서 `this == other`(→ `==` 연산자가 다시 `Equals`), `get`에서 같은 속성 대입. 랩 5(지갑)의 `set => Gold = ...`도 같은 뿌리입니다. 증상(프로그램이 조용히 사라짐)이 같으면 호출 스택부터 보세요.
 
 ---
@@ -643,12 +643,12 @@ first chance:  IOException: The process cannot access the file '...chat.log' bec
             var lines = new List<string>();
             while (reader.ReadLine() is { } line)
                 lines.Add(line);
-            Console.WriteLine($"  업로드: {lines.Count}줄");
+            Console.WriteLine(Text.L($"  업로드: {lines.Count}줄", $"  アップロード: {lines.Count}行"));
             return [.. lines];
         }
         catch (IOException ex)
         {
-            Console.WriteLine($"  업로드 실패: {ex.Message}");
+            Console.WriteLine(Text.L($"  업로드 실패: {ex.Message}", $"  アップロード失敗: {ex.Message}"));
             return [];
         }
     }
@@ -923,7 +923,7 @@ catch (Exception)
 {
     foreach (Exception ex in downloads.Where(d => d.IsFaulted).Select(d => d.Exception!.InnerException!))
     {
-        Console.WriteLine($"  [로그] {ex.Message}");
+        Console.WriteLine(Text.L($"  [로그] {ex.Message}", $"  [ログ] {ex.Message}"));
         failed.Add(ex.Message.Split(' ')[0]);
     }
 }
@@ -981,12 +981,12 @@ try
 }
 catch (InvalidOperationException ex)   // 서버가 거절함: 가방에 그대로 둔다
 {
-    Console.WriteLine($"  [로그] 창고 업로드 거절: {ex.Message}");
+    Console.WriteLine(Text.L($"  [로그] 창고 업로드 거절: {ex.Message}", $"  [ログ] 倉庫アップロード拒否: {ex.Message}"));
     return false;
 }
 ```
 다른 예외(네트워크 끊김, 코드 버그)는 잡지 않고 위로 올려 보낸다. 거기서 잡을지는 그것을 처리할 줄 아는 쪽이 정한다.
-**가짜 수정:** `if (item == "영웅의 증표") return false;`처럼 보이는 아이템만 막으면 기본 케이스는 통과하지만, 숨은 케이스는 다른 아이템이 귀속이라 실패한다. `catch (Exception)`을 그대로 두고 `return false`로만 바꾸면 이 랩은 통과하지만, 코드 버그까지 "보관 실패"로 바꿔 버리는 같은 냄새가 남는다.
+**가짜 수정:** `if (item == Text.L("영웅의 증표", "英雄の証")) return false;`처럼 보이는 아이템만 막으면 기본 케이스는 통과하지만, 숨은 케이스는 다른 아이템이 귀속이라 실패한다. `catch (Exception)`을 그대로 두고 `return false`로만 바꾸면 이 랩은 통과하지만, 코드 버그까지 "보관 실패"로 바꿔 버리는 같은 냄새가 남는다.
 **교훈:** `catch (Exception) { 로그 }` 뒤에 성공 값을 돌려주면, 실패가 **다른 단계의 다른 증상**으로 바뀌어 나타난다. 로그 한 줄은 처리가 아니다. 잡을 예외는 좁히고, 실패는 반환값이나 예외로 호출자에게 알린다.
 
 ## Lab 70 — 시간 초과를 "사용자가 취소함"으로 처리
@@ -1002,7 +1002,7 @@ catch (InvalidOperationException ex)   // 서버가 거절함: 가방에 그대�
 ```csharp
 catch (OperationCanceledException) when (userCancel.IsCancellationRequested)
 {
-    return Text.T("취소됨");      // 플레이어가 눌렀다
+    return Text.L("취소됨", "キャンセル済み");      // 플레이어가 눌렀다
 }
 catch (OperationCanceledException)
 {

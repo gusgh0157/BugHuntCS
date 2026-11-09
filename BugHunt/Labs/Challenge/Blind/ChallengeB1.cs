@@ -21,7 +21,7 @@ public static class ChallengeB1
                     _tiles = tiles;
                     Monitor.Pulse(_gate);
                 }
-            }) { IsBackground = true, Name = Text.F("로더 ({0})", region), Priority = ThreadPriority.Highest };
+            }) { IsBackground = true, Name = Text.L($"로더 ({region})", $"ローダー ({region})"), Priority = ThreadPriority.Highest };
             worker.Start();
         }
 
@@ -39,10 +39,10 @@ public static class ChallengeB1
 
     public static void Run()
     {
-        string[] all = [Text.T("초원"), Text.T("사막"), Text.T("설원"), Text.T("화산")];
+        string[] all = [Text.L("초원", "草原"), Text.L("사막", "砂漠"), Text.L("설원", "雪原"), Text.L("화산", "火山")];
         string[] regions = all[..Pick(1, 3, 4)];
         int total = 0;
-        bool finished = FinishesWithin("지역 불러오기", () =>
+        bool finished = FinishesWithin(Text.L("지역 불러오기", "地域の読み込み"), () =>
         {
             foreach (string region in regions)
             {
@@ -50,10 +50,10 @@ public static class ChallengeB1
                 loader.Start(region, 1000 + region.Length);
                 PrepareScreen();
                 total += loader.WaitForTiles();
-                Console.WriteLine($"  {region} 불러옴");
+                Console.WriteLine(Text.L($"  {region} 불러옴", $"  {region} 読み込み完了"));
             }
         });
         if (finished)
-            Expect("불러온 타일 수", regions.Sum(r => 1000 + r.Length), total);
+            Expect(Text.L("불러온 타일 수", "読み込んだタイル数"), regions.Sum(r => 1000 + r.Length), total);
     }
 }

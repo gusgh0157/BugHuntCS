@@ -75,7 +75,7 @@ public static class ChallengeC2
             {
                 if (frame.ChannelMove)
                 {
-                    Console.WriteLine($"  (프레임 {loop.Frame}: 채널 이동)");
+                    Console.WriteLine(Text.L($"  (프레임 {loop.Frame}: 채널 이동)", $"  (フレーム {loop.Frame}: チャンネル移動)"));
                     store.Invalidate();
                 }
                 foreach ((string quest, int amount) in frame.Kills)
@@ -89,17 +89,17 @@ public static class ChallengeC2
             loop.RunFrame(() => { });
 
         foreach (Exception ex in bus.Faults)
-            Console.WriteLine($"  처리기 예외: {ex.GetType().Name}: {ex.Message}");
+            Console.WriteLine(Text.L($"  처리기 예외: {ex.GetType().Name}: {ex.Message}", $"  ハンドラーの例外: {ex.GetType().Name}: {ex.Message}"));
 
         var total = new Dictionary<string, int>();
         foreach (FrameScript frame in script)
             foreach ((string quest, int amount) in frame.Kills)
                 total[quest] = total.GetValueOrDefault(quest) + amount;
 
-        Console.WriteLine($"  프레임 {loop.Frame}개, 처리한 알림 {tracker.Handled}개, 서버 읽기 {server.Reads}번");
+        Console.WriteLine(Text.L($"  프레임 {loop.Frame}개, 처리한 알림 {tracker.Handled}개, 서버 읽기 {server.Reads}번", $"  フレーム {loop.Frame} 個、処理した通知 {tracker.Handled} 個、サーバー読み込み {server.Reads} 回"));
         string Show(Func<string, int> progress) => string.Join(", ", goals.Keys.Select(q => $"{q} {progress(q)}"));
-        Expect("업적 진행도", Show(q => total.GetValueOrDefault(q)), Show(store.Get));
-        Expect("달성한 업적",
+        Expect(Text.L("업적 진행도", "実績の進行度"), Show(q => total.GetValueOrDefault(q)), Show(store.Get));
+        Expect(Text.L("달성한 업적", "達成した実績"),
             string.Join(", ", goals.Keys.Where(q => total.GetValueOrDefault(q) >= goals[q])),
             string.Join(", ", goals.Keys.Where(store.Unlocked.Contains)));
     }

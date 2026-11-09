@@ -37,15 +37,15 @@ public static class Lab89
             for (int frame = 0; frame < frames; frame++)
                 total += CountNearby(enemies, PlayerAt(frame), radius);
         });
-        Console.WriteLine($"  {frames}프레임, 위협도 합 {total}, 할당 {bytes:N0}바이트 (프레임당 {bytes / frames}), {ms}ms");
+        Console.WriteLine(Text.L($"  {frames}프레임, 위협도 합 {total}, 할당 {bytes:N0}바이트 (프레임당 {bytes / frames}), {ms}ms", $"  {frames} フレーム、脅威度の合計 {total}、割り当て {bytes:N0} バイト (フレームあたり {bytes / frames})、{ms}ms"));
 
         long expected = 0;
         for (int frame = 0; frame < frames; frame++)
             foreach (Enemy e in enemies)
                 if (e.Alive && e.Pos.DistanceSq(PlayerAt(frame)) <= radius * radius)
                     expected++;
-        Expect("위협도 합", expected, total);
-        ExpectAtMost("프레임당 할당 (바이트)", 8, bytes / frames);
+        Expect(Text.L("위협도 합", "脅威度の合計"), expected, total);
+        ExpectAtMost(Text.L("프레임당 할당 (바이트)", "フレームあたりの割り当て (バイト)"), 8, bytes / frames);
     }
 }
 

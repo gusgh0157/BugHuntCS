@@ -19,8 +19,8 @@ public static partial class Lab49
     {
         string dir = SaveDir(saveRoot, profile);
         Directory.CreateDirectory(dir);
-        File.WriteAllText(Path.Combine(dir, "slot1.sav"), Text.F("{0}의 세이브", profile.Name));
-        Console.WriteLine($"  {profile.Name} 저장 → {dir}");
+        File.WriteAllText(Path.Combine(dir, "slot1.sav"), Text.L($"{profile.Name}의 세이브", $"{profile.Name}のセーブ"));
+        Console.WriteLine(Text.L($"  {profile.Name} 저장 → {dir}", $"  {profile.Name} を保存 → {dir}"));
     }
 
     // 세이브 루트 아래의 모든 .sav 를 백업 폴더로 복사
@@ -48,16 +48,16 @@ public static partial class Lab49
             string[] names = [.. Names.Take(Pick(3, 2, Names.Length))];
             int imported = Pick(1, 0, names.Length - 1);
             Profile[] profiles = [.. names.Select((n, i) => new Profile(n, i == imported ? Path.Combine(oldInstall, n) : n))];
-            Console.WriteLine($"  가져온 프로필: {profiles[imported].Name} (폴더 값: {profiles[imported].Folder})");
+            Console.WriteLine(Text.L($"  가져온 프로필: {profiles[imported].Name} (폴더 값: {profiles[imported].Folder})", $"  取り込んだプロフィール: {profiles[imported].Name} (フォルダーの値: {profiles[imported].Folder})"));
 
             foreach (Profile p in profiles)
                 Save(saveRoot, p);
 
             int copied = Backup(saveRoot, backupDir);
-            Console.WriteLine($"  백업: {copied}개 파일 (세이브 루트: {saveRoot})");
+            Console.WriteLine(Text.L($"  백업: {copied}개 파일 (세이브 루트: {saveRoot})", $"  バックアップ: {copied}個のファイル (セーブルート: {saveRoot})"));
 
-            Expect("백업된 세이브 수 = 프로필 수", profiles.Length, copied);
-            Expect("가져온 프로필의 세이브가 세이브 루트 안에 있음", true, File.Exists(Path.Combine(saveRoot, profiles[imported].Name, "slot1.sav")));
+            Expect(Text.L("백업된 세이브 수 = 프로필 수", "バックアップされたセーブ数 = プロフィール数"), profiles.Length, copied);
+            Expect(Text.L("가져온 프로필의 세이브가 세이브 루트 안에 있음", "取り込んだプロフィールのセーブがセーブルートの中にある"), true, File.Exists(Path.Combine(saveRoot, profiles[imported].Name, "slot1.sav")));
         }
         finally
         {

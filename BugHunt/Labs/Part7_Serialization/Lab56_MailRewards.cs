@@ -12,7 +12,7 @@ public static partial class Lab56
     class Reward
     {
         public string Source { get; set; } = "";
-        public virtual string Describe() => Text.T("알 수 없는 보상");
+        public virtual string Describe() => Text.L("알 수 없는 보상", "不明な報酬");
     }
 
     sealed class GoldReward : Reward
@@ -31,7 +31,7 @@ public static partial class Lab56
     sealed class ExpReward : Reward
     {
         public int Points { get; set; }
-        public override string Describe() => $"{Text.T("경험치")} {Points}";
+        public override string Describe() => $"{Text.L("경험치", "経験値")} {Points}";
     }
 
     sealed class Mail
@@ -46,22 +46,22 @@ public static partial class Lab56
     static Mail RoundTrip(Mail mail)
     {
         string json = JsonSerializer.Serialize(mail, Options);
-        Console.WriteLine($"  서버 저장: {json}");
-        return JsonSerializer.Deserialize<Mail>(json, Options) ?? throw new FormatException(Text.T("빈 우편"));
+        Console.WriteLine(Text.L($"  서버 저장: {json}", $"  サーバー保存: {json}"));
+        return JsonSerializer.Deserialize<Mail>(json, Options) ?? throw new FormatException(Text.L("빈 우편", "空のメール"));
     }
 
     public static void Run()
     {
         Reward[] attachments = Pick(Bundles[0], Bundles[1..]);
-        var mail = new Mail { To = Text.T("아린"), Attachments = [.. attachments] };
-        Console.WriteLine($"  보낸 첨부: {string.Join(", ", mail.Attachments.Select(r => r.Describe()))}");
+        var mail = new Mail { To = Text.L("아린", "アリン"), Attachments = [.. attachments] };
+        Console.WriteLine(Text.L($"  보낸 첨부: {string.Join(", ", mail.Attachments.Select(r => r.Describe()))}", $"  送った添付: {string.Join(", ", mail.Attachments.Select(r => r.Describe()))}"));
 
         Mail received = RoundTrip(mail);
-        Console.WriteLine($"  받은 첨부: {string.Join(", ", received.Attachments.Select(r => r.Describe()))}");
+        Console.WriteLine(Text.L($"  받은 첨부: {string.Join(", ", received.Attachments.Select(r => r.Describe()))}", $"  受け取った添付: {string.Join(", ", received.Attachments.Select(r => r.Describe()))}"));
 
-        Expect("첨부 개수", mail.Attachments.Count, received.Attachments.Count);
-        Expect("첨부 내용", string.Join(", ", mail.Attachments.Select(r => r.Describe())), string.Join(", ", received.Attachments.Select(r => r.Describe())));
-        Expect("보상 출처", string.Join(",", mail.Attachments.Select(r => r.Source)), string.Join(",", received.Attachments.Select(r => r.Source)));
+        Expect(Text.L("첨부 개수", "添付の数"), mail.Attachments.Count, received.Attachments.Count);
+        Expect(Text.L("첨부 내용", "添付の内容"), string.Join(", ", mail.Attachments.Select(r => r.Describe())), string.Join(", ", received.Attachments.Select(r => r.Describe())));
+        Expect(Text.L("보상 출처", "報酬の入手元"), string.Join(",", mail.Attachments.Select(r => r.Source)), string.Join(",", received.Attachments.Select(r => r.Source)));
     }
 }
 
@@ -115,10 +115,10 @@ public static partial class Lab56
 {
     static readonly Reward[][] Bundles =
     [
-        [new GoldReward { Amount = 500, Source = Text.T("주간 퀘스트") }, new ItemReward { ItemName = Text.T("회복 물약"), Count = 3, Source = Text.T("주간 퀘스트") }],
-        [new ExpReward { Points = 1200, Source = Text.T("이벤트") }, new GoldReward { Amount = 50, Source = Text.T("출석") }],
-        [new ItemReward { ItemName = Text.T("용의 비늘"), Count = 1, Source = Text.T("레이드") }, new ExpReward { Points = 300, Source = Text.T("레이드") }, new GoldReward { Amount = 999, Source = Text.T("레이드") }],
-        [new ExpReward { Points = 75, Source = Text.T("튜토리얼") }],
+        [new GoldReward { Amount = 500, Source = Text.L("주간 퀘스트", "ウィークリークエスト") }, new ItemReward { ItemName = Text.L("회복 물약", "回復ポーション"), Count = 3, Source = Text.L("주간 퀘스트", "ウィークリークエスト") }],
+        [new ExpReward { Points = 1200, Source = Text.L("이벤트", "イベント") }, new GoldReward { Amount = 50, Source = Text.L("출석", "出席") }],
+        [new ItemReward { ItemName = Text.L("용의 비늘", "竜のうろこ"), Count = 1, Source = Text.L("레이드", "レイド") }, new ExpReward { Points = 300, Source = Text.L("레이드", "レイド") }, new GoldReward { Amount = 999, Source = Text.L("레이드", "レイド") }],
+        [new ExpReward { Points = 75, Source = Text.L("튜토리얼", "チュートリアル") }],
     ];
 }
 #endregion

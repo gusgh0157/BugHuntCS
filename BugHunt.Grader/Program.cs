@@ -15,7 +15,7 @@ static class Program
     const string ReportVersion = "1";
     const int ChallengePart = 0;   // 챌린지 랩의 part 번호(번호 붙은 부가 아님). id는 C-n = 100+n, B-n = 200+n
 
-    static string PartName(int part) => part == ChallengePart ? Text.T("챌린지") : Text.F("{0}부", part);
+    static string PartName(int part) => part == ChallengePart ? Text.L("챌린지", "チャレンジ") : Text.L($"{part}부", $"第{part}部");
 
     record LabInfo(int Id, string Title, int Part, int Hidden, bool Release);
 
@@ -45,11 +45,10 @@ static class Program
         string[]? rest = Text.TakeLangArg(args);
         if (rest == null)
         {
-            Console.WriteLine("--lang 뒤에는 ko 또는 ja / --lang の後には ko か ja を指定してください");
+            Console.WriteLine("--lang 뒤에는 ko 또는 ja / --lang の後には ko か ja を指定してください"); // ko+ja (언어를 아직 못 골랐다 / まだ言語が決まっていない)
             return 2;
         }
         args = rest;
-        Text.InstallConsole();
 
         Options options;
         try
@@ -66,7 +65,7 @@ static class Program
         string? root = FindRepoRoot();
         if (root == null)
         {
-            Console.WriteLine(Text.T("BugHunt.slnx가 있는 폴더를 찾지 못했습니다. 저장소 안에서 실행하세요."));
+            Console.WriteLine(Text.L("BugHunt.slnx가 있는 폴더를 찾지 못했습니다. 저장소 안에서 실행하세요.", "BugHunt.slnx があるフォルダーが見つかりませんでした。リポジトリの中で実行してください。"));
             return 2;
         }
 
@@ -83,8 +82,8 @@ static class Program
             labs = [.. labs.Where(l => options.Only.Contains(l.Id))];
 
         int baseSeed = options.Seed ?? Random.Shared.Next(1, 1_000_000);
-        Console.WriteLine("\n" + Text.F("=== BugHunt 채점 (랩 {0}개, 숨은 케이스 기준 시드 {1}) ===", labs.Count, baseSeed) + "\n");
-        Console.WriteLine($"  {Text.T("랩"),3}  {Text.T("부"),2}  {Text.T("결과"),-8}{Text.T("시간"),8}  {Text.T("제목")}");
+        Console.WriteLine("\n" + Text.L($"=== BugHunt 채점 (랩 {labs.Count}개, 숨은 케이스 기준 시드 {baseSeed}) ===", $"=== BugHunt 採点 (ラボ {labs.Count} 個、隠しケースの基準シード {baseSeed}) ===") + "\n");
+        Console.WriteLine($"  {Text.L("랩", "ラボ"),3}  {Text.L("부", "部"),2}  {Text.L("결과", "結果"),-8}{Text.L("시간", "時間"),8}  {Text.L("제목", "タイトル")}");
 
         var results = new List<LabResult>();
         foreach (LabInfo lab in labs)
@@ -92,8 +91,8 @@ static class Program
             LabResult result = GradeLab(root, lab, options, baseSeed);
             results.Add(result);
             string detail = result.Detail.Length > 0 ? $"\n{"",26}└ {result.Detail}" : "";
-            // 제목과 상세는 이미 고른 언어다. 상세에 섞인 랩 데이터(한국어 값)를 빠진 번역으로 세지 않게 바로 쓴다
-            Text.WriteLineRaw($"  {lab.Id,3}  {(lab.Part == ChallengePart ? "C" : lab.Part.ToString()),2}  {result.Result,-8}{result.Ms,6}ms  {lab.Title}{detail}");
+            // 제목과 상세는 랩 프로세스가 이미 고른 언어로 찍은 것이다
+            Console.WriteLine($"  {lab.Id,3}  {(lab.Part == ChallengePart ? "C" : lab.Part.ToString()),2}  {result.Result,-8}{result.Ms,6}ms  {lab.Title}{detail}");
         }
 
         int passed = results.Count(r => r.Result == "PASS");
@@ -103,21 +102,22 @@ static class Program
         foreach (IGrouping<int, LabResult> part in results.GroupBy(r => r.Part))
             Console.WriteLine($"  {PartName(part.Key)}: {part.Count(r => r.Result == "PASS")} / {part.Count(r => r.Result != "SKIP")}");
         string counts = string.Join(", ", results.GroupBy(r => r.Result).OrderBy(g => g.Key).Select(g => $"{g.Key} {g.Count()}"));
-        Console.WriteLine("\n  " + Text.F("총점: {0} / {1}", passed, graded) + (graded > 0 ? $" ({passed * 100 / graded}%)" : "") + $"   [{counts}]");
+        Console.WriteLine("\n  " + Text.L($"총점: {passed} / {graded}", $"総合点: {passed} / {graded}") + (graded > 0 ? $" ({passed * 100 / graded}%)" : "") + $"   [{counts}]");
 
         string outPath = options.Out ?? Path.Combine(root, "grade-report.json");
         WriteReport(outPath, new Report(Edition, ReportVersion, results.Count, passed, results));
-        Console.WriteLine("  " + Text.F("보고서: {0}", outPath));
+        Console.WriteLine("  " + Text.L($"보고서: {outPath}", $"レポート: {outPath}"));
         if (passed < graded)
-            Console.WriteLine("  " + Text.F("숨은 케이스를 그대로 다시 돌리려면: --seed {0}", baseSeed));
+            Console.WriteLine("  " + Text.L($"숨은 케이스를 그대로 다시 돌리려면: --seed {baseSeed}", $"隠しケースをそのまま再実行するには: --seed {baseSeed}"));
 
         // 일본어로 채점하면 번역이 빠진 문구를 모아 보여 준다 (판정과는 별개. 종료 코드 3)
         if (Text.IsJa)
         {
-            CheckLang(listExe);
-            Console.WriteLine("  " + Text.F("번역이 빠진 문구: {0}개", MissingJa.Count));
+            foreach (string u in Text.FindUnpairedHangul(root))
+                MissingJa.Add(u);
+            Console.WriteLine("  " + Text.L($"번역이 빠진 문구: {MissingJa.Count}개", $"翻訳が抜けている文言: {MissingJa.Count} 個"));
             foreach (string m in MissingJa.Order(StringComparer.Ordinal).Take(30))
-                Text.WriteLineRaw($"    {m}");
+                Console.WriteLine($"    {m}");
             if (MissingJa.Count > 0)
                 return 3;
         }
@@ -125,35 +125,32 @@ static class Program
         return passed == graded ? 0 : 1;
     }
 
-    // 랩 프로세스가 표준 오류에 남긴 "번역 없음" 표시 (일본어로 채점할 때만 생긴다)
+    // 번역이 빠진 곳: 소스에서 Text.L 밖이나 일본어 쪽에 남은 한글 문자열과, 일본어로 돌린 랩의 출력(표준 출력, 표준 오류)에 섞여 나온 한글 줄
+    // [JA] 翻訳が抜けている所: ソースで Text.L の外か日本語側に残ったハングルの文字列と、日本語で実行したラボの出力(標準出力、標準エラー)に混じったハングルの行
     static readonly HashSet<string> MissingJa = new(StringComparer.Ordinal);
 
-    static void CollectMissing(string stderr)
+    // 출력에 한글이 나와도 되는 랩. 50: 모드 B(CP949)를 UTF-8로 잘못 읽어 깨진 글자(�) 사이에 우연히 한글 음절이 섞인다
+    // [JA] 出力にハングルが出てもよいラボ。50: MOD B(CP949)を UTF-8 として誤って読み、化けた文字(�)の間に偶然ハングルの音節が混じる
+    static readonly HashSet<int> HangulAllowed = [50];
+
+    static void CollectHangul(int lab, string output)
     {
-        string mark = Text.MissingMark.Trim();
-        foreach (string line in stderr.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
-            if (line.StartsWith(mark))
-                lock (MissingJa)
-                    MissingJa.Add(line[mark.Length..].Trim());
+        if (!Text.IsJa)
+            return;
+        foreach (string line in output.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+        {
+            if (!Text.HasHangul(line) || (HangulAllowed.Contains(lab) && line.Contains('�')))
+                continue;
+            lock (MissingJa)
+                MissingJa.Add($"Lab {LabCode(lab)}: {line}");
+        }
     }
 
-    // 메뉴·랩 제목·증상과 번역 표 자체 검사 (BugHunt --check-lang)
-    static void CheckLang(string dll)
-    {
-        using Process p = Process.Start(LabProcess(dll, "--check-lang"))!;
-        p.StandardInput.Close();
-        Task<string> err = p.StandardError.ReadToEndAsync();
-        string output = p.StandardOutput.ReadToEnd();
-        p.WaitForExit();
-        CollectMissing(err.Result);
-        foreach (string line in output.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).Where(l => !l.StartsWith("check-lang:")))
-            lock (MissingJa)
-                MissingJa.Add(line);
-    }
+    static string LabCode(int id) => id > 200 ? $"B-{id - 200}" : id > 100 ? $"C-{id - 100}" : id.ToString();
 
     static void PrintUsage()
     {
-        Console.WriteLine("""
+        Console.WriteLine(Text.L("""
             사용법: grade.bat [랩] [옵션]
                     dotnet run --project BugHunt.Grader -- [랩] [옵션]
 
@@ -165,7 +162,19 @@ static class Program
               --timeout MS  실행 한 번의 제한 시간 (기본 20000)
               --out 경로    보고서 위치 (기본: 저장소 루트의 grade-report.json)
               --lang L      출력 언어 ko 또는 ja (기본: BUGHUNT_LANG, 없으면 화면 언어)
-            """);
+            """, """
+            使い方: grade.bat [ラボ] [オプション]
+                    dotnet run --project BugHunt.Grader -- [ラボ] [オプション]
+
+              ラボ          採点するラボ番号。例: 24  24-30  1,5,75-82  C  B  C-1,B-3   (省略するとすべて。C = 深い追跡チャレンジ、B = ブラインド チャレンジ)
+              --config C    Debug か Release だけを採点 (既定: すべて Debug、Release 指定のラボは Release も)
+              --seed N      隠しケースのシードを固定 (失敗をそのまま再現するとき)
+              --no-hidden   隠しケースなしで基本ケースだけ
+              --no-build    ビルドを飛ばして、ビルド済みの BugHunt を採点
+              --timeout MS  1 回の実行の制限時間 (既定 20000)
+              --out パス    レポートの場所 (既定: リポジトリ ルートの grade-report.json)
+              --lang L      出力言語 ko または ja (既定: BUGHUNT_LANG、なければ表示言語)
+            """));
     }
 
     static Options ParseArgs(string[] args)
@@ -174,7 +183,7 @@ static class Program
         for (int i = 0; i < args.Length; i++)
         {
             string a = args[i];
-            string Next() => i + 1 < args.Length ? args[++i] : throw new FormatException($"{a} 뒤에 값이 필요합니다.");
+            string Next() => i + 1 < args.Length ? args[++i] : throw new FormatException(Text.L($"{a} 뒤에 값이 필요합니다.", $"{a} の後に値が必要です。"));
             switch (a)
             {
                 case "-h" or "--help" or "/?":
@@ -185,15 +194,15 @@ static class Program
                     string c = Next();
                     o.Config = c.Equals("release", StringComparison.OrdinalIgnoreCase) ? "Release"
                              : c.Equals("debug", StringComparison.OrdinalIgnoreCase) ? "Debug"
-                             : throw new FormatException($"구성은 Debug 또는 Release: {c}");
+                             : throw new FormatException(Text.L($"구성은 Debug 또는 Release: {c}", $"構成は Debug または Release: {c}"));
                     break;
                 case "--seed":
-                    o.Seed = int.TryParse(Next(), out int seed) && seed != 0 ? seed : throw new FormatException("시드는 0이 아닌 정수");
+                    o.Seed = int.TryParse(Next(), out int seed) && seed != 0 ? seed : throw new FormatException(Text.L("시드는 0이 아닌 정수", "シードは 0 以外の整数"));
                     break;
                 case "--no-hidden": o.Hidden = false; break;
                 case "--no-build": o.Build = false; break;
                 case "--timeout":
-                    o.TimeoutMs = int.TryParse(Next(), out int ms) && ms > 0 ? ms : throw new FormatException("제한 시간은 양의 정수(ms)");
+                    o.TimeoutMs = int.TryParse(Next(), out int ms) && ms > 0 ? ms : throw new FormatException(Text.L("제한 시간은 양의 정수(ms)", "制限時間は正の整数(ms)"));
                     break;
                 case "--out": o.Out = Path.GetFullPath(Next()); break;
                 default:
@@ -207,12 +216,12 @@ static class Program
                             if (part.Length == 1)
                                 for (int n = 1; n < 100; n++) o.Only.Add(baseId + n);
                             else if (int.TryParse(part[2..], out int k)) o.Only.Add(baseId + k);
-                            else throw new FormatException($"알 수 없는 인자: {a}");
+                            else throw new FormatException(Text.L($"알 수 없는 인자: {a}", $"不明な引数: {a}"));
                             continue;
                         }
                         string[] range = part.Split('-');
                         if (!int.TryParse(range[0], out int from) || !int.TryParse(range[^1], out int to) || range.Length > 2)
-                            throw new FormatException($"알 수 없는 인자: {a}");
+                            throw new FormatException(Text.L($"알 수 없는 인자: {a}", $"不明な引数: {a}"));
                         for (int n = from; n <= to; n++)
                             o.Only.Add(n);
                     }
@@ -240,7 +249,7 @@ static class Program
 
     static bool Build(string root, string config)
     {
-        Text.WriteRaw(Text.F("BugHunt 빌드 중 ({0})...", config) + " ");
+        Console.Write(Text.L($"BugHunt 빌드 중 ({config})... ", $"BugHunt をビルド中 ({config})... "));
         var psi = new ProcessStartInfo("dotnet")
         {
             RedirectStandardOutput = true,
@@ -258,15 +267,15 @@ static class Program
         p.WaitForExit();
         if (p.ExitCode == 0)
         {
-            Text.WriteLineRaw(Text.T("완료"));
+            Console.WriteLine(Text.L("완료", "完了"));
             return true;
         }
 
-        Text.WriteLineRaw(Text.T("실패") + Environment.NewLine);
+        Console.WriteLine(Text.L("실패", "失敗") + Environment.NewLine);
         string[] lines = (stdout.Result + stderr.Result).Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         foreach (string line in lines.Where(l => l.Contains(": error ") || l.Contains(": warning ")).Distinct().Take(20))
             Console.WriteLine($"  {line}");
-        Console.WriteLine("\n빌드가 실패해서 채점하지 못했습니다. (이 프로젝트는 경고도 오류로 취급합니다)");
+        Console.WriteLine(Text.L("\n빌드가 실패해서 채점하지 못했습니다. (이 프로젝트는 경고도 오류로 취급합니다)", "\nビルドが失敗したため採点できませんでした。(このプロジェクトは警告もエラーとして扱います)"));
         return false;
     }
 
@@ -311,7 +320,7 @@ static class Program
         string output = p.StandardOutput.ReadToEnd();
         p.WaitForExit();
         return JsonSerializer.Deserialize<List<LabInfo>>(output, Json)
-            ?? throw new InvalidOperationException(Text.T("BugHunt --list 결과를 읽지 못했습니다."));
+            ?? throw new InvalidOperationException(Text.L("BugHunt --list 결과를 읽지 못했습니다.", "BugHunt --list の結果を読めませんでした。"));
     }
 
     static LabResult GradeLab(string root, LabInfo lab, Options options, int baseSeed)
@@ -332,7 +341,7 @@ static class Program
         {
             string? dll = FindLabExe(root, c.Config);
             if (dll == null)
-                return new LabResult(lab.Id, lab.Title, lab.Part, "SKIP", totalMs, Text.F("{0} 빌드가 없음 (--no-build 없이 실행하세요)", c.Config));
+                return new LabResult(lab.Id, lab.Title, lab.Part, "SKIP", totalMs, Text.L($"{c.Config} 빌드가 없음 (--no-build 없이 실행하세요)", $"{c.Config} のビルドがありません (--no-build なしで実行してください)"));
 
             // 랩 8(스택 오버플로)은 PC가 바쁘면 런타임이 넘친 스택을 찍는 데만 20초 가까이 걸린다. 이 랩만 제한 시간을 60초 이상으로
             int timeoutMs = lab.Id == 8 ? Math.Max(options.TimeoutMs, 60_000) : options.TimeoutMs;
@@ -350,11 +359,11 @@ static class Program
             if (configs.Length > 1 || options.Config != null)
                 where.Add(c.Config);
             if (c.Seed != 0)
-                where.Add(Text.F("숨은 케이스 seed {0}", c.Seed));
+                where.Add(Text.L($"숨은 케이스 seed {c.Seed}", $"隠しケース seed {c.Seed}"));
             string prefix = where.Count > 0 ? $"[{string.Join(", ", where)}] " : "";
             // 기본 케이스는 통과했는데 숨은 케이스에서 실패: 보이는 증상만 막고 원인은 그대로 둔 수정일 가능성이 크다
             if (c.Seed != 0)
-                prefix = Text.T("증상은 사라졌지만 원인이 남아 있음") + " " + prefix;
+                prefix = Text.L("증상은 사라졌지만 원인이 남아 있음", "症状は消えたが原因が残っている") + " " + prefix;
             return new LabResult(lab.Id, lab.Title, lab.Part, result, totalMs, prefix + detail);
         }
         return new LabResult(lab.Id, lab.Title, lab.Part, "PASS", totalMs, "");
@@ -385,21 +394,23 @@ static class Program
         {
             p.Kill(entireProcessTree: true);
             p.WaitForExit();
-            CollectMissing(stderr.Result);
+            CollectHangul(lab, stdout.Result);
+            CollectHangul(lab, stderr.Result);
             // 스택 오버플로는 이미 넘친 뒤 런타임이 스택을 찍는 데 PC가 바쁘면 오래 걸릴 수 있다. 넘쳤다면 멈춤이 아니라 크래시다
             if (stderr.Result.StartsWith("Stack overflow.", StringComparison.Ordinal))
                 return ("CRASH", "Stack overflow.", watch.ElapsedMilliseconds);
-            return ("TIMEOUT", Text.F("{0} ms 안에 끝나지 않아 강제 종료", timeoutMs), watch.ElapsedMilliseconds);
+            return ("TIMEOUT", Text.L($"{timeoutMs} ms 안에 끝나지 않아 강제 종료", $"{timeoutMs} ms 以内に終わらなかったため強制終了"), watch.ElapsedMilliseconds);
         }
         p.WaitForExit();
         long elapsed = watch.ElapsedMilliseconds;
 
         string output = stdout.Result;
-        CollectMissing(stderr.Result);
+        CollectHangul(lab, output);
+        CollectHangul(lab, stderr.Result);
         string[] lines = output.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         // 응답 없음 표시는 랩의 출력 언어로 나온다
-        string hangKo = "[FAIL] 응답 없음", hangJa = Text.JaOf(hangKo) ?? hangKo;
-        string? hang = lines.FirstOrDefault(l => l.StartsWith(hangKo) || l.StartsWith(hangJa));
+        string hangMark = Text.L("[FAIL] 응답 없음", "[FAIL] 応答なし");
+        string? hang = lines.FirstOrDefault(l => l.StartsWith(hangMark));
         string? firstFail = lines.FirstOrDefault(l => l.StartsWith("[FAIL]"));
         string? skip = lines.FirstOrDefault(l => l.StartsWith("[SKIP]"));
 
@@ -411,32 +422,13 @@ static class Program
                 return ("PASS", "", elapsed);
             if (skip != null && firstFail == null)
                 return ("SKIP", skip["[SKIP] ".Length..], elapsed);
-            return ("FAIL", firstFail?["[FAIL] ".Length..] ?? Text.T("판정 출력이 없음"), elapsed);
+            return ("FAIL", firstFail?["[FAIL] ".Length..] ?? Text.L("판정 출력이 없음", "判定の出力がない"), elapsed);
         }
 
         // 처리되지 않은 예외, 스택 오버플로, FailFast, 접근 위반 등
         string[] err = stderr.Result.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-        string reason = string.Join(" ", err.Where(l => !l.StartsWith("at ") && !l.StartsWith("---") && !l.StartsWith(Text.MissingMark.Trim())).Take(2));
-        if (Text.IsJa)
-            reason = TranslateExceptionMessage(reason);
+        string reason = string.Join(" ", err.Where(l => !l.StartsWith("at ") && !l.StartsWith("---")).Take(2));
         return ("CRASH", $"0x{p.ExitCode:X8} {reason}".TrimEnd(), elapsed);
-    }
-
-    // 런타임이 찍는 "...Exception: 메시지"에서 랩이 던진 한국어 메시지만 표로 바꾼다 (AggregateException이면 괄호 안의 안쪽 메시지).
-    // 표에 없으면 그대로 둔다. 런타임의 영어 문구는 건드리지 않는다
-    static string TranslateExceptionMessage(string reason)
-    {
-        const string Key = "Exception: ";
-        int at = reason.IndexOf(Key, StringComparison.Ordinal);
-        if (at < 0)
-            return reason;
-        string head = reason[..(at + Key.Length)], message = reason[(at + Key.Length)..];
-        if (Text.JaOf(message) is string ja)
-            return head + ja;
-        int open = message.IndexOf(" (", StringComparison.Ordinal);
-        if (open >= 0 && message.EndsWith(')') && Text.JaOf(message[(open + 2)..^1]) is string inner)
-            return head + message[..(open + 2)] + inner + ")";
-        return reason;
     }
 
     static void WriteReport(string path, Report report)

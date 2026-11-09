@@ -26,12 +26,12 @@ public static partial class Lab48
         try
         {
             string[] lines = File.ReadAllLines(path);
-            Console.WriteLine($"  업로드: {lines.Length}줄");
+            Console.WriteLine(Text.L($"  업로드: {lines.Length}줄", $"  アップロード: {lines.Length}行"));
             return lines;
         }
         catch (IOException ex)
         {
-            Console.WriteLine($"  업로드 실패: {ex.Message}");
+            Console.WriteLine(Text.L($"  업로드 실패: {ex.Message}", $"  アップロード失敗: {ex.Message}"));
             return [];
         }
     }
@@ -41,7 +41,7 @@ public static partial class Lab48
         // FileShare 는 Windows 에서만 운영 체제가 강제한다. Linux/macOS 는 공유 모드를 대부분 무시해서 판정할 수 없다.
         if (!OperatingSystem.IsWindows())
         {
-            Skip("FileShare 충돌은 Windows 에서만 재현됩니다");
+            Skip(Text.L("FileShare 충돌은 Windows 에서만 재현됩니다", "FileShare の競合は Windows でのみ再現します"));
             return;
         }
 
@@ -55,16 +55,16 @@ public static partial class Lab48
 
             using var logger = new ChatLogger(path);
             for (int i = 1; i <= before; i++)
-                logger.Write(senders[i % senders.Length], Text.F("메시지 {0}", i));
+                logger.Write(senders[i % senders.Length], Text.L($"메시지 {i}", $"メッセージ {i}"));
 
             string[] uploaded = Upload(path);
 
             // 신고 뒤에도 채팅은 계속된다.
             for (int i = 1; i <= after; i++)
-                logger.Write(senders[i % senders.Length], Text.F("신고 뒤 메시지 {0}", i));
+                logger.Write(senders[i % senders.Length], Text.L($"신고 뒤 메시지 {i}", $"通報後のメッセージ {i}"));
 
-            Expect("업로드한 줄 수", before, uploaded.Length);
-            Expect("업로드한 마지막 줄", $"[{senders[before % senders.Length]}] " + Text.F("메시지 {0}", before), uploaded.Length > 0 ? uploaded[^1] : "");
+            Expect(Text.L("업로드한 줄 수", "アップロードした行数"), before, uploaded.Length);
+            Expect(Text.L("업로드한 마지막 줄", "アップロードした最後の行"), $"[{senders[before % senders.Length]}] " + Text.L($"메시지 {before}", $"メッセージ {before}"), uploaded.Length > 0 ? uploaded[^1] : "");
         }
         finally
         {

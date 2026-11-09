@@ -36,11 +36,11 @@ public static class Lab86
         int total = kael.Gold + mira.Gold;
         int expectedKael = kael.Gold - kaelGives + miraGives;
 
-        bool done = FinishesWithin("동시 거래", () =>
+        bool done = FinishesWithin(Text.L("동시 거래", "同時取引"), () =>
         {
             using var go = new ManualResetEventSlim();
-            var a = new Thread(() => { go.Wait(); Transfer(kael, mira, kaelGives); }) { IsBackground = true, Name = Text.T("거래: Kael → Mira") };
-            var b = new Thread(() => { go.Wait(); Transfer(mira, kael, miraGives); }) { IsBackground = true, Name = Text.T("거래: Mira → Kael") };
+            var a = new Thread(() => { go.Wait(); Transfer(kael, mira, kaelGives); }) { IsBackground = true, Name = Text.L("거래: Kael → Mira", "取引: Kael → Mira") };
+            var b = new Thread(() => { go.Wait(); Transfer(mira, kael, miraGives); }) { IsBackground = true, Name = Text.L("거래: Mira → Kael", "取引: Mira → Kael") };
             a.Start();
             b.Start();
             go.Set();
@@ -50,9 +50,9 @@ public static class Lab86
         if (!done)
             return;
 
-        Console.WriteLine($"  거래 끝: Kael {kael.Gold}, Mira {mira.Gold}");
-        Expect("Kael 골드", expectedKael, kael.Gold);
-        Expect("두 사람 골드 합", total, kael.Gold + mira.Gold);
+        Console.WriteLine(Text.L($"  거래 끝: Kael {kael.Gold}, Mira {mira.Gold}", $"  取引終了: Kael {kael.Gold}、Mira {mira.Gold}"));
+        Expect(Text.L("Kael 골드", "Kael のゴールド"), expectedKael, kael.Gold);
+        Expect(Text.L("두 사람 골드 합", "二人のゴールドの合計"), total, kael.Gold + mira.Gold);
     }
 }
 

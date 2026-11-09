@@ -19,7 +19,7 @@ public static class Lab24
     public static void Run()
     {
         int count = Pick(4, 3, 9);
-        Stage[] stages = [.. Enumerable.Range(1, count).Select(i => new Stage(Text.F("{0}단계", i), Pick(i * 100, 10, 500), 60))];
+        Stage[] stages = [.. Enumerable.Range(1, count).Select(i => new Stage(Text.L($"{i}단계", $"ステージ{i}"), Pick(i * 100, 10, 500), 60))];
 
         // 플레이어는 아직 퀘스트를 다 깨지 않았다. 지금까지 깬 단계의 클리어 시간(초)
         int cleared = Pick(3, 1, count - 1);
@@ -27,14 +27,14 @@ public static class Lab24
         for (int i = 0; i < cleared; i++)
             clearSeconds.Add(Pick(45 + i * 10, 30, 90));
 
-        Console.WriteLine($"  퀘스트 {stages.Length}단계 중 {clearSeconds.Count}단계 클리어: {string.Join(", ", clearSeconds.Select(s => $"{s}{Text.T("초")}"))}");
+        Console.WriteLine(Text.L($"  퀘스트 {stages.Length}단계 중 {clearSeconds.Count}단계 클리어: {string.Join(", ", clearSeconds.Select(s => $"{s}초"))}", $"  クエスト {stages.Length} 段階中 {clearSeconds.Count} 段階クリア: {string.Join(", ", clearSeconds.Select(s => $"{s}秒"))}"));
         int total = Settle(stages, clearSeconds);
-        Console.WriteLine($"  중간 정산: {total}G");
+        Console.WriteLine(Text.L($"  중간 정산: {total}G", $"  途中精算: {total}G"));
 
         int expected = 0;
         for (int i = 0; i < cleared; i++)
             expected += stages[i].Gold + (clearSeconds[i] <= 60 ? stages[i].Gold / 2 : 0);
-        Expect("중간 정산 골드", expected, total);
+        Expect(Text.L("중간 정산 골드", "途中精算のゴールド"), expected, total);
     }
 }
 

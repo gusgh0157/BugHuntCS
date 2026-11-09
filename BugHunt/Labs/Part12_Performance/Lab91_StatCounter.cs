@@ -27,13 +27,13 @@ public static class Lab91
             for (int i = 0; i < events; i++)
                 stats.Add(keys[(i * step) % keys.Length], 1 + i % 3);
         });
-        Console.WriteLine($"  이벤트 {events:N0}개: 할당 {bytes:N0}바이트 (이벤트당 {(double)bytes / events:0.0}), {ms}ms");
+        Console.WriteLine(Text.L($"  이벤트 {events:N0}개: 할당 {bytes:N0}바이트 (이벤트당 {(double)bytes / events:0.0}), {ms}ms", $"  イベント {events:N0} 個: 割り当て {bytes:N0} バイト (イベントあたり {(double)bytes / events:0.0})、{ms}ms"));
 
         var expected = new int[keys.Length];
         for (int i = 0; i < events; i++)
             expected[(i * step) % keys.Length] += 1 + i % 3;
-        Expect("통계", string.Join(", ", expected), string.Join(", ", keys.Select(stats.Get)));
-        ExpectAtMost("이벤트 1000개당 할당 (바이트)", 64, bytes * 1000 / events);
+        Expect(Text.L("통계", "統計"), string.Join(", ", expected), string.Join(", ", keys.Select(stats.Get)));
+        ExpectAtMost(Text.L("이벤트 1000개당 할당 (바이트)", "イベント 1000 個あたりの割り当て (バイト)"), 64, bytes * 1000 / events);
     }
 }
 

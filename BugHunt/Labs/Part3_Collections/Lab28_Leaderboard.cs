@@ -22,10 +22,10 @@ public static class Lab28
 
         SortLeaderboard(board);
         string actual = string.Join(" ", board.Select(e => e.Name));
-        Console.WriteLine($"  1~5위: {string.Join(", ", board.Take(5).Select(e => $"{e.Name}({e.Score})"))}");
+        Console.WriteLine(Text.L($"  1~5위: {string.Join(", ", board.Take(5).Select(e => $"{e.Name}({e.Score})"))}", $"  1~5 位: {string.Join(", ", board.Take(5).Select(e => $"{e.Name}({e.Score})"))}"));
 
-        Expect("1위", expected.Split(' ')[0], board[0].Name);
-        Expect("전체 순위", expected, actual);
+        Expect(Text.L("1위", "1 位"), expected.Split(' ')[0], board[0].Name);
+        Expect(Text.L("전체 순위", "全体の順位"), expected, actual);
     }
 }
 

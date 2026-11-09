@@ -15,7 +15,7 @@
 Player? player = FindPlayer(name);
 if (player is null)
 {
-    Console.WriteLine($"  {name}: 없는 플레이어");
+    Console.WriteLine(Text.L($"  {name}: 없는 플레이어", $"  {name}: 存在しないプレイヤー"));
     return;
 }
 PrintPlayer(player);
@@ -77,7 +77,7 @@ PrintPlayer(player);
             try { loaded.Add(Parse(file.Key, file.Value)); }
             catch (FormatException ex)
             {
-                Console.WriteLine($"  고장 난 파일 건너뜀: {file.Key} ({ex.Message})");
+                Console.WriteLine(Text.L($"  고장 난 파일 건너뜀: {file.Key} ({ex.Message})", $"  壊れたファイルを飛ばしました: {file.Key} ({ex.Message})"));
                 Interlocked.Increment(ref skipped);
             }
         });
@@ -96,11 +96,11 @@ PrintPlayer(player);
 ```csharp
         catch (Exception ex)
         {
-            Console.WriteLine($"  슬롯 {index + 1} 손상: {ex.GetType().Name}");
+            Console.WriteLine(Text.L($"  슬롯 {index + 1} 손상: {ex.GetType().Name}", $"  スロット {index + 1} 破損: {ex.GetType().Name}"));
             throw;   // 元のスタックトレースをそのままにして投げ直す
         }
 ```
-情報を足したいなら `throw new SaveLoadException($"슬롯 {index + 1}", ex);` のように**内部例外で包む**(このラボにはそのような例外型がないので自分で作る必要がある)。
+情報を足したいなら `throw new SaveLoadException(Text.L($"슬롯 {index + 1}", $"スロット {index + 1}"), ex);` のように**内部例外で包む**(このラボにはそのような例外型がないので自分で作る必要がある)。
 **教訓:** スタックトレースは例外が**最後に throw された所**から記録される。投げ直すときは `throw;`。警告を切ると、その警告が守っていたバグも一緒に隠れる。
 
 ---
@@ -108,10 +108,10 @@ PrintPlayer(player);
 ## Lab 8 — `ToString` が `$"{this}"` で自分を呼び無限再帰
 ```
 呼び出し履歴:  DamageLabel.ToString → DamageLabel.ToString → … (数千段)
-本当の原因:  $"{this} {Text.T("피해")}" の {this} は this.ToString() を呼ぶ。それが今実行中の ToString。
+本当の原因:  $"{this} {Text.L("피해", "ダメージ")}" の {this} は this.ToString() を呼ぶ。それが今実行中の ToString。
            無限再帰でスタックを使い切ると StackOverflowException でプロセスが即死する。
 ```
-**修正:** `ToString` でそのオブジェクト自身を補間せず、フィールドを直接書きます: `$"{Amount} {Text.T("피해")}"`。
+**修正:** `ToString` でそのオブジェクト自身を補間せず、フィールドを直接書きます: `$"{Amount} {Text.L("피해", "ダメージ")}"`。
 **教訓:** `ToString`、`GetHashCode`、`Equals`、演算子オーバーロード、プロパティの `get` の中で**自分自身を再び呼ばない**よう気をつけます。よくある形: `ToString` で `$"{this}"`、`Equals` で `this == other`(→ `==` 演算子がまた `Equals` を呼ぶ)、`get` で同じプロパティへの代入。ラボ 5(財布)の `set => Gold = ...` も同じ根です。症状(プログラムが静かに消える)が同じなら呼び出し履歴から見てください。
 
 ---
@@ -645,12 +645,12 @@ first chance:  IOException: The process cannot access the file '...chat.log' bec
             var lines = new List<string>();
             while (reader.ReadLine() is { } line)
                 lines.Add(line);
-            Console.WriteLine($"  업로드: {lines.Count}줄");
+            Console.WriteLine(Text.L($"  업로드: {lines.Count}줄", $"  アップロード: {lines.Count}行"));
             return [.. lines];
         }
         catch (IOException ex)
         {
-            Console.WriteLine($"  업로드 실패: {ex.Message}");
+            Console.WriteLine(Text.L($"  업로드 실패: {ex.Message}", $"  アップロード失敗: {ex.Message}"));
             return [];
         }
     }
@@ -925,7 +925,7 @@ catch (Exception)
 {
     foreach (Exception ex in downloads.Where(d => d.IsFaulted).Select(d => d.Exception!.InnerException!))
     {
-        Console.WriteLine($"  [로그] {ex.Message}");
+        Console.WriteLine(Text.L($"  [로그] {ex.Message}", $"  [ログ] {ex.Message}"));
         failed.Add(ex.Message.Split(' ')[0]);
     }
 }
@@ -983,12 +983,12 @@ try
 }
 catch (InvalidOperationException ex)   // サーバーが拒否した: バッグにそのまま残す
 {
-    Console.WriteLine($"  [로그] 창고 업로드 거절: {ex.Message}");
+    Console.WriteLine(Text.L($"  [로그] 창고 업로드 거절: {ex.Message}", $"  [ログ] 倉庫アップロード拒否: {ex.Message}"));
     return false;
 }
 ```
 他の例外(ネットワーク切断、コードのバグ)は捕まえず上に送る。そこで捕まえるかは、それを処理できる側が決める。
-**偽の修正:** `if (item == Text.T("영웅의 증표")) return false;`(日本語では "英雄の証") のように見えているアイテムだけ塞ぐと基本ケースは通るが、隠しケースは別のアイテムが束縛(귀속)なので失敗する。`catch (Exception)` をそのままにして `return false` にだけ変えると、このラボは通るが、コードのバグまで「保管失敗」に変えてしまう同じ匂いが残る。
+**偽の修正:** `if (item == Text.L("영웅의 증표", "英雄の証")) return false;` のように見えているアイテムだけ塞ぐと基本ケースは通るが、隠しケースは別のアイテムが束縛(귀속)なので失敗する。`catch (Exception)` をそのままにして `return false` にだけ変えると、このラボは通るが、コードのバグまで「保管失敗」に変えてしまう同じ匂いが残る。
 **教訓:** `catch (Exception) { ログ }` のあとに成功値を返すと、失敗が**別の段階の別の症状**に変わって現れる。ログ一行は処理ではない。捕まえる例外は絞り、失敗は戻り値か例外で呼び出し元に知らせる。
 
 ## Lab 70 — タイムアウトを「ユーザーがキャンセルした」として処理
@@ -1004,7 +1004,7 @@ catch (InvalidOperationException ex)   // サーバーが拒否した: バッグ
 ```csharp
 catch (OperationCanceledException) when (userCancel.IsCancellationRequested)
 {
-    return Text.T("취소됨");      // プレイヤーが押した
+    return Text.L("취소됨", "キャンセル済み");      // プレイヤーが押した
 }
 catch (OperationCanceledException)
 {

@@ -23,14 +23,14 @@ public static partial class Lab37
 
         double total = Total(prices);
         double expectedTotal = (double)prices.Sum();
-        Console.WriteLine(FormattableString.Invariant($"  장바구니 {prices.Length}개 합계: {total} (기대 {expectedTotal})"));
+        Console.WriteLine(Text.L(FormattableString.Invariant($"  장바구니 {prices.Length}개 합계: {total} (기대 {expectedTotal})"), FormattableString.Invariant($"  カート {prices.Length}個の合計: {total} (期待 {expectedTotal})")));
 
         decimal tax = RoundTax(taxRaw);
         decimal expectedTax = Math.Round(taxRaw, MidpointRounding.AwayFromZero);
-        Console.WriteLine(FormattableString.Invariant($"  세금 {taxRaw} → {tax} (기대 {expectedTax})"));
+        Console.WriteLine(Text.L(FormattableString.Invariant($"  세금 {taxRaw} → {tax} (기대 {expectedTax})"), FormattableString.Invariant($"  税 {taxRaw} → {tax} (期待 {expectedTax})")));
 
-        Expect("장바구니 합계", expectedTotal, total);
-        Expect($"세금 반올림 ({taxRaw})", expectedTax, tax);
+        Expect(Text.L("장바구니 합계", "カートの合計"), expectedTotal, total);
+        Expect(Text.L($"세금 반올림 ({taxRaw})", $"税の四捨五入 ({taxRaw})"), expectedTax, tax);
     }
 }
 

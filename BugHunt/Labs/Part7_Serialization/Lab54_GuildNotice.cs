@@ -18,7 +18,7 @@ public static partial class Lab54
     static readonly JsonSerializerOptions Options = new() { WriteIndented = false };
 
     static GuildNotice Receive(string json) =>
-        JsonSerializer.Deserialize<GuildNotice>(json, Options) ?? throw new FormatException(Text.T("빈 공지"));
+        JsonSerializer.Deserialize<GuildNotice>(json, Options) ?? throw new FormatException(Text.L("빈 공지", "空のお知らせ"));
 
     public static void Run()
     {
@@ -26,15 +26,15 @@ public static partial class Lab54
 
         // 서버(웹 API)가 보낸 응답. 웹 API 관례대로 camelCase 다.
         string json = $$"""{"title":"{{n.Title}}","author":"{{n.Author}}","priority":{{n.Priority}},"pinned":{{(n.Pinned ? "true" : "false")}}}""";
-        Console.WriteLine($"  받은 JSON: {json}");
+        Console.WriteLine(Text.L($"  받은 JSON: {json}", $"  受け取った JSON: {json}"));
 
         GuildNotice notice = Receive(json);
-        Console.WriteLine($"  화면: [{(notice.Pinned ? "고정" : "일반")}] {notice.Title} - {notice.Author} (중요도 {notice.Priority})");
+        Console.WriteLine(Text.L($"  화면: [{(notice.Pinned ? "고정" : "일반")}] {notice.Title} - {notice.Author} (중요도 {notice.Priority})", $"  画面: [{(notice.Pinned ? "固定" : "通常")}] {notice.Title} - {notice.Author} (重要度 {notice.Priority})"));
 
-        Expect("공지 제목", n.Title, notice.Title);
-        Expect("작성자", n.Author, notice.Author);
-        Expect("중요도", n.Priority, notice.Priority);
-        Expect("고정 공지", n.Pinned, notice.Pinned);
+        Expect(Text.L("공지 제목", "お知らせのタイトル"), n.Title, notice.Title);
+        Expect(Text.L("작성자", "作成者"), n.Author, notice.Author);
+        Expect(Text.L("중요도", "重要度"), n.Priority, notice.Priority);
+        Expect(Text.L("고정 공지", "固定のお知らせ"), n.Pinned, notice.Pinned);
     }
 }
 
@@ -84,10 +84,10 @@ public static partial class Lab54
 {
     static readonly (string, string, int, bool)[] Notices =
     [
-        (Text.T("이번 주 레이드는 토요일 9시"), Text.T("길드장 아린"), 3, true),
-        (Text.T("창고 정리 부탁드립니다"), Text.T("부길드장 케인"), 1, false),
-        (Text.T("신규 길드원 환영회"), Text.T("총무 미라"), 2, true),
-        (Text.T("길드 전쟁 참가 신청"), Text.T("길드장 아린"), 5, false),
+        (Text.L("이번 주 레이드는 토요일 9시", "今週のレイドは土曜21時"), Text.L("길드장 아린", "ギルドマスター アリン"), 3, true),
+        (Text.L("창고 정리 부탁드립니다", "倉庫の整理をお願いします"), Text.L("부길드장 케인", "サブマスター ケイン"), 1, false),
+        (Text.L("신규 길드원 환영회", "新メンバー歓迎会"), Text.L("총무 미라", "会計係 ミラ"), 2, true),
+        (Text.L("길드 전쟁 참가 신청", "ギルド戦の参加申し込み"), Text.L("길드장 아린", "ギルドマスター アリン"), 5, false),
     ];
 }
 #endregion

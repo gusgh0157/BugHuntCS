@@ -39,15 +39,15 @@ public static class Lab05
     {
         var wallet = new Wallet();
         wallet.AddGems(30);
-        Console.WriteLine($"  보석 {wallet.Gems}");
+        Console.WriteLine(Text.L($"  보석 {wallet.Gems}", $"  宝石 {wallet.Gems}"));
 
         wallet.AddGold(100);
         wallet.AddGold(200);
-        Console.WriteLine($"  골드 {wallet.Gold}");
-        Expect("골드 (100 + 200)", 300, wallet.Gold);
+        Console.WriteLine(Text.L($"  골드 {wallet.Gold}", $"  ゴールド {wallet.Gold}"));
+        Expect(Text.L("골드 (100 + 200)", "ゴールド (100 + 200)"), 300, wallet.Gold);
 
         wallet.AddGold(1_000_000);
-        Expect("골드 상한", Wallet.MaxGold, wallet.Gold);
+        Expect(Text.L("골드 상한", "ゴールドの上限"), Wallet.MaxGold, wallet.Gold);
     }
 }
 
