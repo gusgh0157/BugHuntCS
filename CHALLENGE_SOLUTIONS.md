@@ -86,11 +86,47 @@
 - 조사식에 `$1.Count`를 넣고 친구 창을 지나가 보세요. 24가 5로 바뀝니다. 누가 바꿨는지는 `List<T>.RemoveAll`에 함수 중단점을 걸면 바로 나옵니다(조건: `this == $1`).
 - 데이터 중단점: 어느 `RankEntry`의 `Rank` 속성 뒤의 필드를 조사식에서 고르고 "값이 바뀔 때 중단"을 겁니다(.NET Core 3 이상, VS 2019 16.x 이상).
 
-**수정:** 캐시 결과를 아무도 고치지 못하게 한다.
-- `Top`이 `IReadOnlyList<RankEntry>`를 돌려주고, `RankEntry.Rank`를 `init`으로 만든다. 그러면 컴파일러가 고쳐 쓰는 곳을 모두 찾아 준다.
-- 친구 창은 새 목록을 만든다: `service.Top(region).Where(r => friends.Contains(r.Name)).Select((r, i) => $"{i + 1}. {r.Name}")`
-- `RankFilters`처럼 "받은 것을 고쳐서 그대로 돌려주는" 도우미는 이름이 거짓말을 한다. LINQ `Where`와 같은 이름인데 동작이 반대다.
+**수정:** 캐시 결과를 아무도 고치지 못하게 한다. 세 가지를 함께 적용해야 컴파일된다(`Rank`를 `init`으로 바꾸는 순간 `RankFilters`가 컴파일되지 않으므로 지워야 하고, 그러면 친구 창도 새로 써야 한다).
+1. `Ranking.cs`: `RankEntry.Rank`를 `init`으로 만들고, `Top`은 `IReadOnlyList<RankEntry>`를 돌려주며 순위는 정렬된 순서대로 **새 항목을 만들면서** 정한다.
+```csharp
+public sealed class RankEntry(string name, string guild, int score)
+{
+    public string Name { get; } = name;
+    public string Guild { get; } = guild;
+    public int Score { get; } = score;
+    public int Rank { get; init; }   // 만들 때만 정한다
 
+    public override string ToString() => $"{Rank}{Text.T("위")} {Name} ({Score})";
+}
+
+public sealed class RankingService(RankingDatabase db)
+{
+    readonly Dictionary<string, IReadOnlyList<RankEntry>> _cache = [];
+
+    public IReadOnlyList<RankEntry> Top(string region)
+    {
+        if (!_cache.TryGetValue(region, out IReadOnlyList<RankEntry>? ranks))
+        {
+            List<RankEntry> rows = db.QuerySeason(region);
+            rows.Sort((a, b) => b.Score != a.Score ? b.Score.CompareTo(a.Score) : string.CompareOrdinal(a.Name, b.Name));
+            ranks = rows.Select((r, i) => new RankEntry(r.Name, r.Guild, r.Score) { Rank = i + 1 }).ToList();
+            _cache[region] = ranks;
+        }
+        return ranks;
+    }
+
+    public void Invalidate(string region) => _cache.Remove(region);
+}
+```
+2. `Ranking.cs`: `RankFilters` 클래스를 바로 위의 설명 주석과 함께 통째로 지운다. "받은 것을 고쳐서 그대로 돌려주는" 도우미는 이름이 거짓말을 한다(LINQ `Where`와 같은 이름인데 동작이 반대다).
+3. `Screens.cs`: 친구 창은 캐시를 건드리지 않고 새 목록을 만든다. `GuildRankingScreen`과 `WeeklyRewardMailer`는 `IReadOnlyList`로도 그대로 컴파일된다.
+```csharp
+public sealed class FriendRankingScreen(RankingService service)
+{
+    public List<string> Show(string region, IReadOnlySet<string> friends) =>
+        service.Top(region).Where(r => friends.Contains(r.Name)).Select((r, i) => $"{i + 1}. {r.Name}").ToList();
+}
+```
 **교훈:** 캐시는 같은 객체를 여러 사람에게 나눠 주는 장치입니다. 나눠 준 객체가 변경 가능하면, 한 화면의 실수가 시간과 장소를 건너 다른 화면의 증상으로 나타납니다. 증상이 난 화면에서 캐시를 비우는 것은 그 화면만 고칩니다. 캐시가 돌려주는 것은 불변으로 만들거나 복사본으로 줍니다 (랩 19 얕은 복사, 30 질의와 스냅샷).
 
 **범주:** 캐시 + 공유된 변경 가능 상태 (2부 얕은 복사, 3부 컨테이너)
@@ -146,7 +182,22 @@
 원인:   StartAutoSave 의 지역 변수 timer 말고는 Timer 를 붙잡는 것이 없다. 메서드가 끝나면 수거 대상이 되고,
         GC 가 돌면 종료자가 타이머를 멈춘다. (System.Threading.Timer 는 콜백이 살아 있어도 Timer 객체가 없으면 멈춘다)
 ```
-**수정:** 타이머를 필드에 저장하고, 끝낼 때 `Dispose`한다. (`PeriodicTimer`와 `async` 루프도 좋다)
+**수정:** 타이머를 지역 변수가 아니라 필드에 저장하고, 끝낼 때 `Dispose`한다. `StartAutoSave` 안에서 `using var timer`로 바꾸는 것은 반대 방향이다(메서드가 끝나는 순간 타이머가 멈춘다).
+```csharp
+    static int _saves;
+    static Timer? _autoSave;   // 필드가 붙잡고 있는 동안은 GC 대상이 아니다
+
+    static void StartAutoSave(int intervalMs)
+    {
+        _autoSave = new Timer(_ => Interlocked.Increment(ref _saves), null, intervalMs, intervalMs);
+        Console.WriteLine($"  자동 저장 시작 ({intervalMs}ms마다)");
+    }
+
+    // Run의 마지막 줄 (if/else 뒤)
+        _autoSave?.Dispose();
+        _autoSave = null;
+```
+(`PeriodicTimer`와 `async` 루프도 좋다.)
 
 **범주:** 9부 리소스와 메모리 (GC와 객체 수명)
 
@@ -168,7 +219,19 @@
 원인:   Parallel.ForEach 는 Action<T> 를 받는다. async 람다는 async void 가 되어, 첫 await 에서 바로 "끝났다"고 돌아온다.
         ForEach 는 아무것도 기다리지 않고 끝나고, 우편은 그 뒤에 도착한다. 예외가 나면 프로세스가 죽는다(랩 62)
 ```
-**수정:** `await Parallel.ForEachAsync(players, async (p, ct) => await server.SendAsync(p))` 또는 `await Task.WhenAll(players.Select(server.SendAsync))`
+**수정:** `Action<T>`가 아니라 기다릴 수 있는 API로 보낸다. `SendCompensation`을 `async Task`를 돌려주는 `SendCompensationAsync`로 바꾸고(`Run`의 호출도 함께 고친다) `Parallel.ForEachAsync`를 `await`한다. `Run`은 채점기가 부르는 동기 메서드라서 끝까지 기다려야 한다(콘솔 앱에는 `SynchronizationContext`가 없으므로 여기서 `GetAwaiter().GetResult()`로 막아도 랩 63 같은 데드락은 생기지 않는다).
+```csharp
+    static async Task SendCompensationAsync(MailServer server, IEnumerable<string> players)
+    {
+        await Parallel.ForEachAsync(players, async (player, ct) => await server.SendAsync(player));
+        Console.WriteLine("  보상 우편 발송 완료");
+    }
+
+    // Run
+        SendCompensationAsync(server, players).GetAwaiter().GetResult();
+        Expect("'발송 완료' 시점에 도착한 우편", count, server.Delivered);
+```
+또는 `await Task.WhenAll(players.Select(server.SendAsync));`로 전부 띄우고 한꺼번에 기다린다.
 
 **가짜 수정:** `Thread.Sleep(500)`을 넣으면, 왕복이 더 오래 걸리는 숨은 케이스에서 다시 모자랍니다.
 

@@ -68,19 +68,19 @@ PrintPlayer(player);
 진짜 원인:  catch (FormatException)는 AggregateException과 형식이 달라서 안 잡힘.
            게다가 실패 후 남은 파일을 처리하지 않을 수도 있어서 "파일 하나만 건너뛰기"가 안 됨
 ```
-**수정:** 파일 하나 단위로 잡는다.
+**수정:** 파일 하나 단위로 잡는다. `Run`의 바깥 `try`/`catch (FormatException)`는 지우고(이제 아무것도 잡지 못한다), `Parallel.ForEach` 호출을 아래로 바꾼다. 람다 안에서 `skipped++`를 그대로 쓰면 스레드 경쟁이 생기므로 `Interlocked.Increment`로 센다(랩 66 참고).
 ```csharp
-Parallel.ForEach(Files, file =>
-{
-    try { loaded.Add(Parse(file.Key, file.Value)); }
-    catch (FormatException ex)
-    {
-        Console.WriteLine($"  고장 난 파일 건너뜀: {file.Key} ({ex.Message})");
-        Interlocked.Increment(ref skipped);
-    }
-});
+        Parallel.ForEach(Files, file =>
+        {
+            try { loaded.Add(Parse(file.Key, file.Value)); }
+            catch (FormatException ex)
+            {
+                Console.WriteLine($"  고장 난 파일 건너뜀: {file.Key} ({ex.Message})");
+                Interlocked.Increment(ref skipped);
+            }
+        });
 ```
-(`skipped++`를 그대로 두면 스레드 경쟁이 생긴다. 랩 66 참고.) 더 나아가 `int.TryParse`로 예외 없이 처리할 수도 있다.
+더 나아가 `Parse`에서 `int.TryParse`로 예외 없이 처리할 수도 있다.
 **교훈:** 병렬 API(`Parallel`, `Task.Wait`, `Task.Result`)는 예외를 **AggregateException으로 감싼다**. 예외 설정 창의 first chance 중단으로 진짜 throw 지점(작업 스레드)을 바로 볼 수 있다.
 
 ## Lab 7 — `throw ex;`가 스택 트레이스를 덮어씀
@@ -90,7 +90,15 @@ Parallel.ForEach(Files, file =>
 진짜 원인:      throw ex; 는 예외를 "새로 던진" 것처럼 스택 트레이스를 이 줄에서 다시 시작함
 숨긴 경고:      BugHunt.csproj 의 <NoWarn>CA2200</NoWarn>
 ```
-**수정:** `throw;` 그리고 `NoWarn`에서 CA2200을 지운다. 정보를 덧붙이고 싶다면 `throw new SaveLoadException($"슬롯 {index + 1}", ex);`처럼 **내부 예외로 감싼다**.
+**수정:** `LoadSlot`의 `catch` 안에서 `throw ex;`를 `throw;`로 바꾼다. 그다음 `BugHunt.csproj`의 `<NoWarn>$(NoWarn);CA2200</NoWarn>` 줄을 지운다. 순서가 중요하다: 이 저장소는 경고를 오류로 다루므로(`TreatWarningsAsErrors`) `throw ex;`가 남아 있는 채로 `NoWarn`을 먼저 지우면 빌드가 실패한다. `throw ex;`를 쓰는 랩은 이 랩뿐이라, 고친 뒤에는 `NoWarn`을 지워도 빌드가 깨끗하다. (`NoWarn`을 그대로 두어도 채점은 통과하지만, 그러면 다음에 누가 또 `throw ex;`를 써도 컴파일러가 알려 주지 않는다.)
+```csharp
+        catch (Exception ex)
+        {
+            Console.WriteLine($"  슬롯 {index + 1} 손상: {ex.GetType().Name}");
+            throw;   // 원래 스택 트레이스를 그대로 둔 채 다시 던진다
+        }
+```
+정보를 덧붙이고 싶다면 `throw new SaveLoadException($"슬롯 {index + 1}", ex);`처럼 **내부 예외로 감싼다**(이 랩에는 그런 예외 형식이 없으므로 직접 만들어야 한다).
 **교훈:** 스택 트레이스는 예외가 **마지막으로 throw된 곳**부터 기록된다. 다시 던질 때는 `throw;`. 경고를 끄면 그 경고가 지키던 버그도 함께 숨는다.
 
 ---
@@ -381,7 +389,16 @@ savedHashes:                     지난 세션 값(이 랩에서는 고정된 �
 진짜 원인:  .NET Core 이후 문자열 해시는 프로세스마다 무작위 시드를 쓴다(해시 충돌 공격 방지).
            해시는 같은 프로세스 안의 Dictionary/HashSet을 위한 값이지, 저장하거나 보내는 식별자가 아니다.
 ```
-**수정:** 해시가 아니라 **스킬 이름(또는 고정 Id)** 자체를 저장하고 비교합니다. 해시가 꼭 필요하면 FNV-1a, `XxHash64`(`System.IO.Hashing`), SHA-256 같은 **정의가 고정된 해시**를 직접 씁니다. 이 랩에서는 세이브 쪽이 안정 해시(`OldSessionHash`)로 저장돼 있으므로 비교도 `OldSessionHash(s)`로 하면 통과합니다.
+**수정:** 해시가 아니라 **스킬 이름(또는 고정 Id)** 자체를 저장하고 비교합니다. 이 랩에서는 세이브 쪽이 이미 안정 해시(`OldSessionHash`)로 저장돼 있으므로, 비교하는 쪽도 같은 함수를 쓰면 됩니다. `Run`에서 `starred`를 만드는 줄 하나만 바뀝니다.
+```csharp
+        string[] starred = [.. allSkills.Where(s => savedHashes.Contains(OldSessionHash(s)))];
+```
+이름을 저장하는 쪽으로 고치려면 `savedHashes` 대신 이름 집합을 씁니다(그러면 `OldSessionHash`는 쓰이지 않으므로 지워도 됩니다).
+```csharp
+        HashSet<string> savedNames = [.. favorites];
+        string[] starred = [.. allSkills.Where(savedNames.Contains)];
+```
+해시가 꼭 필요하면 FNV-1a, `XxHash64`(`System.IO.Hashing`), SHA-256 같은 **정의가 고정된 해시**를 직접 씁니다.
 **교훈:** `GetHashCode`의 계약은 "같은 프로세스에서, 같은 값이면 같은 해시"뿐입니다. 프로세스, 머신, .NET 버전을 넘어가는 순간 의미가 없습니다. `HashCode.Combine`도 같은 이유로 실행마다 다릅니다.
 
 ## Lab 32 — `a + b ?? 0`은 `(a + b) ?? 0`
@@ -471,12 +488,21 @@ F11 (monster.DropCount):   IDropSource.DropCount 의 기본 구현 (=> 1) 으로
 진짜 원인:  Boss.DropCount(int, bool = false), Elite.DropCount(long) 은 인터페이스의 int DropCount(int) 와 시그니처가 달라서
            구현으로 인정되지 않는다. 인터페이스에 기본 구현이 있으니 컴파일 오류도 경고도 없다.
 ```
-**수정:** 시그니처를 인터페이스와 똑같이 맞춘다.
+**수정:** 시그니처를 인터페이스의 `int DropCount(int luck)`와 똑같이 맞춘다. `Boss`는 선택적 매개변수 `bool elite = false`와 그것을 쓰던 `(elite ? 1 : 0)`을 지우고, `Elite`는 `long`을 `int`로 바꾼다. 두 클래스 위의 주석("정예 보스는 1개 더", "운은 long으로 받는다")도 바뀐 코드에 맞게 고친다.
 ```csharp
-public int DropCount(int luck) => baseDrops + luck / 10;      // Boss
-public int DropCount(int luck) => 2 + luck / 20;              // Elite
+    sealed class Boss(string name, int baseDrops) : IDropSource
+    {
+        public string Name => name;
+        public int DropCount(int luck) => baseDrops + luck / 10;
+    }
+
+    sealed class Elite(string name) : IDropSource
+    {
+        public string Name => name;
+        public int DropCount(int luck) => 2 + luck / 20;
+    }
 ```
-정예 보스 같은 변형은 생성자 인자나 별도 오버로드로 받는다.
+정예 보스 같은 변형은 생성자 인자(`bool elite`)나 별도 오버로드로 받고, 서버의 `long` 운 수치는 인터페이스를 부르기 전에 `int`로 바꾼다.
 **교훈:** 선택적 매개변수를 붙이거나 매개변수 형식을 넓히면(`int` → `long`) 호출하는 쪽 코드는 똑같아 보여도 **다른 메서드**입니다. 기본 구현(DIM)이 있는 인터페이스는 "구현을 빠뜨려도 컴파일된다"는 위험을 같이 들고 옵니다. 기본 구현을 잠깐 지워 보면 구현이 빠진 클래스가 컴파일 오류로 드러납니다.
 
 ## Lab 40 — 명시적 인터페이스 구현이 다른 값을 돌려줌
@@ -511,11 +537,33 @@ Knight.MaxHp 중단점 (처음 멈춤):   armor == 0, baseHp == 100
 진짜 원인:  생성 순서는 파생 필드 이니셜라이저 → 기반 생성자 → 파생 생성자 본문.
            기반 생성자가 부른 가상 메서드는 이미 Knight.MaxHp 로 가지만, armor 는 파생 생성자 본문에서야 들어간다.
 ```
-**수정:** 기반 생성자가 필요한 값을 인자로 받는다.
+**수정:** 기반 생성자가 최대 체력을 인자로 받고, 가상 호출 `Hp = MaxHp();`를 없앤다. 파생 생성자는 자기 필드 값으로 계산한 최대 체력을 `base(...)`에 넘긴다. `MaxHp()` 재정의와 필드 이니셜라이저는 그대로 둔다.
 ```csharp
-protected Unit(string name, int maxHp) { Name = name; Hp = maxHp; }
-public Knight(string name, int armor) : base(name, 100 + armor * 10) { this.armor = armor; }
-public Mage(string name, int wisdom) : base(name, 60 + wisdom * 5) { this.wisdom = wisdom; }
+    abstract class Unit
+    {
+        public string Name { get; }
+        public int Hp { get; protected set; }
+
+        protected Unit(string name, int maxHp)
+        {
+            Name = name;
+            Hp = maxHp;   // 파생 클래스가 계산해서 넘긴 값. 가상 호출이 없다
+        }
+
+        public abstract int MaxHp();
+    }
+
+    // Knight
+        public Knight(string name, int armor) : base(name, 100 + armor * 10)
+        {
+            this.armor = armor;
+        }
+
+    // Mage
+        public Mage(string name, int wisdom) : base(name, 60 + wisdom * 5)
+        {
+            this.wisdom = wisdom;
+        }
 ```
 또는 체력 채우기를 생성이 끝난 뒤의 `Spawn()` 단계로 옮긴다.
 **교훈:** 생성자에서 가상 메서드를 부르면 파생 클래스가 아직 준비되지 않은 객체를 보게 됩니다(CA2214). 필드 이니셜라이저(`baseHp = 100`)는 기반 생성자보다 **먼저**, 생성자 본문은 **나중에** 실행된다는 차이가 증상을 헷갈리게 만듭니다. `Knight` 생성자 끝에서 `Hp`를 다시 채우는 수정은 숨은 케이스(마법사)에서 걸립니다.
@@ -584,10 +632,26 @@ first chance:  IOException: The process cannot access the file '...chat.log' bec
 진짜 원인:  ChatLogger 의 StreamWriter(append) 는 FileAccess.Write + FileShare.Read 로 열려 있다.
            File.ReadAllLines 는 FileAccess.Read + FileShare.Read 로 연다. 즉 "남이 쓰고 있으면 거부". "다른 프로세스"는 사실 이 프로세스.
 ```
-**수정:** 읽는 쪽이 쓰기 공유를 허용한다.
+**수정:** 읽는 쪽이 쓰기 공유를 허용한다. `Upload`의 `File.ReadAllLines(path)`는 공유 모드를 고를 수 없으므로, `FileStream`을 직접 열고 `StreamReader`로 줄을 읽는다.
 ```csharp
-using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-using var reader = new StreamReader(stream);
+    static string[] Upload(string path)
+    {
+        try
+        {
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var reader = new StreamReader(stream);
+            var lines = new List<string>();
+            while (reader.ReadLine() is { } line)
+                lines.Add(line);
+            Console.WriteLine($"  업로드: {lines.Count}줄");
+            return [.. lines];
+        }
+        catch (IOException ex)
+        {
+            Console.WriteLine($"  업로드 실패: {ex.Message}");
+            return [];
+        }
+    }
 ```
 **교훈:** 두 핸들이 공존하려면 서로의 `FileAccess`가 상대의 `FileShare`에 들어 있어야 합니다. 쓰는 쪽은 `AutoFlush`나 `Flush`도 해야 읽는 쪽이 최신 내용을 봅니다. 업로드 전에 로거를 닫는 수정도 동작하지만 신고 중에 온 채팅을 놓칠 수 있습니다. `catch (IOException)`이 실패를 "0줄"로 바꾼 것도 랩 69(예외를 삼키고 성공을 돌려줌)과 같은 냄새입니다. Linux/macOS는 공유 모드를 강제하지 않아 이 랩은 `SKIP`합니다.
 
@@ -1171,7 +1235,31 @@ Checksum 첫 줄 F10:    프로그램이 사라짐. [FAIL]도 예외 창도 없�
 진짜 원인:  stackalloc byte[n]은 스택에 n 바이트를 잡는다. 스택은 보통 1 MB로 고정이라
            수백만 바이트를 잡으면 StackOverflowException. 이 예외는 catch로 못 잡고 프로세스를 즉시 끝낸다.
 ```
-**수정:** `stackalloc` 크기는 작고 고정된 상한(예: 1024 바이트) 안에서만 쓰고, 큰 입력은 힙(`ArrayPool<byte>`나 `new byte[n]`)으로 처리합니다. `const int StackCap = 1024;` 뒤 `packet.Length <= StackCap`일 때만 `stackalloc`, 아니면 `ArrayPool<byte>.Shared.Rent(...)` 후 `finally`에서 `Return`.
+**수정:** `stackalloc` 크기는 작고 고정된 상한(`StackCap`) 안에서만 쓰고, 큰 입력은 힙(`ArrayPool<byte>`)에서 빌립니다. `Checksum`을 통째로 바꾸고 `using System.Buffers;`를 추가합니다.
+```csharp
+using System.Buffers;
+// Lab81
+    const int StackCap = 1024;   // 스택에 잡아도 되는 최대 크기
+
+    static long Checksum(byte[] packet)
+    {
+        byte[]? rented = packet.Length <= StackCap ? null : ArrayPool<byte>.Shared.Rent(packet.Length);
+        try
+        {
+            Span<byte> scratch = rented is null ? stackalloc byte[StackCap] : rented;
+            scratch = scratch[..packet.Length];
+            packet.CopyTo(scratch);
+            long sum = 0;
+            foreach (byte b in scratch) sum += b;
+            return sum;
+        }
+        finally
+        {
+            if (rented is not null) ArrayPool<byte>.Shared.Return(rented);
+        }
+    }
+```
+(그냥 `Span<byte> scratch = packet.Length <= StackCap ? stackalloc byte[StackCap] : new byte[packet.Length];`로 힙에 잡아도 됩니다. `OutOfMemoryException`은 잡히는 예외입니다.)
 **교훈:** `stackalloc`의 크기는 **반드시 컴파일 시점에 아는 작은 상한** 안에 두세요. 입력·반복 횟수·재귀 깊이 중 어느 것이든 스택을 무제한으로 쓰면 오버플로입니다. 힙의 `OutOfMemoryException`은 그래도 잡을 수 있지만, 스택 오버플로는 잡을 수 없습니다.
 
 ## Lab 82 — `unsafe` 포인터 쓰기가 버퍼를 넘겨 옆 메모리를 덮어씀
