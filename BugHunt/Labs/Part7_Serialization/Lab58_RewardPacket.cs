@@ -64,7 +64,7 @@ public static partial class Lab58
 // 콘솔의 "받음"/"거절" 줄을 패킷 JSON 과 나란히 보세요. "count": null 인 패킷은 거절됐습니다. 그런데 "count" 가 아예 없는 패킷은요?
 // Decode 의 return 에 중단점을 걸고, count 가 없는 패킷일 때 반환값을 펼쳐 보세요.
 //
-// [JA] コンソールの「받음」(受信)/「거절」(拒否)の行をパケットの JSON と並べて見てください。"count": null のパケットは拒否されました。では "count" がまったくないパケットは?
+// [JA] コンソールの「受信」/「拒否」の行をパケットの JSON と並べて見てください。"count": null のパケットは拒否されました。では "count" がまったくないパケットは?
 // [JA] Decode の return にブレークポイントを置き、count がないパケットのときに戻り値を展開してみてください。
 #endregion
 

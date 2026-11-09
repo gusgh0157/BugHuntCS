@@ -54,9 +54,13 @@ public static class Text
     public static string L(string ko, string ja) => IsJa ? ja : ko;
 
     // 보간 문자열 두 개를 넘기면 고른 언어 쪽만 만든다. {} 안의 식도 그쪽에서 한 번만 계산한다.
-    // (일반 $"..." 와 같이 CurrentCulture로 서식을 맞춘다.) F11로 들어가도 이 안으로는 들어오지 않는다.
+    // 숫자 서식은 일반 $"..." 와 똑같이 CurrentCulture 를 따른다(이 클래스가 CurrentCulture 를 바꾸지는 않는다).
+    // 문화권 랩의 출력이 Text.L 을 쓰기 전과 같아야 하므로 InvariantCulture 로 바꾸지 말 것. 고정 서식이 필요한 값은 그 자리에서 ToString(CultureInfo.InvariantCulture) 로.
+    // F11로 들어가도 이 안으로는 들어오지 않는다.
     // [JA] 補間文字列を二つ渡すと、選んだ言語の方だけを作ります。{} の中の式もその方で一度だけ計算します。
-    // [JA] (普通の $"..." と同じく CurrentCulture で書式を整えます。)F11 でもこの中には入りません。
+    // [JA] 数値の書式は普通の $"..." とまったく同じく CurrentCulture に従います(このクラスが CurrentCulture を変えることはありません)。
+    // [JA] カルチャのラボの出力が Text.L を使う前と同じである必要があるので、InvariantCulture に変えないでください。固定の書式が必要な値は、その場で ToString(CultureInfo.InvariantCulture) で。
+    // [JA] F11 でもこの中には入りません。
     [DebuggerStepThrough]
     public static string L(ref KoText ko, ref JaText ja) => IsJa ? ja.ToStringAndClear() : ko.ToStringAndClear();
 
@@ -73,9 +77,9 @@ public static class Text
     // 이 표시가 붙은 줄의 한글 문자열은 두 언어를 이미 한 문자열에 같이 적은 것이라 검사하지 않는다.
     public const string BothLangMark = "// ko+ja";
 
-    // 소스(.cs)에서 Text.L(...) 밖에 있는 한글 문자열 리터럴을 찾는다. 주석과 BothLangMark 줄은 건너뛴다.
-    // 돌려주는 값: "파일:줄: 리터럴"
-    // [JA] ソース(.cs)で Text.L(...) の外にあるハングルの文字列リテラルを探します。コメントと BothLangMark の行は飛ばします。
+    // 소스(.cs)에서 Text.L(...) 밖에 있거나 일본어 쪽(둘째 인자)에 들어간 한글 문자열 리터럴을 찾는다. 주석과 BothLangMark 줄은 건너뛴다.
+    // 돌려주는 값: "파일:줄: 리터럴" (일본어 쪽이면 앞에 "[ja] ")
+    // [JA] ソース(.cs)で Text.L(...) の外にある、または日本語側(2 番目の引数)に入ったハングルの文字列リテラルを探します。コメントと BothLangMark の行は飛ばします。
     public static List<string> FindUnpairedHangul(string root)
     {
         var found = new List<string>();
@@ -91,40 +95,59 @@ public static class Text
                     continue;
                 string src = File.ReadAllText(file);
                 string[] lines = src.Split('\n');
-                foreach ((int at, int length) in new LiteralScanner(src).UnpairedHangul())
+                foreach ((int at, int length, bool inJa) in new LiteralScanner(src).UnpairedHangul())
                 {
                     int line = src.AsSpan(0, at).Count('\n');
                     if (lines[line].Contains(BothLangMark))
                         continue;
-                    found.Add($"{rel}:{line + 1}: {src.Substring(at, Math.Min(length, 80)).ReplaceLineEndings(" ")}");
+                    found.Add($"{rel}:{line + 1}: {(inJa ? "[ja] " : "")}{src.Substring(at, Math.Min(length, 80)).ReplaceLineEndings(" ")}");
                 }
             }
         }
         return found;
     }
 
-    // C# 소스를 훑으며 문자열 리터럴이 Text.L( ... ) 인자 안에 있는지 본다. (주석, 문자 리터럴, 보간 구멍, 원시 문자열 처리)
+    // C# 소스를 훑으며 한글 문자열 리터럴이 Text.L( 한국어, 일본어 ) 의 첫 인자 안에 있는지 본다.
+    // Text.L 밖이거나 일본어 쪽(둘째 인자) 안에 있으면 찾은 것으로 친다. (주석, 문자 리터럴, 보간 구멍과 그 서식, 원시 문자열 처리)
     sealed class LiteralScanner(string src)
     {
-        int _i;
-        readonly Stack<bool> _parens = new();   // 여는 괄호마다: 그 괄호가 Text.L( 인가
-        readonly List<(int, int)> _found = [];
-
-        public List<(int At, int Length)> UnpairedHangul()
+        // 여는 괄호 ( [ { 마다 하나. Pair: 그 괄호가 Text.L( 인가, Arg: 그 괄호 안에서 지금 몇 번째 인자인가(0부터)
+        sealed class Frame(bool pair)
         {
-            Code(endAtBrace: false);
+            public bool Pair { get; } = pair;
+            public int Arg { get; set; }
+        }
+
+        int _i;
+        readonly List<Frame> _frames = [];
+        readonly List<(int, int, bool)> _found = [];
+
+        public List<(int At, int Length, bool InJa)> UnpairedHangul()
+        {
+            Code(inHole: false);
             return _found;
         }
 
-        bool InsidePair => _parens.Contains(true);
-
-        void Code(bool endAtBrace)
+        // 가장 안쪽 Text.L 이 없으면 Text.L 밖, 있으면 그 인자 번호로 판단한다
+        (bool Outside, bool InJa) Where()
         {
-            int depth = 0;
+            for (int k = _frames.Count - 1; k >= 0; k--)
+                if (_frames[k].Pair)
+                    return (false, _frames[k].Arg >= 1);
+            return (true, false);
+        }
+
+        // inHole: 보간 구멍 안. 맨 바깥에서 } 를 만나거나 서식(:)·정렬(,)이 시작되면 돌아간다
+        void Code(bool inHole)
+        {
+            int bottom = _frames.Count;
             while (_i < src.Length)
             {
                 char c = src[_i];
-                if (Starts("//") || (c == '#' && LineStartBefore(_i)))
+                bool top = _frames.Count == bottom;
+                if (inHole && top && c is '}' or ':' or ',')
+                    return;
+                if (!inHole && (Starts("//") || (c == '#' && LineStartBefore(_i))))
                 {
                     int nl = src.IndexOf('\n', _i);
                     _i = nl < 0 ? src.Length : nl;
@@ -145,26 +168,19 @@ public static class Text
                 {
                     Literal();
                 }
-                else if (c == '(')
+                else if (c is '(' or '[' or '{')
                 {
-                    _parens.Push(src.AsSpan(0, _i).TrimEnd().EndsWith("Text.L", StringComparison.Ordinal));
+                    _frames.Add(new Frame(c == '(' && src.AsSpan(0, _i).TrimEnd().EndsWith("Text.L", StringComparison.Ordinal)));
                     _i++;
                 }
-                else if (c == ')')
+                else if (c is ')' or ']' or '}')
                 {
-                    if (_parens.Count > 0) _parens.Pop();
+                    if (_frames.Count > bottom) _frames.RemoveAt(_frames.Count - 1);
                     _i++;
                 }
-                else if (c == '{')
+                else if (c == ',' && _frames.Count > 0)
                 {
-                    depth++;
-                    _i++;
-                }
-                else if (c == '}')
-                {
-                    if (depth == 0 && endAtBrace)
-                        return;
-                    depth--;
+                    _frames[^1].Arg++;
                     _i++;
                 }
                 else
@@ -228,14 +244,17 @@ public static class Text
                     _i++;
                 }
             }
-            if (hangul && !InsidePair)
-                _found.Add((start, _i - start));
+            (bool outside, bool inJa) = Where();
+            if (hangul && (outside || inJa))
+                _found.Add((start, _i - start, inJa));
         }
 
-        // 보간 구멍 { ... } 은 코드다. 닫는 } 를 braces 개 건너뛴다
+        // 보간 구멍 { 식 , 정렬 : 서식 } 에서 식만 코드로 읽고, 정렬·서식은 닫는 } 까지 건너뛴다 (} 는 braces 개)
         void Hole(int braces)
         {
-            Code(endAtBrace: true);
+            Code(inHole: true);
+            while (_i < src.Length && src[_i] != '}')
+                _i++;
             _i += braces;
         }
 
@@ -279,6 +298,9 @@ public static class Text
         public void AppendFormatted<T>(T value, int alignment, string? format) => _inner.AppendFormatted(value, alignment, format);
         public void AppendFormatted(string? value) => _inner.AppendFormatted(value);
         public void AppendFormatted(string? value, int alignment = 0, string? format = null) => _inner.AppendFormatted(value, alignment, format);
+        public void AppendFormatted(object? value, int alignment = 0, string? format = null) => _inner.AppendFormatted(value, alignment, format);
+        public void AppendFormatted(scoped ReadOnlySpan<char> value) => _inner.AppendFormatted(value);
+        public void AppendFormatted(scoped ReadOnlySpan<char> value, int alignment = 0, string? format = null) => _inner.AppendFormatted(value, alignment, format);
         public string ToStringAndClear() => _inner.ToStringAndClear();
     }
 
@@ -301,6 +323,9 @@ public static class Text
         public void AppendFormatted<T>(T value, int alignment, string? format) => _inner.AppendFormatted(value, alignment, format);
         public void AppendFormatted(string? value) => _inner.AppendFormatted(value);
         public void AppendFormatted(string? value, int alignment = 0, string? format = null) => _inner.AppendFormatted(value, alignment, format);
+        public void AppendFormatted(object? value, int alignment = 0, string? format = null) => _inner.AppendFormatted(value, alignment, format);
+        public void AppendFormatted(scoped ReadOnlySpan<char> value) => _inner.AppendFormatted(value);
+        public void AppendFormatted(scoped ReadOnlySpan<char> value, int alignment = 0, string? format = null) => _inner.AppendFormatted(value, alignment, format);
         public string ToStringAndClear() => _inner.ToStringAndClear();
     }
 }

@@ -125,8 +125,8 @@ static class Program
         return passed == graded ? 0 : 1;
     }
 
-    // 번역이 빠진 곳: 소스에서 Text.L 밖에 남은 한글 문자열과, 일본어로 돌린 랩의 출력에 섞여 나온 한글 줄
-    // [JA] 翻訳が抜けている所: ソースで Text.L の外に残ったハングルの文字列と、日本語で実行したラボの出力に混じったハングルの行
+    // 번역이 빠진 곳: 소스에서 Text.L 밖이나 일본어 쪽에 남은 한글 문자열과, 일본어로 돌린 랩의 출력(표준 출력, 표준 오류)에 섞여 나온 한글 줄
+    // [JA] 翻訳が抜けている所: ソースで Text.L の外か日本語側に残ったハングルの文字列と、日本語で実行したラボの出力(標準出力、標準エラー)に混じったハングルの行
     static readonly HashSet<string> MissingJa = new(StringComparer.Ordinal);
 
     // 출력에 한글이 나와도 되는 랩. 50: 모드 B(CP949)를 UTF-8로 잘못 읽어 깨진 글자(�) 사이에 우연히 한글 음절이 섞인다
@@ -395,6 +395,7 @@ static class Program
             p.Kill(entireProcessTree: true);
             p.WaitForExit();
             CollectHangul(lab, stdout.Result);
+            CollectHangul(lab, stderr.Result);
             // 스택 오버플로는 이미 넘친 뒤 런타임이 스택을 찍는 데 PC가 바쁘면 오래 걸릴 수 있다. 넘쳤다면 멈춤이 아니라 크래시다
             if (stderr.Result.StartsWith("Stack overflow.", StringComparison.Ordinal))
                 return ("CRASH", "Stack overflow.", watch.ElapsedMilliseconds);
@@ -405,6 +406,7 @@ static class Program
 
         string output = stdout.Result;
         CollectHangul(lab, output);
+        CollectHangul(lab, stderr.Result);
         string[] lines = output.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         // 응답 없음 표시는 랩의 출력 언어로 나온다
         string hangMark = Text.L("[FAIL] 응답 없음", "[FAIL] 応答なし");

@@ -270,9 +270,9 @@ static class Program
         return 0;
     }
 
-    // 번역 검사: 소스에서 Text.L(...) 밖에 남은 한글 문자열 리터럴을 찾는다. (주석과 "// ko+ja" 표시가 붙은 줄은 제외)
+    // 번역 검사: 소스에서 Text.L(...) 밖이나 일본어 쪽(둘째 인자)에 남은 한글 문자열 리터럴을 찾는다. (주석과 "// ko+ja" 표시가 붙은 줄은 제외)
     // 랩을 실행할 때 일본어 출력에 한글이 섞이는지는 채점기 --lang ja 가 랩마다 본다.
-    // [JA] 翻訳チェック: ソースで Text.L(...) の外に残ったハングルの文字列リテラルを探します。(コメントと "// ko+ja" の付いた行は除外)
+    // [JA] 翻訳チェック: ソースで Text.L(...) の外か日本語側(2 番目の引数)に残ったハングルの文字列リテラルを探します。(コメントと "// ko+ja" の付いた行は除外)
     // [JA] ラボ実行時に日本語の出力にハングルが混じるかどうかは、採点器の --lang ja がラボごとに見ます。
     static int CheckLang()
     {
@@ -288,7 +288,7 @@ static class Program
         List<string> unpaired = Text.FindUnpairedHangul(root);
         foreach (string u in unpaired)
             Console.WriteLine(u);
-        Console.WriteLine(Text.L($"check-lang: Text.L 밖의 한글 문자열 {unpaired.Count}개", $"check-lang: Text.L の外のハングル文字列 {unpaired.Count} 個"));
+        Console.WriteLine(Text.L($"check-lang: Text.L 밖이나 일본어 쪽에 남은 한글 문자열 {unpaired.Count}개", $"check-lang: Text.L の外か日本語側に残ったハングル文字列 {unpaired.Count} 個"));
         return unpaired.Count == 0 ? 0 : 1;
     }
 

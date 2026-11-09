@@ -27,7 +27,11 @@ public static partial class Lab47
             string[] attackers = [Text.L("기사", "騎士"), Text.L("궁수", "弓兵"), Text.L("마법사", "魔法使い"), Text.L("도적", "盗賊")];
             var lines = new List<string>();
             for (int i = 1; i <= count; i++)
-                lines.Add($"[{i:0000}] " + Text.L($"{(attackers[i % attackers.Length])}의 공격: 피해 {Pick(17 * i % 100, 1, 999)}", $"{(attackers[i % attackers.Length])}の攻撃: ダメージ {Pick(17 * i % 100, 1, 999)}"));
+            {
+                string attacker = attackers[i % attackers.Length];
+                int damage = Pick(17 * i % 100, 1, 999);
+                lines.Add($"[{i:0000}] " + Text.L($"{attacker}의 공격: 피해 {damage}", $"{attacker}の攻撃: ダメージ {damage}"));
+            }
             // 줄 길이 합이 우연히 버퍼 크기의 배수가 되지 않게 한 줄 더
             if (lines.Sum(l => l.Length + 2) % 1024 == 0)
                 lines.Add(Text.L("[끝] 전투 종료", "[終] 戦闘終了"));
