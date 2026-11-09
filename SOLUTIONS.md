@@ -200,7 +200,12 @@ NumberDecimalSeparator (de-DE)  ","
 double.Parse("1,5", InvariantCulture)   15   ← Invariant에서 ","는 천 단위 구분 기호
 진짜 원인:  $"{double}" 보간은 CurrentCulture로 숫자를 씀. 읽는 쪽만 InvariantCulture
 ```
-**수정:** 쓰는 쪽도 고정한다. `string.Create(CultureInfo.InvariantCulture, $"moveSpeed={o.MoveSpeed}\n...")`, 또는 `FormattableString.Invariant(...)`, `o.MoveSpeed.ToString(CultureInfo.InvariantCulture)`.
+**수정:** 쓰는 쪽도 고정한다. `Lab16_SettingsFile.cs`의 `Save`를 아래로 바꾼다. `using System.Globalization;`은 파일에 이미 있고, `Load`와 `SaveAndReload`는 그대로 둔다.
+```csharp
+    static string Save(Options o) =>
+        string.Create(CultureInfo.InvariantCulture, $"moveSpeed={o.MoveSpeed}\nmouseSensitivity={o.MouseSensitivity}");
+```
+`FormattableString.Invariant($"...")`로 감싸거나 값마다 `o.MoveSpeed.ToString(CultureInfo.InvariantCulture)`를 써도 같다.
 **교훈:** 파일·네트워크·세이브처럼 **기계가 읽는 텍스트**는 쓰기와 읽기 모두 InvariantCulture로. 화면에 보여 줄 때만 CurrentCulture. 한국어·영어 PC에서는 재현되지 않아서 "내 PC에서는 되는" 버그가 된다. CA1305가 잡아 준다.
 
 ## Lab 17 — DateTime 빼기는 Kind를 무시한다
@@ -337,10 +342,21 @@ public override int GetHashCode() => Id.GetHashCode();
 진짜 원인:  Dictionary는 한 번에 한 스레드만 고친다는 가정으로 만들어졌다. 내부 배열을 늘리는(Resize) 도중에 다른 스레드가 넣으면
            항목이 사라지거나 내부 연결이 꼬인다. 키가 겹치지 않아도 같다.
 ```
-**수정 (택1):**
-- `ConcurrentDictionary<int, int>`
-- 고치는 곳을 `lock`으로 감싼다
-- 전투 스레드마다 따로 모았다가 끝난 뒤 한 스레드에서 합친다 (가장 빠르다)
+**수정:** `Lab27_KillLog.cs`의 `KillLog` 클래스를 아래로 바꾼다. 파일 맨 위(`namespace BugHunt;` 위)에 `using System.Collections.Concurrent;`를 넣는다. `Run`은 그대로 둔다.
+```csharp
+using System.Collections.Concurrent;
+
+    class KillLog
+    {
+        // 여러 스레드가 동시에 고쳐도 되는 사전
+        readonly ConcurrentDictionary<int, int> _kills = new();
+
+        public void Record(int monsterId, int worker) => _kills[monsterId] = worker;
+
+        public int Count => _kills.Count;
+    }
+```
+다른 방법: `Dictionary`를 그대로 두고 고치는 곳을 `lock (_kills) _kills[monsterId] = worker;`로 감싸거나(그러면 `Count`도 같은 `lock` 안에서 읽는다), 전투 스레드마다 따로 모았다가 끝난 뒤 한 스레드에서 합친다(가장 빠르다).
 
 **교훈:** .NET Framework의 `Dictionary`는 이렇게 꼬이면 **무한루프**(CPU 100%로 멈춤)에 빠지기도 했다. 지금의 .NET은 꼬임을 일부 감지해 예외를 내지만, 항목이 조용히 사라지는 것은 막지 못한다. 결과가 실행마다 다르면 랩 66처럼 경쟁 조건부터 의심한다.
 
@@ -351,9 +367,17 @@ public override int GetHashCode() => Id.GetHashCode();
 16개 이하로 줄이면:  맞게 나온다 (작은 구간은 삽입 정렬이라 우연히 안정)
 진짜 원인:  List.Sort는 불안정 정렬(introsort). 비교자가 0을 돌려준 원소들의 원래 순서를 지키지 않는다.
 ```
-**수정 (택1):**
-- 안정 정렬인 LINQ를 쓴다: `board.OrderByDescending(e => e.Score)`
-- 같을 때의 규칙을 비교자에 넣는다: 달성 시각이나 들어온 순서를 두 번째 키로 비교
+**수정:** 안정 정렬인 LINQ를 쓴다. `Lab28_Leaderboard.cs`의 `SortLeaderboard`를 아래로 바꾼다. `Run`은 받은 목록이 그 자리에서 정렬되기를 기대하므로, 정렬한 결과를 같은 목록에 다시 채운다. `Run`은 그대로 둔다.
+```csharp
+    static void SortLeaderboard(List<Entry> board)
+    {
+        // OrderByDescending 은 안정 정렬: 점수가 같으면 들어온 순서(먼저 달성한 순서)를 지킨다
+        List<Entry> sorted = [.. board.OrderByDescending(e => e.Score)];
+        board.Clear();
+        board.AddRange(sorted);
+    }
+```
+다른 방법: 같을 때의 규칙을 비교자에 넣는다. 달성 시각이나 들어온 순서를 `Entry`에 담아 두 번째 키로 비교한다.
 
 **교훈:** "같으면 먼저 온 사람"처럼 같은 값의 순서에 의미가 있으면, 그 규칙을 **명시**한다. 비교자는 일관되어야 한다. `(a, b) => a.Score > b.Score ? -1 : 1`(같을 때 0을 안 줌)이나 `a.Score - b.Score`(넘침, 랩 14)처럼 어긋난 비교자는 결과가 실행·크기마다 흔들리거나 `InvalidOperationException: IComparer.Compare() method returns inconsistent results`를 낸다.
 
@@ -463,7 +487,20 @@ gate.Set() 줄에서 i:                   for를 다 돈 뒤라 이미 5(= piece
 진짜 원인:  double은 0.1, 0.2를 정확히 담지 못해 합에 오차가 쌓인다.
            Math.Round의 기본은 MidpointRounding.ToEven(은행가 반올림)이라 2.5 → 2, 0.5 → 0.
 ```
-**수정:** 합계를 `decimal`로 더합니다(`decimal sum = 0; sum += p;`). 세금은 `Math.Round(tax, MidpointRounding.AwayFromZero)`처럼 규칙을 명시합니다.
+**수정:** 합계를 `decimal`로 더하고, 세금은 반올림 규칙을 명시합니다. `Lab37_CashShop.cs`의 `Total`과 `RoundTax`를 아래로 바꿉니다. `Run`이 합계를 `double`로 비교하므로 `Total`의 반환 형식은 그대로 두고, 다 더한 뒤 한 번만 바꿉니다. `Run`은 그대로 둡니다.
+```csharp
+    // 장바구니 합계. 가격은 "원" 단위 소수.
+    static double Total(decimal[] prices)
+    {
+        decimal sum = 0;
+        foreach (decimal p in prices)
+            sum += p;
+        return (double)sum;   // 다 더한 뒤에 한 번만 바꾼다
+    }
+
+    // 세금을 정수로 반올림한다. .5 는 0 에서 먼 쪽으로.
+    static decimal RoundTax(decimal tax) => Math.Round(tax, MidpointRounding.AwayFromZero);
+```
 **교훈:** 돈, 수량, 점수처럼 10진수로 정확해야 하는 값은 `decimal` 또는 정수(원·센트 단위)로 다룹니다. 반올림 규칙은 도메인 결정이므로 항상 인자로 적습니다. `double` 합계를 `Math.Round(sum, 2)`로 감추는 수정은 이 랩의 숨은 케이스는 통과할 수 있지만, 값이 커지거나 연산이 길어지면 다시 어긋납니다. (참고: `(decimal)someDouble`은 유효숫자 15자리로 반올림해 변환하므로 오차를 가려 버립니다. 이 랩이 합계를 `double`로 비교하는 이유입니다.)
 
 ---
@@ -692,7 +729,11 @@ else
 조사식:            text.Contains('\r') == true
 진짜 원인:  메모장은 CRLF 로 저장한다. Split('\n') 은 각 항목 끝에 '\r' 을 남기고, 끝 줄바꿈 뒤에 빈 문자열을 하나 더 만든다.
 ```
-**수정:** `File.ReadAllLines(path)`(또는 `File.ReadLines`, `StreamReader.ReadLine`). 직접 자른다면 `text.Split(["\r\n", "\n"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)`.
+**수정:** 줄 단위로 읽는 API를 쓴다. `Lab51_BlockList.cs`의 `LoadBlockList`를 아래 한 줄로 바꾼다(`File.ReadAllText`와 `Split('\n')`는 지운다). `Run`은 그대로 둔다.
+```csharp
+    static HashSet<string> LoadBlockList(string path) => [.. File.ReadAllLines(path)];
+```
+`File.ReadLines`나 `StreamReader.ReadLine`도 같다. 직접 자른다면 `text.Split(["\r\n", "\n"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)`.
 **교훈:** `ReadLine` 계열은 `\r\n`, `\n`, `\r`을 모두 줄 끝으로 처리하고 끝 줄바꿈 뒤에 빈 줄을 만들지 않습니다. `TrimEnd('\r')`만 붙이면 빈 항목이 남고, `Split("\r\n")`만 쓰면 숨은 케이스(LF 파일)에서 한 줄로 붙어 걸립니다.
 
 ## Lab 52 — 원본을 직접 덮어쓰다 실패해서 반쯤 쓴 파일
@@ -702,22 +743,33 @@ Save 의 첫 줄(new StreamWriter(path)) 직후:  0바이트
 예외 뒤:  개수 줄 + 앞쪽 아이템 몇 줄만 (Load 가 손상으로 판정)
 진짜 원인:  new StreamWriter(path) 는 FileMode.Create 라서 여는 순간 기존 파일을 자른다. 예외가 나도 using 이 그때까지 쓴 앞부분을 내보낸다.
 ```
-**수정:** 다른 파일에 끝까지 쓰고, 다 쓴 뒤 한 번에 바꿔치기.
+**수정:** 다른 파일에 끝까지 쓰고, 다 쓰고 닫은 뒤 한 번에 바꿔치기. `Lab52_SafeSave.cs`의 `Save`를 통째로 아래로 바꾼다. 실패하면 임시 파일을 지우고 예외를 그대로 다시 던진다(`Run`이 그 예외를 잡아 지난번 세이브를 쓴다). `using System.Globalization;`은 파일에 이미 있고, `Load`와 `Run`은 그대로 둔다.
 ```csharp
-string tmp = path + ".tmp";
-try
-{
-    using var writer = new StreamWriter(tmp);
-    ... (같은 내용)
-}
-catch
-{
-    File.Delete(tmp);
-    throw;
-}
-if (File.Exists(path)) File.Replace(tmp, path, null);   // 백업을 남기려면 세 번째 인자에 경로
-else File.Move(tmp, path);
+    static void Save(string path, IReadOnlyList<Item> items)
+    {
+        string tmp = path + ".tmp";
+        try
+        {
+            using (var writer = new StreamWriter(tmp))
+            {
+                writer.WriteLine(items.Count.ToString(CultureInfo.InvariantCulture));
+                foreach (Item item in items)
+                {
+                    if (item.Count < 0)
+                        throw new InvalidDataException(Text.L($"손상된 아이템: {item.Name} x{item.Count}", $"破損したアイテム: {item.Name} x{item.Count}"));
+                    writer.WriteLine($"{item.Name}|{item.Count.ToString(CultureInfo.InvariantCulture)}");
+                }
+            }   // 바꿔치기 전에 닫아서 버퍼를 다 내보낸다
+        }
+        catch
+        {
+            File.Delete(tmp);   // 실패한 저장의 임시 파일은 남기지 않는다
+            throw;
+        }
+        File.Move(tmp, path, overwrite: true);   // 같은 볼륨 안에서는 이름만 바뀐다
+    }
 ```
+지난번 세이브를 백업으로도 남기려면, 원본이 있을 때 마지막 줄 대신 `File.Replace(tmp, path, path + ".bak");`를 쓴다.
 **교훈:** 정전, 강제 종료, 디스크 꽉 참도 같은 결과입니다. 같은 볼륨 안의 `File.Replace`/`File.Move(…, overwrite: true)`는 이름만 바꾸므로 중간 상태가 남지 않습니다. 먼저 메모리에서 전부 검사한 뒤에 여는 수정은 이 예외는 피하지만 쓰는 도중의 중단에는 여전히 약합니다. 실패한 저장의 임시 파일은 지웁니다(세 번째 판정).
 
 ## Lab 53 — 비동기 쓰기를 기다리지 않고 그 파일을 읽음
@@ -752,7 +804,24 @@ Level private set 중단점:   Load 중에 안 불림
 진짜 원인:  Gold 는 필드. System.Text.Json 은 기본으로 public 속성만 다룬다 → 저장부터 빠짐.
            Level 은 public get 이라 저장은 되지만 set 이 private 이라 읽을 때 건너뜀 → 초기값 1.
 ```
-**수정:** `[JsonInclude] public int Gold;`, `[JsonInclude] public int Level { get; private set; } = 1;` (또는 `IncludeFields = true` + Level에 `[JsonInclude]`, 또는 `[JsonConstructor]` 생성자).
+**수정:** 두 멤버에 `[JsonInclude]`를 붙인다. `Lab55_CharacterSave.cs`의 `Character` 클래스를 아래로 바꾸고, 파일 맨 위의 `using` 줄들에 `using System.Text.Json.Serialization;`을 더한다(`[JsonInclude]`가 있는 네임스페이스). `Run`은 그대로 둔다.
+```csharp
+using System.Text.Json.Serialization;
+
+    sealed class Character
+    {
+        public string Name { get; set; } = "";
+
+        // 골드는 자주 바뀌어서 필드로 둔다. 필드는 [JsonInclude] 가 있어야 저장·복원된다.
+        [JsonInclude] public int Gold;
+
+        // 레벨은 LevelUp 으로만 올린다. private set 은 [JsonInclude] 가 있어야 읽을 때 쓰인다.
+        [JsonInclude] public int Level { get; private set; } = 1;
+
+        public void LevelUp() => Level++;
+    }
+```
+다른 방법: `Options`에 `IncludeFields = true`를 주고 `Level`에만 `[JsonInclude]`를 붙이거나, `[JsonConstructor]` 생성자로 받는다.
 **교훈:** "저장은 되는데 못 읽는 멤버"는 경고가 없습니다. 세이브 형식에는 저장 → 불러오기 → 비교하는 왕복 테스트를 둡니다.
 
 ## Lab 56 — 다형성 정보가 없어 파생 형식이 기반 형식으로 돌아옴
@@ -762,13 +831,19 @@ Level private set 중단점:   Load 중에 안 불림
 진짜 원인:  List<Reward> 의 항목을 선언 형식 Reward 로 직렬화해서 파생 형식의 속성이 빠지고,
            JSON 에 형식 구분자가 없으니 읽을 때도 전부 Reward 로 만든다.
 ```
-**수정:**
+**수정:** 기반 형식에 파생 형식을 등록한다. `Lab56_MailRewards.cs`의 `Reward` 클래스를 아래로 바꾸고(본문은 그대로, 특성 네 줄이 늘어난다), 파일 맨 위의 `using` 줄들에 `using System.Text.Json.Serialization;`을 더한다. 파생 형식 세 개를 모두 등록해야 한다. 파생 클래스와 `Run`은 그대로 둔다.
 ```csharp
-[JsonPolymorphic(TypeDiscriminatorPropertyName = "$type")]
-[JsonDerivedType(typeof(GoldReward), "gold")]
-[JsonDerivedType(typeof(ItemReward), "item")]
-[JsonDerivedType(typeof(ExpReward), "exp")]
-class Reward { ... }
+using System.Text.Json.Serialization;
+
+    [JsonPolymorphic(TypeDiscriminatorPropertyName = "$type")]
+    [JsonDerivedType(typeof(GoldReward), "gold")]
+    [JsonDerivedType(typeof(ItemReward), "item")]
+    [JsonDerivedType(typeof(ExpReward), "exp")]
+    class Reward
+    {
+        public string Source { get; set; } = "";
+        public virtual string Describe() => Text.L("알 수 없는 보상", "不明な報酬");
+    }
 ```
 **교훈:** System.Text.Json은 보안상 "JSON에 적힌 형식 이름으로 아무 형식이나 만드는" 기능이 없고, 허용할 파생 형식을 직접 등록합니다. 하나라도 빠뜨리면 그 형식을 직렬화할 때 `NotSupportedException`이 납니다(숨은 케이스의 경험치 보상). 기반 형식을 `abstract`로 만들어 두면 등록을 잊었을 때 역직렬화가 조용히 넘어가지 않고 예외를 내 줍니다.
 
@@ -779,9 +854,18 @@ Restore 전:   party.Leader 와 party.Members[0] 의 개체 ID 가 같음 ($1)
 Restore 뒤:   restored.Leader 와 restored.Members[0] 의 개체 ID 가 다름
 진짜 원인:  JSON 에는 "같은 객체" 개념이 없다. 적힌 곳마다 새 객체를 만든다. MainTank 도 마찬가지.
 ```
-**수정 (택1):**
-- 저장·복원 양쪽 옵션에 `ReferenceHandler = ReferenceHandler.Preserve` (`$id`/`$ref`가 붙음).
-- 형식을 바꾼다: `Leader` 대신 `LeaderIndex`(또는 고유 Id)를 저장하고 읽은 뒤 다시 잇는다.
+**수정:** 저장·복원 양쪽 옵션에 `ReferenceHandler = ReferenceHandler.Preserve`를 준다(`$id`/`$ref`가 붙는다). `Lab57_PartySnapshot.cs`에서는 `Serialize`와 `Deserialize`가 같은 `Options` 필드를 쓰므로 그 필드 하나만 아래로 바꾸면 양쪽에 적용된다. 파일 맨 위의 `using` 줄들에 `using System.Text.Json.Serialization;`을 더한다(`ReferenceHandler`가 있는 네임스페이스). `Restore`와 `Run`은 그대로 둔다.
+```csharp
+using System.Text.Json.Serialization;
+
+    // 한글을 이스케이프하지 않고 그대로 쓴다(콘솔에서 읽기 쉽게). 같은 객체는 $id/$ref 로 한 번만 적는다.
+    static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web)
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        ReferenceHandler = ReferenceHandler.Preserve,
+    };
+```
+다른 방법: 형식을 바꾼다. `Leader` 대신 `LeaderIndex`(또는 고유 Id)를 저장하고 읽은 뒤 다시 잇는다.
 
 **교훈:** 객체 그래프를 그대로 직렬화하면 공유가 사라지고, 순환이 있으면 `JsonException`(깊이 초과)이 납니다. 세이브 형식으로는 Id로 참조하는 쪽이 더 단단합니다(`$ref`는 다른 프로그램이 이해하지 못할 수 있음). 리더만 이름으로 다시 잇는 수정은 메인 탱커에서 걸립니다.
 
@@ -808,16 +892,40 @@ static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web) 
 멈춘 곳:  new XmlSerializer(typeof(GameOptions))   (데이터와 상관없이 생성자에서)
 그것을 고치면 다음:  Cannot serialize member ...KeyBindings of type Dictionary`2 ... because it implements IDictionary.
 ```
-**수정:** `GraphicsOptions`를 매개변수 없는 생성자와 public set이 있는 class로. `KeyBindings`는 `[XmlIgnore]`로 두고 XML에는 배열 대리 속성으로:
+**수정:** `GraphicsOptions`를 매개변수 없는 생성자와 public set이 있는 class로. `KeyBindings`는 `[XmlIgnore]`로 두고 XML에는 배열 대리 속성으로 적는다. `Lab59_OptionsXml.cs`의 `GraphicsOptions` record와 `GameOptions` 클래스를 지우고 그 자리에 아래 두 클래스를 넣는다. `Run`이 `new GraphicsOptions(w, h, fullscreen)`으로 만들므로 3인자 생성자도 남긴다. `using System.Xml.Serialization;`은 파일에 이미 있고, `Save`, `Load`, `Run`은 그대로 둔다.
 ```csharp
-[XmlIgnore] public Dictionary<string, string> KeyBindings { get; set; } = [];
-[XmlArray("KeyBindings")]
-public KeyBinding[] KeyBindingList
-{
-    get => [.. KeyBindings.Select(p => new KeyBinding { Action = p.Key, Key = p.Value })];
-    set => KeyBindings = value.ToDictionary(b => b.Action, b => b.Key);
-}
-public sealed class KeyBinding { [XmlAttribute] public string Action { get; set; } = ""; [XmlAttribute] public string Key { get; set; } = ""; }
+    // XmlSerializer 가 다루는 형식은 public 이어야 하고, 매개변수 없는 생성자와 public set 이 있어야 한다.
+    public sealed class GraphicsOptions
+    {
+        public int Width { get; set; }
+        public int Height { get; set; }
+        public bool Fullscreen { get; set; }
+
+        public GraphicsOptions() { }   // XmlSerializer 가 읽을 때 쓴다
+        public GraphicsOptions(int width, int height, bool fullscreen) => (Width, Height, Fullscreen) = (width, height, fullscreen);
+    }
+
+    public sealed class GameOptions
+    {
+        public int Volume { get; set; } = 80;
+        public GraphicsOptions Graphics { get; set; } = new(1280, 720, false);
+
+        // XmlSerializer 는 IDictionary 를 못 다루므로 XML 에서는 빼고, 아래 배열로 대신 적는다
+        [XmlIgnore] public Dictionary<string, string> KeyBindings { get; set; } = [];
+
+        [XmlArray("KeyBindings")]
+        public KeyBinding[] KeyBindingList
+        {
+            get => [.. KeyBindings.Select(p => new KeyBinding { Action = p.Key, Key = p.Value })];
+            set => KeyBindings = value.ToDictionary(b => b.Action, b => b.Key);
+        }
+
+        public sealed class KeyBinding
+        {
+            [XmlAttribute] public string Action { get; set; } = "";
+            [XmlAttribute] public string Key { get; set; } = "";
+        }
+    }
 ```
 또는 이 파일을 System.Text.Json으로 저장한다(record와 Dictionary를 그대로 다룸).
 **교훈:** `XmlSerializer`는 public 형식, 매개변수 없는 생성자, 읽고 쓸 수 있는 public 멤버만 다루고 `IDictionary`는 못 다룹니다. 형식 전체를 생성자에서 검사하므로 "There was an error reflecting type"이 나오면 **내부 예외를 끝까지** 읽습니다(랩 6의 `AggregateException`과 같은 읽는 법).
@@ -1022,19 +1130,30 @@ catch (OperationCanceledException)
 개체 ID로 같은 예외임을 확인하고 throw last! 줄을 F10:  StackTrace 가 RetryAsync 에서 새로 시작
 진짜 원인:  throw last; 는 스택 트레이스를 "지금 이 줄"부터 다시 쓴다. catch 블록 밖이라 throw; 도 못 쓴다
 ```
-**수정:** 원래 스택 트레이스를 그대로 다시 던진다.
+**수정:** 원래 스택 트레이스를 그대로 다시 던진다. `Lab71_QuestSync.cs`의 `RetryAsync`를 통째로 아래로 바꾼다(`Exception? last = null;`과 `throw last!;`는 사라진다). 파일 맨 위의 `using System.Text.RegularExpressions;` 옆에 `using` 두 줄을 더한다. `Run`과 `Report`는 그대로 둔다.
 ```csharp
-using System.Runtime.ExceptionServices;
-...
-ExceptionDispatchInfo? last = null;
-...
-catch (Exception ex)
-{
-    last = ExceptionDispatchInfo.Capture(ex);
-    ...
-}
-last!.Throw();
-throw new UnreachableException();   // 컴파일러용. Throw()는 돌아오지 않는다
+using System.Diagnostics;                 // UnreachableException
+using System.Runtime.ExceptionServices;   // ExceptionDispatchInfo
+
+    static async Task<T> RetryAsync<T>(Func<Task<T>> body)
+    {
+        ExceptionDispatchInfo? last = null;
+        for (int attempt = 1; attempt <= Attempts; attempt++)
+        {
+            try
+            {
+                return await body();
+            }
+            catch (Exception ex)
+            {
+                last = ExceptionDispatchInfo.Capture(ex);   // 이 순간의 스택 트레이스까지 함께 담아 둔다
+                Console.WriteLine(Text.L($"  [재시도 {attempt}/{Attempts}] {ex.GetType().Name}: {ex.Message}", $"  [再試行 {attempt}/{Attempts}] {ex.GetType().Name}: {ex.Message}"));
+                await Task.Delay(5);
+            }
+        }
+        last!.Throw();
+        throw new UnreachableException();   // 컴파일러용. Throw()는 돌아오지 않는다
+    }
 ```
 `ExceptionDispatchInfo.Throw(lastException)`(정적 메서드)도 같다. 또는 마지막 시도에서는 잡지 않는다: `catch (Exception ex) when (attempt < Attempts)`. 그러면 마지막 예외는 손대지 않은 채 그대로 올라간다.
 **가짜 수정:** `throw new Exception(last.Message, last)`로 감싸면 예외 형식이 바뀌고 위치는 여전히 `RetryAsync`다. 보고서에 함수 이름을 박아 넣으면 숨은 케이스(헤더 손상, 다운로드 실패)에서 틀린다.
@@ -1072,27 +1191,45 @@ GC.CollectionCount(0)  0   ← GC가 한 번도 안 돌았음
 (조사식으로 GC.Collect() 실행 후) ~Texture() 가 "종료자 스레드"(.NET Finalizer)에서 걸림
 진짜 원인:  종료자는 C++ 소멸자가 아님. 객체가 쓸모없어진 순간이 아니라, GC가 발견한 뒤 종료자 스레드가 짬이 날 때 불림
 ```
-**수정:** `IDisposable`을 구현하고, 레벨을 나갈 때 명시적으로 Dispose한다.
-```csharp
-class Texture : IDisposable
-{
-    bool _disposed;
-    public void Dispose()
-    {
-        if (_disposed) return;
-        _disposed = true;
-        GpuMemory.Free(Bytes);
-        GC.SuppressFinalize(this);
-    }
-    ~Texture() => Dispose();   // 안전망: Dispose를 잊었을 때만, 언젠가
-}
+**수정:** `IDisposable`을 구현하고, 레벨을 나갈 때 명시적으로 Dispose한다. `Lab74_TextureCache.cs`에서 두 곳을 바꾼다. 원래의 종료자(`~Texture() { GpuMemory.Free(Bytes); }`)는 지우고 아래의 안전망 종료자로 대신한다. `GpuMemory`, `Level.Enter`, `Run`은 그대로 둔다.
 
-public void Exit()
-{
-    foreach (Texture texture in _textures)
-        texture.Dispose();
-    _textures.Clear();
-}
+1. `Texture` 클래스를 통째로 아래로 바꾼다.
+```csharp
+    class Texture : IDisposable
+    {
+        bool _disposed;
+
+        public string Name { get; }
+        public long Bytes { get; }
+
+        public Texture(string name, long bytes)
+        {
+            Name = name;
+            Bytes = bytes;
+            GpuMemory.Allocate(bytes);
+        }
+
+        // 레벨을 나갈 때 바로 GPU 메모리를 돌려준다. 두 번 불려도 한 번만 돌려준다.
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+            GpuMemory.Free(Bytes);
+            GC.SuppressFinalize(this);
+        }
+
+        ~Texture() => Dispose();   // 안전망: Dispose를 잊었을 때만, 언젠가
+    }
+```
+2. `Level` 클래스의 `Exit`를 아래로 바꾼다.
+```csharp
+        public void Exit()
+        {
+            foreach (Texture texture in _textures)
+                texture.Dispose();
+            _textures.Clear();
+            Console.WriteLine(Text.L($"  {name} 퇴장: GPU {GpuMemory.BytesInUse / (1024 * 1024)}MB", $"  {name} 退場: GPU {GpuMemory.BytesInUse / (1024 * 1024)}MB"));
+        }
 ```
 (실무에서는 비관리 핸들을 직접 종료자로 다루기보다 `SafeHandle`을 쓴다.)
 **교훈:** "정해진 순간"에 돌려줘야 하는 자원은 **Dispose**로. 종료자는 잊었을 때를 위한 안전망일 뿐이고, 언제 불릴지(불리기는 할지) 보장되지 않는다. `GC.Collect()`로 억지로 돌리는 것도 해결책이 아니다.
@@ -1149,17 +1286,31 @@ throw 줄에서 F10:      handle.Free()로 가지 않고 catch로 빠짐
 GC.GetGCMemoryInfo().PinnedObjectsCount:  손상된 패킷 수만큼 늘어 있음
 진짜 원인:  체크섬이 틀리면 throw로 빠져나가면서 handle.Free()를 건너뜀
 ```
-**수정:** 고정은 네이티브 호출 동안만 하고, `finally`에서 반드시 푼다.
+**수정:** 고정은 네이티브 호출 동안만 하고, `finally`에서 반드시 푼다. `Lab77_PacketReceive.cs`의 `ReceivePacket`을 통째로 아래로 바꾼다. 원래 `return buffer;` 바로 앞에 있던 `handle.Free();`는 지운다(두 번 풀면 `InvalidOperationException`이 난다). `using System.Runtime.InteropServices;`는 파일에 이미 있고, `ReceiveAll`과 `Run`은 그대로 둔다.
 ```csharp
-GCHandle handle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
-try
-{
-    NativeNet.Receive(handle.AddrOfPinnedObject(), buffer.Length, packetId, corrupt);
-}
-finally
-{
-    handle.Free();
-}
+    static byte[] ReceivePacket(int packetId, bool corrupt)
+    {
+        var buffer = new byte[256];
+        Tracked.Add(new WeakReference(buffer));
+
+        GCHandle handle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
+        try
+        {
+            NativeNet.Receive(handle.AddrOfPinnedObject(), buffer.Length, packetId, corrupt);
+        }
+        finally
+        {
+            handle.Free();   // 예외가 나도 반드시 푼다
+        }
+
+        byte sum = 0;
+        for (int i = 0; i < buffer.Length - 1; i++)
+            sum += buffer[i];
+        if (sum != buffer[^1])
+            throw new InvalidDataException(Text.L($"패킷 {packetId} 체크섬 불일치", $"パケット {packetId} チェックサム不一致"));
+
+        return buffer;
+    }
 ```
 짧게만 고정한다면 `fixed (byte* p = buffer) { ... }`가 더 간단하다 (블록을 어떻게 빠져나가든 풀린다).
 **교훈:** `GCHandle`은 GC 바깥의 강한 참조라서, `Free`를 잊으면 **GC가 있어도 누수**다. Pinned 핸들은 게다가 힙 압축도 방해한다. 얻었으면 `finally`에서 돌려준다. `lock`, 세마포(랩 87)과 같은 규칙이다.
@@ -1406,7 +1557,18 @@ Release:   응답 없음. 멈춘 순간 loader.Done == True, 읽은 에셋 20개
 진짜 원인:  enemies.Count(e => ... player ... radius)의 람다가 바깥 변수 player, radius를 캡처한다.
            부를 때마다 캡처를 담을 객체 하나와 대리자 하나가 새로 만들어진다. 2000프레임이면 4000개.
 ```
-**수정:** 평범한 `foreach`로 센다. `radius * radius`도 루프 밖에서 한 번만 계산한다.
+**수정:** 평범한 `foreach`로 센다. `radius * radius`도 루프 밖에서 한 번만 계산한다. `Lab89_ThreatMeter.cs`의 `CountNearby`를 아래로 바꾼다. 람다가 없으니 캡처 객체도 대리자도 만들어지지 않는다. `Run`은 그대로 둔다.
+```csharp
+    static int CountNearby(List<Enemy> enemies, Vec player, float radius)
+    {
+        float radiusSq = radius * radius;
+        int count = 0;
+        foreach (Enemy e in enemies)
+            if (e.Alive && e.Pos.DistanceSq(player) <= radiusSq)
+                count++;
+        return count;
+    }
+```
 
 **교훈:** 1초에 수십 번 도는 코드(Update, 렌더, 서버 틱)에서 LINQ와 캡처하는 람다는 "보이지 않는 `new`"다. 결과가 같아도 GC가 자주 돌고 그때마다 모든 스레드가 잠깐 멈춘다. 캡처하지 않는 람다는 캐시되므로 `static` 람다로 써 두면 실수로 캡처하는 것을 컴파일러가 막아 준다.
 
@@ -1416,7 +1578,19 @@ Release:   응답 없음. 멈춘 순간 loader.Done == True, 읽은 에셋 20개
 조사식:      text.Length가 줄마다 커진다. += 할 때마다 그 길이만큼 통째로 복사
 진짜 원인:  string은 불변이라 a += b는 a 전체를 복사한 새 문자열을 만든다. n줄이면 복사량이 n²에 비례한다.
 ```
-**수정:** `StringBuilder`에 `Append`하고 마지막에 한 번 `ToString()`. (줄 수를 알면 `string.Join`, 파일로 쓸 거면 `StreamWriter`로 바로 쓰기)
+**수정:** `StringBuilder`에 `Append`하고 마지막에 한 번 `ToString()`. `Lab90_ChatExport.cs`의 `Export`를 아래로 바꾸고, 파일 맨 위(`namespace BugHunt;` 위)에 `using System.Text;`를 넣는다. `Run`은 그대로 둔다.
+```csharp
+using System.Text;
+
+    static string Export(List<ChatLine> lines)
+    {
+        var text = new StringBuilder();
+        foreach (ChatLine line in lines)
+            text.Append($"[{line.Minute / 60:00}:{line.Minute % 60:00}] {line.Sender}: {line.Text}\n");
+        return text.ToString();
+    }
+```
+(줄 수를 알면 `string.Join`, 파일로 쓸 거면 `StreamWriter`로 바로 쓰기)
 
 **교훈:** 몇 개를 이어 붙이는 것은 괜찮다(컴파일러가 `string.Concat` 하나로 만든다). **루프** 안의 `+=`가 문제다. 데이터가 2배가 되면 시간이 4배가 되는 코드는 작은 시험 데이터로는 절대 안 드러난다. 숨은 케이스처럼 크기를 바꿔 재 보면 보인다.
 
@@ -1436,7 +1610,18 @@ Release:   응답 없음. 멈춘 순간 loader.Done == True, 읽은 에셋 20개
 CPU 사용량:  시간 대부분이 List.Contains → ItemId.Equals
 진짜 원인:  List.Contains는 처음부터 하나씩 비교한다. 전리품마다 도감 전체를 훑으니 비교는 전리품 수 × 도감 크기.
 ```
-**수정:** "이미 있나?"는 `HashSet<ItemId>`에 묻고, 순서는 `List`에 따로 남긴다: `if (seen.Add(id)) unique.Add(id);`
+**수정:** "이미 있나?"는 `HashSet<ItemId>`에 묻고, 순서는 `List`에 따로 남긴다. `Lab92_LootDedupe.cs`의 `UniqueInOrder`를 아래로 바꾼다. `ItemId`와 `Run`은 그대로 둔다.
+```csharp
+    static List<ItemId> UniqueInOrder(List<ItemId> drops)
+    {
+        var seen = new HashSet<ItemId>();
+        var unique = new List<ItemId>();
+        foreach (ItemId id in drops)
+            if (seen.Add(id))   // 처음 본 Id 일 때만 true
+                unique.Add(id);
+        return unique;
+    }
+```
 
 **교훈:** 컬렉션은 "무엇을 자주 묻는가"로 고른다. 포함 여부·키로 찾기는 `HashSet`/`Dictionary`, 앞에서 빼기는 `Queue`, 정렬 유지는 `SortedSet`. 루프 안의 `Contains`, `IndexOf`, `Remove(item)`, `Insert(0, ...)`는 모두 한 번에 O(n)이다. 해시 컬렉션에 넣는 struct는 `IEquatable<T>`와 `GetHashCode`를 제대로 구현해야 박싱 없이 빠르다.
 
@@ -1446,9 +1631,14 @@ CPU 사용량:  RegexParser, RegexWriter 등 패턴 해석 코드가 핫 경로�
 버그 상태:   메시지당 약 2700바이트 (기대: 64 이하)
 진짜 원인:  new Regex(pattern)는 패턴을 해석해서 실행할 수 있는 형태로 만든다. 그 일을 메시지마다 다시 한다.
 ```
-**수정 (택1):**
-- 한 번만 만든다: `static readonly Regex NameRule = new("...");`
-- 소스 생성기: `[GeneratedRegex("...")] private static partial Regex NameRule();` (빌드할 때 만들어 둔다)
+**수정:** 한 번만 만든다. `Lab93_NameCheck.cs`의 `IsValidName` 한 줄(과 그 위 주석)을 아래로 바꾼다. `using System.Text.RegularExpressions;`는 파일에 이미 있고, `Run`은 그대로 둔다.
+```csharp
+    // 이름 규칙: 영문자로 시작, 영문자·숫자·밑줄 3~16자. 패턴은 한 번만 해석해 두고 재사용한다.
+    static readonly Regex NameRule = new("^[A-Za-z][A-Za-z0-9_]{2,15}$");
+
+    static bool IsValidName(string name) => NameRule.IsMatch(name);
+```
+소스 생성기를 써도 된다(빌드할 때 만들어 둔다). 그때는 클래스 선언을 `public static partial class Lab93`으로 바꾸고, `NameRule` 필드 대신 `[GeneratedRegex("^[A-Za-z][A-Za-z0-9_]{2,15}$")] private static partial Regex NameRule();`를 선언한 뒤 `NameRule().IsMatch(name)`으로 부른다.
 
 정적 메서드 `Regex.IsMatch(name, pattern)`은 내부 캐시(기본 15개)를 쓰므로 이 랩에서는 통과하지만, 패턴이 많으면 캐시에서 밀려나 같은 일이 생긴다.
 
@@ -1461,8 +1651,20 @@ CPU 사용량:  RegexParser, RegexWriter 등 패턴 해석 코드가 핫 경로�
 진짜 원인:  params object?[] 배열과 그 안의 상자(int, float 박싱)는 Log.Debug에 들어가기 "전에", 부르는 쪽에서 만들어진다.
            함수 안의 if (!DebugEnabled) return;은 이미 비용을 치른 뒤다.
 ```
-**수정 (택1):**
-- 부르는 쪽에서 감싼다: `if (Log.DebugEnabled) Log.Debug(...);`
+**수정:** 부르는 쪽에서 감싼다. `Lab94_DebugLog.cs`의 `MoveAll`을 아래로 바꾼다. 로그가 꺼져 있으면 `Log.Debug`의 인자를 아예 계산하지 않으므로 `params` 배열도 박싱 상자도 만들어지지 않는다. `Log` 클래스와 `Run`은 그대로 둔다.
+```csharp
+    static void MoveAll(Unit[] units, float dx, float dy, int frame)
+    {
+        for (int i = 0; i < units.Length; i++)
+        {
+            units[i].X += dx;
+            units[i].Y += dy;
+            if (Log.DebugEnabled)   // 꺼져 있으면 인자를 만들지 않는다
+                Log.Debug(Text.L("프레임 {0}: 유닛 {1} 이동 → ({2}, {3})", "フレーム {0}: ユニット {1} 移動 → ({2}, {3})"), frame, units[i].Id, units[i].X, units[i].Y);
+        }
+    }
+```
+다른 방법:
 - 제네릭 오버로드 `Debug<T1, T2, T3, T4>(string format, T1 a, ...)`를 만들어 배열과 박싱을 없앤다
 - 보간 문자열 처리기(`[InterpolatedStringHandler]`)로 꺼져 있으면 아무것도 만들지 않게 한다 (`ILogger`가 쓰는 방식)
 

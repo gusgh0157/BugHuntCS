@@ -55,9 +55,24 @@
 - 디버그 → 창 → **작업(Tasks)** / **병렬 스택**의 작업 보기: 첫 프레임 뒤에 `OnProgressAsync` 작업 여러 개가 같은 `LoadAsync`를 기다리고 있습니다.
 - `Publish`에 `{questId} {amount}` 추적점을, `store.Add`에 `{e}` 추적점을 겁니다. 출력 창에서 순서를 비교하면, 보낸 알림과 처리한 알림이 다릅니다.
 
-**수정 (택1):**
-- 처리기에서 `await` **전에** 필요한 값을 지역 변수로 복사한다
-- 버스가 알림마다 새 객체를 만든다 (불변 `record`로 만들면 더 좋다)
+**수정:** 처리기에서 `await` **전에** 필요한 값을 지역 변수로 복사한다. `C2/Achievements.cs`의 `AchievementTracker.OnProgressAsync`를 아래로 바꾼다. `await` 뒤에서는 `e`를 다시 읽지 않는다. 다른 클래스는 그대로 둔다.
+```csharp
+    async Task OnProgressAsync(QuestProgress e)
+    {
+        // e 는 버스가 계속 다시 쓰는 객체다. await 전에 필요한 값을 복사해 둔다
+        string questId = e.QuestId;
+        int amount = e.Amount;
+
+        if (!store.Loaded)
+            await store.LoadAsync();
+
+        int now = store.Add(questId, amount);
+        _handled += 1;
+        if (goals.TryGetValue(questId, out int goal) && now >= goal && store.Unlock(questId))
+            Console.WriteLine(Text.L($"  [업적] {questId} 달성! ({now}/{goal})", $"  [実績] {questId} 達成! ({now}/{goal})"));
+    }
+```
+다른 방법: 버스가 알림마다 새 객체를 만든다(`QuestEventBus.Publish`가 `_current`를 고쳐 쓰는 대신 `new QuestProgress { ... }`를 넘긴다. 불변 `record`로 만들면 더 좋다).
 
 재사용하고 싶다면 그 객체가 처리기 밖으로 새지 않는다는 계약(동기 처리기만)이 있어야 합니다.
 
@@ -140,7 +155,43 @@ public sealed class FriendRankingScreen(RankingService service)
 증상:   "지역 불러오기" 응답 없음. 모두 중단하면 메인 스레드가 Monitor.Wait 에, 로더 스레드는 이미 끝나 있다
 원인:   로더가 300ms 안에 끝나서 Pulse 를 먼저 울린다. Monitor 는 신호를 기억하지 않으므로 나중에 Wait 한 쪽은 영원히 기다린다
 ```
-**수정:** 조건 변수와 함께 루프로 기다린다: 로더가 `_done = true`를 쓰고 `Pulse`, 기다리는 쪽은 `while (!_done) Monitor.Wait(_gate);`. 더 간단하게는 `Task<int>`를 돌려주고 기다리거나 `ManualResetEventSlim`을 쓴다.
+**수정:** 조건 변수와 함께 루프로 기다린다: 로더가 `_done = true`를 쓰고 `Pulse`, 기다리는 쪽은 `while (!_done) Monitor.Wait(_gate);`. `Blind/ChallengeB1.cs`의 `RegionLoader` 클래스를 통째로 아래로 바꾼다. `PrepareScreen`과 `Run`은 그대로 둔다.
+```csharp
+    sealed class RegionLoader
+    {
+        readonly object _gate = new();
+        int _tiles;
+        bool _done;   // Pulse 는 기억되지 않으니 "끝났다"를 상태로 남긴다
+
+        public void Start(string region, int tileCount)
+        {
+            var worker = new Thread(() =>
+            {
+                int tiles = 0;
+                for (int i = 0; i < tileCount; i++)
+                    tiles++;
+                lock (_gate)
+                {
+                    _tiles = tiles;
+                    _done = true;
+                    Monitor.Pulse(_gate);
+                }
+            }) { IsBackground = true, Name = Text.L($"로더 ({region})", $"ローダー ({region})"), Priority = ThreadPriority.Highest };
+            worker.Start();
+        }
+
+        public int WaitForTiles()
+        {
+            lock (_gate)
+            {
+                while (!_done)   // 이미 끝났으면 기다리지 않는다
+                    Monitor.Wait(_gate);
+                return _tiles;
+            }
+        }
+    }
+```
+더 간단하게는 `Task<int>`를 돌려주고 기다리거나 `ManualResetEventSlim`을 쓴다.
 
 **가짜 수정:** `Monitor.Wait(_gate, 1000)`처럼 제한 시간을 주면, 지역 하나는 1초 만에 끝나서 통과합니다. 하지만 지역 3~4개를 불러오는 숨은 케이스에서는 감시 시간을 넘깁니다.
 
@@ -170,7 +221,16 @@ public sealed class FriendRankingScreen(RankingService service)
 예외:   ArrayTypeMismatchException at Refill
 원인:   Recruit 는 Unit[] 를 돌려주지만 실제로는 Archer[] 다(배열 공변성). 그 배열에 Knight 를 넣는 순간 런타임 형식 검사가 실패한다
 ```
-**수정:** 실제 배열을 `Unit[]`로 만든다: `.ToArray<Unit>()`, 또는 `List<Unit>`을 쓴다. `IReadOnlyList<Unit>`처럼 공변 인터페이스로 돌려주면 넣기 자체를 컴파일러가 막는다.
+**수정:** 실제 배열을 `Unit[]`로 만든다. `Blind/ChallengeB4.cs`의 `Recruit`를 아래로 바꾼다(세 갈래의 `.ToArray()`가 모두 `.ToArray<Unit>()`이 된다). `Refill`과 `Run`은 그대로 둔다.
+```csharp
+    static Unit[] Recruit(string kind, int size) => kind switch
+    {
+        "archer" => Enumerable.Range(1, size).Select(n => new Archer(n)).ToArray<Unit>(),
+        "knight" => Enumerable.Range(1, size).Select(n => new Knight(n)).ToArray<Unit>(),
+        _ => Enumerable.Range(1, size).Select(n => new Healer(n)).ToArray<Unit>(),
+    };
+```
+`List<Unit>`을 써도 된다. `IReadOnlyList<Unit>`처럼 공변 인터페이스로 돌려주면 넣기 자체를 컴파일러가 막는다.
 
 **가짜 수정:** 예외를 잡고 넘어가면, 부대가 채워지지 않아 전투력이 모자랍니다.
 
@@ -244,8 +304,27 @@ public sealed class FriendRankingScreen(RankingService service)
         "이미 죽은 변수"로 보고, 호출한 쪽도 임시 객체(new Texture())를 붙잡고 있지 않다. 그래서 루프 도중 GC 가 Texture 를 수거하고,
         종료자가 블록을 풀에 돌려주고, 스트리밍이 그 블록을 받아 0xEE 로 칠한다
 ```
-**수정 (택1):**
-- 네이티브 자원을 쓰는 동안 소유자를 살려 둔다: 메서드 끝에 `GC.KeepAlive(this);`
+**수정:** 네이티브 자원을 쓰는 동안 소유자를 살려 둔다. `Blind/ChallengeB8.cs`의 `Texture.FillAndChecksum`을 아래로 바꾼다. 체크섬을 다 센 뒤 `GC.KeepAlive(this);`를 부르면, JIT는 그 줄까지 `this`를 살아 있는 것으로 본다. 특성(`[MethodImpl]`)과 나머지 코드는 그대로 둔다.
+```csharp
+        // 핫 경로라서 처음부터 최적화해서 컴파일한다
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        public uint FillAndChecksum(byte color, Action everyFewRows)
+        {
+            Span<byte> pixels = NativePool.Pixels(_block);
+            for (int row = 0; row < Rows; row++)
+            {
+                pixels.Slice(row * RowBytes, RowBytes).Fill(color);
+                if (row % 8 == 7)
+                    everyFewRows();
+            }
+            uint sum = 0;
+            foreach (byte b in pixels)
+                sum = sum * 31 + b;
+            GC.KeepAlive(this);   // 여기까지 this(블록의 주인)를 살려 둔다. 종료자가 블록을 먼저 돌려주지 못한다
+            return sum;
+        }
+```
+다른 방법:
 - 더 근본적으로는 종료자에 기대지 않는다. `IDisposable`로 만들어 `using var tex = new Texture();`처럼 명시적으로 반납한다. 네이티브 핸들은 `SafeHandle`로 감싼다 (랩 74)
 
 **범주:** 10부 unsafe와 네이티브 메모리 (`GC.KeepAlive`, 종료자와 네이티브 자원). Release에서만 나는 점은 랩 88과 같다
