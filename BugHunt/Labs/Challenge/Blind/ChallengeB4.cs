@@ -11,9 +11,9 @@ public static class ChallengeB4
         public bool Down { get; set; }
     }
 
-    sealed class Archer(int n) : Unit(Text.F("궁수{0}", n), 3);
-    sealed class Knight(int n) : Unit(Text.F("기사{0}", n), 5);
-    sealed class Healer(int n) : Unit(Text.F("치유사{0}", n), 2);
+    sealed class Archer(int n) : Unit(Text.L($"궁수{n}", $"弓兵{n}"), 3);
+    sealed class Knight(int n) : Unit(Text.L($"기사{n}", $"騎士{n}"), 5);
+    sealed class Healer(int n) : Unit(Text.L($"치유사{n}", $"治癒師{n}"), 2);
 
     static Unit[] Recruit(string kind, int size) => kind switch
     {
@@ -42,7 +42,7 @@ public static class ChallengeB4
 
         int expected = squad.Where(u => !u.Down).Sum(u => u.Power) + reserve.Take(squad.Count(u => u.Down)).Sum(u => u.Power);
         Refill(squad, reserve);
-        Console.WriteLine($"  부대: {string.Join(", ", squad.Select(u => u.Name))}");
-        Expect("부대 전투력", expected, squad.Where(u => !u.Down).Sum(u => u.Power));
+        Console.WriteLine(Text.L($"  부대: {string.Join(", ", squad.Select(u => u.Name))}", $"  部隊: {string.Join(", ", squad.Select(u => u.Name))}"));
+        Expect(Text.L("부대 전투력", "部隊の戦闘力"), expected, squad.Where(u => !u.Down).Sum(u => u.Power));
     }
 }

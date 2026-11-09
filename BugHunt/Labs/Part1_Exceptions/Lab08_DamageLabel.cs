@@ -9,7 +9,7 @@ public static partial class Lab08
         public int Amount { get; } = amount;
 
         // 금액 뒤에 " 피해"를 붙여 보여 준다.
-        public override string ToString() => $"{this} {Text.T("피해")}";
+        public override string ToString() => $"{this} {Text.L("피해", "ダメージ")}";
     }
 
     public static void Run()
@@ -19,11 +19,11 @@ public static partial class Lab08
 
         // 라벨은 스택이 작은(256KB) 화면 갱신 스레드에서 만든다. (스택이 작으면 넘칠 때 빨리 넘쳐 채점이 오래 걸리지 않는다)
         string text = "";
-        var ui = new Thread(() => text = label.ToString(), maxStackSize: 256 * 1024) { Name = Text.T("UI 갱신") };
+        var ui = new Thread(() => text = label.ToString(), maxStackSize: 256 * 1024) { Name = Text.L("UI 갱신", "UI 更新") };
         ui.Start();
         ui.Join();
-        Console.WriteLine($"  라벨: {text}");
-        Expect("피해 표시", $"{amount} {Text.T("피해")}", text);
+        Console.WriteLine(Text.L($"  라벨: {text}", $"  ラベル: {text}"));
+        Expect(Text.L("피해 표시", "ダメージ表示"), $"{amount} {Text.L("피해", "ダメージ")}", text);
     }
 }
 
@@ -41,22 +41,22 @@ public static partial class Lab08
 #endregion
 
 #region 힌트 2 / ヒント 2
-// $"{this} {Text.T("피해")}" 안의 {this} 는 this 를 문자열로 바꾸려고 this.ToString() 을 부릅니다. 그게 바로 지금 실행 중인 ToString 입니다.
+// $"{this} {Text.L("피해", "ダメージ")}" 안의 {this} 는 this 를 문자열로 바꾸려고 this.ToString() 을 부릅니다. 그게 바로 지금 실행 중인 ToString 입니다.
 // 그래서 ToString → ToString → ToString … 무한 재귀가 되고, 스택을 다 쓰면 StackOverflowException 으로 프로세스가 즉시 죽습니다.
 // 이 죽음은 try/catch 로 못 잡습니다. 그래서 [FAIL] 한 줄도 없이 사라집니다. (랩 5 와 비교하세요: 거기선 다른 원인으로 죽었습니다.)
 //
-// [JA] $"{this} {Text.T("피해")}" の中の {this} は this を文字列にするために this.ToString() を呼びます。それが今まさに実行中の ToString です。
+// [JA] $"{this} {Text.L("피해", "ダメージ")}" の中の {this} は this を文字列にするために this.ToString() を呼びます。それが今まさに実行中の ToString です。
 // [JA] だから ToString → ToString → ToString … の無限再帰になり、スタックを使い切ると StackOverflowException でプロセスが即死します。
 // [JA] この死は try/catch で捕まえられません。だから [FAIL] の一行もなく消えます。(ラボ 5 と比べてください: あちらは別の原因で死にました。)
 #endregion
 
 #region 힌트 3 / ヒント 3
 // ToString 안에서는 그 객체 자신을 문자열로 보간하지 마세요. 필요한 필드를 직접 쓰세요:
-//   public override string ToString() => $"{Amount} {Text.T("피해")}";
+//   public override string ToString() => $"{Amount} {Text.L("피해", "ダメージ")}";
 // 자기 참조가 필요하면 base.ToString() 이나 각 필드를 명시적으로 조합하세요. {this} 와 {this.SomeProp} 도 SomeProp 이 다시 this 를 쓰면 같은 함정입니다.
 //
 // [JA] ToString の中でそのオブジェクト自身を文字列補間しないでください。必要なフィールドを直接書いてください:
-// [JA]   public override string ToString() => $"{Amount} {Text.T("피해")}";
+// [JA]   public override string ToString() => $"{Amount} {Text.L("피해", "ダメージ")}";
 // [JA] 自己参照が必要なら base.ToString() や各フィールドを明示的に組み合わせてください。{this} や {this.SomeProp} も、SomeProp がまた this を使えば同じ罠です。
 #endregion
 

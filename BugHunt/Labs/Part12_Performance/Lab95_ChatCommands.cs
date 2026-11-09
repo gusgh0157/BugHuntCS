@@ -19,7 +19,7 @@ public static class Lab95
 
     public static void Run()
     {
-        string[] commands = ["/roll 20", Text.T("/roll ㅋㅋㅋ"), "/roll", "/roll 6", Text.T("/roll 백"), "/roll 1d6", "/roll 100"];
+        string[] commands = ["/roll 20", Text.L("/roll ㅋㅋㅋ", "/roll www"), "/roll", "/roll 6", Text.L("/roll 백", "/roll 百"), "/roll 1d6", "/roll 100"];
         int count = Pick(20_000, 10_000, 30_000);
         int offset = Pick(0, 0, commands.Length - 1);
         ParseRollMax("/roll x");   // 처음 한 번만 드는 비용 빼기
@@ -34,7 +34,7 @@ public static class Lab95
                 sum += ParseRollMax(commands[(i + offset) % commands.Length]);
         });
         AppDomain.CurrentDomain.FirstChanceException -= counter;
-        Console.WriteLine($"  명령 {count:N0}개 처리, 최댓값 합 {sum:N0}. 그동안 던져진 예외 {exceptions:N0}개, {ms}ms");
+        Console.WriteLine(Text.L($"  명령 {count:N0}개 처리, 최댓값 합 {sum:N0}. 그동안 던져진 예외 {exceptions:N0}개, {ms}ms", $"  コマンド {count:N0} 個を処理、最大値の合計 {sum:N0}。その間に投げられた例外 {exceptions:N0} 個、{ms}ms"));
 
         long expected = 0;
         for (int i = 0; i < count; i++)
@@ -42,8 +42,8 @@ public static class Lab95
             string c = commands[(i + offset) % commands.Length];
             expected += c.Length > 6 && c[6..].All(char.IsAsciiDigit) ? int.Parse(c[6..]) : 100;
         }
-        Expect("최댓값 합", expected, sum);
-        ExpectAtMost("처리 중 던져진 예외 수", 0, exceptions);
+        Expect(Text.L("최댓값 합", "最大値の合計"), expected, sum);
+        ExpectAtMost(Text.L("처리 중 던져진 예외 수", "処理中に投げられた例外の数"), 0, exceptions);
     }
 }
 

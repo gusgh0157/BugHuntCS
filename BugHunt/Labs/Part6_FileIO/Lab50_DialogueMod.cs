@@ -28,7 +28,7 @@ public static partial class Lab50
         return table;
     }
 
-    static string Lookup(Dictionary<string, string> table, string key) => table.TryGetValue(key, out string? s) ? s : Text.T("(없음)");
+    static string Lookup(Dictionary<string, string> table, string key) => table.TryGetValue(key, out string? s) ? s : Text.L("(없음)", "(なし)");
 
     public static void Run()
     {
@@ -53,12 +53,12 @@ public static partial class Lab50
             File.WriteAllText(modC, content, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
             string firstKey = lines[0].Key, lastKey = lines[^1].Key;
-            foreach ((string name, string path) in new[] { (Text.T("모드 A (UTF-8 BOM)"), modA), (Text.T("모드 B (CP949)"), modB), (Text.T("모드 C (UTF-8)"), modC) })
+            foreach ((string name, string path) in new[] { (Text.L("모드 A (UTF-8 BOM)", "MOD A (UTF-8 BOM)"), modA), (Text.L("모드 B (CP949)", "MOD B (CP949)"), modB), (Text.L("모드 C (UTF-8)", "MOD C (UTF-8)"), modC) })
             {
                 Dictionary<string, string> table = LoadDialogue(path);
                 Console.WriteLine($"  {name}: {firstKey} = {Lookup(table, firstKey)} / {lastKey} = {Lookup(table, lastKey)}");
-                Expect($"{name}의 첫 대사", lines[0].Line, Lookup(table, firstKey));
-                Expect($"{name}의 마지막 대사", lines[^1].Line, Lookup(table, lastKey));
+                Expect(Text.L($"{name}의 첫 대사", $"{name}の最初のセリフ"), lines[0].Line, Lookup(table, firstKey));
+                Expect(Text.L($"{name}의 마지막 대사", $"{name}の最後のセリフ"), lines[^1].Line, Lookup(table, lastKey));
             }
         }
         finally
@@ -114,10 +114,10 @@ public static partial class Lab50
 {
     static readonly (string Key, string Line)[][] Scripts =
     [
-        [("greet", Text.T("어서 오게, 모험가여.")), ("quest", Text.T("북쪽 숲의 늑대를 잡아 주게.")), ("bye", Text.T("조심해서 가게."))],
-        [("hello", Text.T("길드에 온 걸 환영하네.")), ("rank", Text.T("자네 등급은 아직 청동이군.")), ("farewell", Text.T("다음 의뢰도 부탁하네."))],
-        [("open", Text.T("물건 보고 가세요!")), ("sale", Text.T("오늘만 물약 반값이에요.")), ("close", Text.T("또 오세요."))],
-        [("intro", Text.T("이 탑은 백 층이다.")), ("warn", Text.T("위로 갈수록 몬스터가 강해진다.")), ("hint", Text.T("열쇠는 오십 층에 있다.")), ("end", Text.T("행운을 빈다."))],
+        [("greet", Text.L("어서 오게, 모험가여.", "ようこそ、旅の者よ。")), ("quest", Text.L("북쪽 숲의 늑대를 잡아 주게.", "北の森のオオカミを狩ってくれ。")), ("bye", Text.L("조심해서 가게.", "道中、無事でな。"))],
+        [("hello", Text.L("길드에 온 걸 환영하네.", "ギルドへようこそ。")), ("rank", Text.L("자네 등급은 아직 청동이군.", "きみのランクはまだブロンズだな。")), ("farewell", Text.L("다음 의뢰도 부탁하네.", "次の仕事もたのむよ。"))],
+        [("open", Text.L("물건 보고 가세요!", "見ていってください!")), ("sale", Text.L("오늘만 물약 반값이에요.", "今日だけ品物が半額です。")), ("close", Text.L("또 오세요.", "またどうぞ。"))],
+        [("intro", Text.L("이 탑은 백 층이다.", "この塔は百階だ。")), ("warn", Text.L("위로 갈수록 몬스터가 강해진다.", "上の階ほど魔物は手ごわい。")), ("hint", Text.L("열쇠는 오십 층에 있다.", "鍵は五十階にある。")), ("end", Text.L("행운을 빈다.", "幸運を祈る。"))],
     ];
 }
 #endregion

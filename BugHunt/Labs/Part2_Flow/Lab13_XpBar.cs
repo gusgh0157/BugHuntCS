@@ -16,7 +16,7 @@ public static class Lab13
             {
                 Level++;
                 XpBar = 0f;
-                Console.WriteLine($"  레벨 업! Lv.{Level}");
+                Console.WriteLine(Text.L($"  레벨 업! Lv.{Level}", $"  レベルアップ! Lv.{Level}"));
             }
         }
     }
@@ -27,10 +27,10 @@ public static class Lab13
         for (int kill = 1; kill <= 10; kill++)
         {
             hero.GainXp(0.1f);
-            Console.WriteLine($"  처치 {kill,2}: 경험치 {hero.XpBar:P0}");
+            Console.WriteLine(Text.L($"  처치 {kill,2}: 경험치 {hero.XpBar:P0}", $"  撃破 {kill,2}: 経験値 {hero.XpBar:P0}"));
         }
 
-        Expect("슬라임 10마리 처치 후 레벨", 2, hero.Level);
+        Expect(Text.L("슬라임 10마리 처치 후 레벨", "スライム 10 匹撃破後のレベル"), 2, hero.Level);
     }
 }
 

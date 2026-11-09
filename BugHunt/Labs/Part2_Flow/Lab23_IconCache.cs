@@ -36,11 +36,11 @@ public static class Lab23
 
         var loader = new IconLoader();
         string drawn = string.Join(" ", bag.Select(loader.Get));
-        Console.WriteLine($"  그린 아이콘: {drawn}");
-        Console.WriteLine($"  디스크 읽기: {loader.DiskReads}번 (아이템 {bag.Length}칸, 종류 {bag.Distinct().Count()}개)");
+        Console.WriteLine(Text.L($"  그린 아이콘: {drawn}", $"  描いたアイコン: {drawn}"));
+        Console.WriteLine(Text.L($"  디스크 읽기: {loader.DiskReads}번 (아이템 {bag.Length}칸, 종류 {bag.Distinct().Count()}개)", $"  ディスク読み込み: {loader.DiskReads} 回 (アイテム {bag.Length} 枠、種類 {bag.Distinct().Count()} 個)"));
 
-        Expect("그린 아이콘", string.Join(" ", bag.Select(id => $"[{id}.png]")), drawn);
-        Expect("디스크 읽기 횟수 (종류마다 한 번)", bag.Distinct().Count(), loader.DiskReads);
+        Expect(Text.L("그린 아이콘", "描いたアイコン"), string.Join(" ", bag.Select(id => $"[{id}.png]")), drawn);
+        Expect(Text.L("디스크 읽기 횟수 (종류마다 한 번)", "ディスク読み込み回数 (種類ごとに 1 回)"), bag.Distinct().Count(), loader.DiskReads);
     }
 }
 

@@ -30,9 +30,9 @@ public static class Lab25
 
         int damage = Pick(30, 5, 120);
         AreaAttack(party, damage);
-        Console.WriteLine($"  광역 공격 {damage}: {string.Join(", ", party.Select(m => $"{m.Name} {m.Hp}"))}");
+        Console.WriteLine(Text.L($"  광역 공격 {damage}: {string.Join(", ", party.Select(m => $"{m.Name} {m.Hp}"))}", $"  範囲攻撃 {damage}: {string.Join(", ", party.Select(m => $"{m.Name} {m.Hp}"))}"));
 
-        Expect("공격 뒤 파티 HP", string.Join(", ", before.Select(hp => Math.Max(0, hp - damage))), string.Join(", ", party.Select(m => m.Hp)));
+        Expect(Text.L("공격 뒤 파티 HP", "攻撃後のパーティー HP"), string.Join(", ", before.Select(hp => Math.Max(0, hp - damage))), string.Join(", ", party.Select(m => m.Hp)));
     }
 }
 

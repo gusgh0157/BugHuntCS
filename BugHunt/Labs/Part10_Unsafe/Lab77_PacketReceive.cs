@@ -37,7 +37,7 @@ public static class Lab77
         for (int i = 0; i < buffer.Length - 1; i++)
             sum += buffer[i];
         if (sum != buffer[^1])
-            throw new InvalidDataException(Text.F("패킷 {0} 체크섬 불일치", packetId));
+            throw new InvalidDataException(Text.L($"패킷 {packetId} 체크섬 불일치", $"パケット {packetId} チェックサム不一致"));
 
         handle.Free();
         return buffer;
@@ -56,7 +56,7 @@ public static class Lab77
             }
             catch (InvalidDataException ex)
             {
-                Console.WriteLine($"  손상된 패킷 버림: {ex.Message}");
+                Console.WriteLine(Text.L($"  손상된 패킷 버림: {ex.Message}", $"  破損したパケットを破棄: {ex.Message}"));
             }
         }
         return ok;
@@ -68,17 +68,17 @@ public static class Lab77
         HashSet<int> corrupt = Seed == 0 ? [3, 7] : [.. Enumerable.Range(1, count).Where(_ => Pick(0, 0, 3) == 0), count];
 
         int ok = ReceiveAll(count, corrupt);
-        Console.WriteLine($"  패킷 {count}개 중 {ok}개 처리");
+        Console.WriteLine(Text.L($"  패킷 {count}개 중 {ok}개 처리", $"  パケット {count} 個中 {ok} 個を処理"));
 
         // 처리가 끝난 패킷 버퍼는 이제 아무도 쓰지 않는다. GC 를 돌리면 전부 수거되어야 한다.
         GC.Collect();
         GC.WaitForPendingFinalizers();
         GC.Collect();
         int alive = Tracked.Count(w => w.IsAlive);
-        Console.WriteLine($"  GC 뒤에도 살아 있는 패킷 버퍼: {alive}개, 고정된 객체: {GC.GetGCMemoryInfo().PinnedObjectsCount}개");
+        Console.WriteLine(Text.L($"  GC 뒤에도 살아 있는 패킷 버퍼: {alive}개, 고정된 객체: {GC.GetGCMemoryInfo().PinnedObjectsCount}개", $"  GC 後も生きているパケット バッファ: {alive} 個、固定されたオブジェクト: {GC.GetGCMemoryInfo().PinnedObjectsCount} 個"));
 
-        Expect("처리한 패킷 수", count - corrupt.Count, ok);
-        Expect("GC 뒤에 살아 있는 패킷 버퍼", 0, alive);
+        Expect(Text.L("처리한 패킷 수", "処理したパケット数"), count - corrupt.Count, ok);
+        Expect(Text.L("GC 뒤에 살아 있는 패킷 버퍼", "GC 後に生きているパケット バッファ"), 0, alive);
     }
 }
 

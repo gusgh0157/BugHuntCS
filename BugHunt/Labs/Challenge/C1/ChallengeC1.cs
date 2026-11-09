@@ -7,13 +7,13 @@ public static class ChallengeC1
     public static void Run()
     {
         string[] party = ["Kael", "Mira", "Doran", "Yuna"];
-        string[] loot = [Text.T("전설 망토"), Text.T("용의 비늘"), Text.T("고대 금화"), Text.T("회복 물약"), Text.T("마나 결정"), Text.T("흑요석 반지")];
+        string[] loot = [Text.L("전설 망토", "伝説のマント"), Text.L("용의 비늘", "竜のうろこ"), Text.L("고대 금화", "古代の金貨"), Text.L("회복 물약", "回復ポーション"), Text.L("마나 결정", "マナの結晶"), Text.L("흑요석 반지", "黒曜石の指輪")];
 
         // 드롭 목록: 기본 케이스는 화면에 보이는 그대로. 숨은 케이스는 무작위(같은 사람에게 같은 아이템이 두 번 떨어지기도 한다)
         var drops = new List<(string Member, string Item)>
         {
-            ("Kael", Text.T("전설 망토")), ("Mira", Text.T("용의 비늘")), ("Doran", Text.T("고대 금화")),
-            ("Yuna", Text.T("회복 물약")), ("Mira", Text.T("마나 결정")), ("Kael", Text.T("흑요석 반지")),
+            ("Kael", Text.L("전설 망토", "伝説のマント")), ("Mira", Text.L("용의 비늘", "竜のうろこ")), ("Doran", Text.L("고대 금화", "古代の金貨")),
+            ("Yuna", Text.L("회복 물약", "回復ポーション")), ("Mira", Text.L("마나 결정", "マナの結晶")), ("Kael", Text.L("흑요석 반지", "黒曜石の指輪")),
         };
         if (Seed != 0)
         {
@@ -44,16 +44,16 @@ public static class ChallengeC1
             server.Tick();
         }
 
-        Console.WriteLine($"  보낸 패킷 {link.PacketsSent}개 (재전송 {server.Resends}개), 받은 패킷 {inbox.Received}개, 중복으로 버림 {inbox.Duplicates}개");
+        Console.WriteLine(Text.L($"  보낸 패킷 {link.PacketsSent}개 (재전송 {server.Resends}개), 받은 패킷 {inbox.Received}개, 중복으로 버림 {inbox.Duplicates}개", $"  送信したパケット {link.PacketsSent} 個 (再送 {server.Resends} 個)、受信したパケット {inbox.Received} 個、重複として破棄 {inbox.Duplicates} 個"));
         foreach (string member in party)
-            Console.WriteLine($"  {member,-6} 가방: {string.Join(", ", view.LinesOf(member))}");
+            Console.WriteLine(Text.L($"  {member,-6} 가방: {string.Join(", ", view.LinesOf(member))}", $"  {member,-6} バッグ: {string.Join(", ", view.LinesOf(member))}"));
 
         foreach (string member in party)
         {
             string expected = string.Join(", ", drops.Where(d => d.Member == member).Select(d => d.Item).Order());
             string actual = string.Join(", ", view.LinesOf(member).Order());
-            Expect($"{member}의 보상", expected, actual);
+            Expect(Text.L($"{member}의 보상", $"{member} の報酬"), expected, actual);
         }
-        Expect("ack 를 못 받은 패킷", 0, server.Unacked);
+        Expect(Text.L("ack 를 못 받은 패킷", "ack を受け取れなかったパケット"), 0, server.Unacked);
     }
 }

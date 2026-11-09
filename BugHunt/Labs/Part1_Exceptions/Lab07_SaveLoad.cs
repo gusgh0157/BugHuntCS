@@ -36,7 +36,7 @@ public static class Lab07
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"  슬롯 {index + 1} 손상: {ex.GetType().Name}");
+            Console.WriteLine(Text.L($"  슬롯 {index + 1} 손상: {ex.GetType().Name}", $"  スロット {index + 1} 破損: {ex.GetType().Name}"));
             throw ex;
         }
     }
@@ -59,12 +59,12 @@ public static class Lab07
         }
 
         foreach (SaveData save in loaded)
-            Console.WriteLine($"  Lv.{save.Level} {save.Name} - 아이템 {save.Items.Count}종");
+            Console.WriteLine(Text.L($"  Lv.{save.Level} {save.Name} - 아이템 {save.Items.Count}종", $"  Lv.{save.Level} {save.Name} - アイテム {save.Items.Count} 種類"));
         foreach (string report in crashReports)
-            Console.WriteLine($"  --- 크래시 리포트 ---\n{report}\n  -------------------");
+            Console.WriteLine(Text.L($"  --- 크래시 리포트 ---\n{report}\n  -------------------", $"  --- クラッシュレポート ---\n{report}\n  -------------------"));
 
-        Expect("불러온 슬롯 (Kael, Doran)", 2, loaded.Count);
-        Expect("크래시 리포트가 실제로 실패한 함수(ParseItem)를 가리킨다", true,
+        Expect(Text.L("불러온 슬롯 (Kael, Doran)", "読み込んだスロット (Kael, Doran)"), 2, loaded.Count);
+        Expect(Text.L("크래시 리포트가 실제로 실패한 함수(ParseItem)를 가리킨다", "クラッシュレポートが実際に失敗した関数(ParseItem)を指している"), true,
                crashReports.Count == 1 && crashReports[0].Contains(nameof(ParseItem)));
     }
 }

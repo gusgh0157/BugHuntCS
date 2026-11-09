@@ -17,7 +17,7 @@ public static class Lab90
     public static void Run()
     {
         string[] senders = ["Kael", "Mira", "Doran", "Lia"];
-        string[] texts = [Text.T("ㅎㅇ"), Text.T("보스 가자"), Text.T("포션 있음?"), Text.T("2시 방향 집결"), Text.T("ㄱㄱ"), Text.T("수고하셨습니다")];
+        string[] texts = [Text.L("ㅎㅇ", "ちわ"), Text.L("보스 가자", "ボス行こう"), Text.L("포션 있음?", "ポーションある?"), Text.L("2시 방향 집결", "2時の方向に集合"), Text.L("ㄱㄱ", "いこいこ"), Text.L("수고하셨습니다", "お疲れさまでした")];
         int count = Pick(3_000, 2_000, 5_000);
         var lines = new List<ChatLine>();
         for (int i = 0; i < count; i++)
@@ -28,11 +28,11 @@ public static class Lab90
         string exported = "";
         (long bytes, long ms) = Measure(() => exported = Export(lines));
         long resultBytes = exported.Length * 2L;
-        Console.WriteLine($"  {count}줄 → {exported.Length:N0}글자. 할당 {bytes:N0}바이트 (결과 문자열의 {bytes / resultBytes}배), {ms}ms");
+        Console.WriteLine(Text.L($"  {count}줄 → {exported.Length:N0}글자. 할당 {bytes:N0}바이트 (결과 문자열의 {bytes / resultBytes}배), {ms}ms", $"  {count} 行 → {exported.Length:N0} 文字。割り当て {bytes:N0} バイト (結果の文字列の {bytes / resultBytes} 倍)、{ms}ms"));
 
-        Expect("내보낸 줄 수", count, exported.Count(c => c == '\n'));
-        Expect("마지막 줄", $"[{lines[^1].Minute / 60:00}:{lines[^1].Minute % 60:00}] {lines[^1].Sender}: {lines[^1].Text}", exported.TrimEnd('\n').Split('\n')[^1]);
-        ExpectAtMost("할당 / 결과 문자열 크기 (배)", 8, bytes / resultBytes);
+        Expect(Text.L("내보낸 줄 수", "書き出した行数"), count, exported.Count(c => c == '\n'));
+        Expect(Text.L("마지막 줄", "最後の行"), $"[{lines[^1].Minute / 60:00}:{lines[^1].Minute % 60:00}] {lines[^1].Sender}: {lines[^1].Text}", exported.TrimEnd('\n').Split('\n')[^1]);
+        ExpectAtMost(Text.L("할당 / 결과 문자열 크기 (배)", "割り当て / 結果の文字列のサイズ (倍)"), 8, bytes / resultBytes);
     }
 }
 

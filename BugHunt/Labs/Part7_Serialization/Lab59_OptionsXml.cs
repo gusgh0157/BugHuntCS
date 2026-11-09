@@ -28,7 +28,7 @@ public static partial class Lab59
     {
         var serializer = new XmlSerializer(typeof(GameOptions));
         using var reader = new StringReader(xml);
-        return (GameOptions)(serializer.Deserialize(reader) ?? throw new FormatException(Text.T("빈 옵션")));
+        return (GameOptions)(serializer.Deserialize(reader) ?? throw new FormatException(Text.L("빈 옵션", "空のオプション")));
     }
 
     public static void Run()
@@ -43,15 +43,15 @@ public static partial class Lab59
             options.KeyBindings[action] = key;
 
         string xml = Save(options);
-        Console.WriteLine($"  저장한 옵션 XML: {xml.Length}자");
+        Console.WriteLine(Text.L($"  저장한 옵션 XML: {xml.Length}자", $"  保存したオプション XML: {xml.Length}文字"));
 
         GameOptions loaded = Load(xml);
-        Console.WriteLine($"  불러온 옵션: 볼륨 {loaded.Volume}, {loaded.Graphics.Width}x{loaded.Graphics.Height}, 키 {loaded.KeyBindings.Count}개");
+        Console.WriteLine(Text.L($"  불러온 옵션: 볼륨 {loaded.Volume}, {loaded.Graphics.Width}x{loaded.Graphics.Height}, 키 {loaded.KeyBindings.Count}개", $"  ロードしたオプション: 音量 {loaded.Volume}、{loaded.Graphics.Width}x{loaded.Graphics.Height}、キー {loaded.KeyBindings.Count}個"));
 
-        Expect("볼륨", options.Volume, loaded.Volume);
-        Expect("해상도", $"{options.Graphics.Width}x{options.Graphics.Height}", $"{loaded.Graphics.Width}x{loaded.Graphics.Height}");
-        Expect("전체 화면", options.Graphics.Fullscreen, loaded.Graphics.Fullscreen);
-        Expect("키 설정", string.Join(",", options.KeyBindings.OrderBy(p => p.Key, StringComparer.Ordinal)), string.Join(",", loaded.KeyBindings.OrderBy(p => p.Key, StringComparer.Ordinal)));
+        Expect(Text.L("볼륨", "音量"), options.Volume, loaded.Volume);
+        Expect(Text.L("해상도", "解像度"), $"{options.Graphics.Width}x{options.Graphics.Height}", $"{loaded.Graphics.Width}x{loaded.Graphics.Height}");
+        Expect(Text.L("전체 화면", "フルスクリーン"), options.Graphics.Fullscreen, loaded.Graphics.Fullscreen);
+        Expect(Text.L("키 설정", "キー設定"), string.Join(",", options.KeyBindings.OrderBy(p => p.Key, StringComparer.Ordinal)), string.Join(",", loaded.KeyBindings.OrderBy(p => p.Key, StringComparer.Ordinal)));
     }
 }
 

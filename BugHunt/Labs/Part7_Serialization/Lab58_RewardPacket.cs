@@ -41,17 +41,17 @@ public static partial class Lab58
             if (p == null)
             {
                 rejected++;
-                Console.WriteLine($"  거절: {json}");
+                Console.WriteLine(Text.L($"  거절: {json}", $"  拒否: {json}"));
                 continue;
             }
             bag.Add($"{p.Item ?? "(null)"} x{p.Count}");
-            Console.WriteLine($"  받음: {json} → {bag[^1]}");
+            Console.WriteLine(Text.L($"  받음: {json} → {bag[^1]}", $"  受信: {json} → {bag[^1]}"));
         }
 
         int invalid = packets.Count(p => !p.Valid);
-        Expect("거절한 패킷 수", invalid, rejected);
-        Expect("가방에 들어온 보상 수", packets.Length - invalid, bag.Count);
-        Expect("수량 0 이나 이름 없는 보상이 들어오지 않음", false, bag.Any(b => b.EndsWith(" x0") || b.StartsWith("(null)") || b.StartsWith(" x")));
+        Expect(Text.L("거절한 패킷 수", "拒否したパケット数"), invalid, rejected);
+        Expect(Text.L("가방에 들어온 보상 수", "バッグに入った報酬の数"), packets.Length - invalid, bag.Count);
+        Expect(Text.L("수량 0 이나 이름 없는 보상이 들어오지 않음", "数量 0 や名前のない報酬が入ってこない"), false, bag.Any(b => b.EndsWith(" x0") || b.StartsWith("(null)") || b.StartsWith(" x")));
     }
 }
 
@@ -100,28 +100,28 @@ public static partial class Lab58
     static readonly (string, bool)[][] Batches =
     [
         [
-            ($$"""{"item":"{{Text.T("회복 물약")}}","count":3}""", true),
-            ($$"""{"item":"{{Text.T("마나 물약")}}"}""", false),
-            ($$"""{"item":"{{Text.T("화살")}}","count":null}""", false),
-            ($$"""{"item":"{{Text.T("철광석")}}","count":12}""", true),
+            ($$"""{"item":"{{Text.L("회복 물약", "回復ポーション")}}","count":3}""", true),
+            ($$"""{"item":"{{Text.L("마나 물약", "マナポーション")}}"}""", false),
+            ($$"""{"item":"{{Text.L("화살", "矢")}}","count":null}""", false),
+            ($$"""{"item":"{{Text.L("철광석", "鉄鉱石")}}","count":12}""", true),
         ],
         [
-            ($$"""{"item":"{{Text.T("용의 비늘")}}","count":1}""", true),
+            ($$"""{"item":"{{Text.L("용의 비늘", "竜のうろこ")}}","count":1}""", true),
             ("""{"item":null,"count":5}""", false),
             ("""{"count":2}""", false),
-            ($$"""{"item":"{{Text.T("빵")}}"}""", false),
+            ($$"""{"item":"{{Text.L("빵", "パン")}}"}""", false),
         ],
         [
-            ($$"""{"item":"{{Text.T("화살")}}","count":99}""", true),
+            ($$"""{"item":"{{Text.L("화살", "矢")}}","count":99}""", true),
             ("""{"count":7}""", false),
-            ($$"""{"item":"{{Text.T("마나 물약")}}","count":4}""", true),
+            ($$"""{"item":"{{Text.L("마나 물약", "マナポーション")}}","count":4}""", true),
         ],
         [
             ("""{"item":null,"count":1}""", false),
-            ($$"""{"item":"{{Text.T("회복 물약")}}","count":2}""", true),
-            ($$"""{"item":"{{Text.T("철광석")}}","count":null}""", false),
-            ($$"""{"item":"{{Text.T("빵")}}","count":6}""", true),
-            ($$"""{"item":"{{Text.T("영웅의 증표")}}"}""", false),
+            ($$"""{"item":"{{Text.L("회복 물약", "回復ポーション")}}","count":2}""", true),
+            ($$"""{"item":"{{Text.L("철광석", "鉄鉱石")}}","count":null}""", false),
+            ($$"""{"item":"{{Text.L("빵", "パン")}}","count":6}""", true),
+            ($$"""{"item":"{{Text.L("영웅의 증표", "英雄の証")}}"}""", false),
         ],
     ];
 }

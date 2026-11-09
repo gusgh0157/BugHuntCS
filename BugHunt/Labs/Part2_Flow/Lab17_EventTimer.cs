@@ -24,18 +24,18 @@ public static class Lab17
         TimeZoneInfo seoul = TimeZoneInfo.FindSystemTimeZoneById("Korea Standard Time");
 
         // 서버 기준(UTC) 11월 3일 15:00 에 끝난다. 서울로는 11월 4일 자정.
-        var halloween = new LimitedEvent(Text.T("할로윈 사냥"), new DateTime(2026, 11, 3, 15, 0, 0, DateTimeKind.Utc));
+        var halloween = new LimitedEvent(Text.L("할로윈 사냥", "ハロウィン狩り"), new DateTime(2026, 11, 3, 15, 0, 0, DateTimeKind.Utc));
 
         // 지금은 UTC 12:00, 서울로는 밤 9시.
         var clock = new PlayerClock(new DateTime(2026, 11, 3, 12, 0, 0, DateTimeKind.Utc), seoul);
 
         TimeSpan remaining = halloween.Remaining(clock);
-        Console.WriteLine($"  지금 {clock.Now:yyyy-MM-dd HH:mm} (서울)");
+        Console.WriteLine(Text.L($"  지금 {clock.Now:yyyy-MM-dd HH:mm} (서울)", $"  現在 {clock.Now:yyyy-MM-dd HH:mm} (ソウル)"));
         Console.WriteLine(remaining > TimeSpan.Zero
-            ? $"  {halloween.Name}: {remaining.TotalHours:0}시간 남음"
-            : $"  {halloween.Name}: 이미 끝남 ({remaining.TotalHours:0}시간)");
+            ? Text.L($"  {halloween.Name}: {remaining.TotalHours:0}시간 남음", $"  {halloween.Name}: 残り {remaining.TotalHours:0} 時間")
+            : Text.L($"  {halloween.Name}: 이미 끝남 ({remaining.TotalHours:0}시간)", $"  {halloween.Name}: すでに終了 ({remaining.TotalHours:0} 時間)"));
 
-        Expect("남은 시간 (시간)", 3.0, remaining.TotalHours);
+        Expect(Text.L("남은 시간 (시간)", "残り時間 (時間)"), 3.0, remaining.TotalHours);
     }
 }
 

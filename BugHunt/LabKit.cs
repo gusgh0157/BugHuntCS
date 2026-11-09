@@ -5,6 +5,7 @@ namespace BugHunt;
 
 // 각 랩은 "기대값 vs 실제값"을 출력한다.
 // [FAIL]이 나오거나 프로그램이 멈추면, 그때부터 버그 추적 시작.
+// what, message, reason 은 이미 고른 언어의 문구다 (랩에서 Text.L("…", "…") 로 넘긴다).
 public static class LabKit
 {
     public static int PassCount { get; private set; }
@@ -14,7 +15,7 @@ public static class LabKit
     {
         bool ok = EqualityComparer<T>.Default.Equals(expected, actual);
         if (ok) PassCount++; else FailCount++;
-        Text.WriteLineRaw("  " + (ok ? "[PASS] " : "[FAIL] ") + Text.F("{0}  (기대: {1}, 실제: {2})", Text.T(what), Show(expected), Show(actual)));
+        Console.WriteLine("  " + (ok ? "[PASS] " : "[FAIL] ") + Text.L($"{what}  (기대: {Show(expected)}, 실제: {Show(actual)})", $"{what}  (期待: {Show(expected)}, 実際: {Show(actual)})"));
         return ok;
     }
 
@@ -23,7 +24,7 @@ public static class LabKit
     {
         bool ok = actual <= limit;
         if (ok) PassCount++; else FailCount++;
-        Text.WriteLineRaw("  " + (ok ? "[PASS] " : "[FAIL] ") + Text.F("{0}  (기대: {1} 이하, 실제: {2})", Text.T(what), limit, actual));
+        Console.WriteLine("  " + (ok ? "[PASS] " : "[FAIL] ") + Text.L($"{what}  (기대: {Show(limit)} 이하, 실제: {Show(actual)})", $"{what}  (期待: {Show(limit)} 以下, 実際: {Show(actual)})"));
         return ok;
     }
 
@@ -59,34 +60,34 @@ public static class LabKit
     // 디버거가 붙어 있으면 실패로 끝내지 않고 계속 기다린다. 그때 디버그 → 모두 중단으로 멈춘 곳을 보면 된다.
     public static bool FinishesWithin(string what, Action body, int timeoutMs = 2000)
     {
-        var worker = new Thread(() => body()) { IsBackground = true, Name = Text.F("랩 본문 ({0})", what), Priority = ThreadPriority.Highest };
+        var worker = new Thread(() => body()) { IsBackground = true, Name = Text.L($"랩 본문 ({what})", $"ラボ本体 ({what})"), Priority = ThreadPriority.Highest };
         worker.Start();
         if (worker.Join(timeoutMs))
             return true;
 
         if (Debugger.IsAttached && !IsGrading)
         {
-            Text.WriteLineRaw("  >> " + Text.F("{0}: {1} ms가 지나도 안 끝난다. 지금 디버그 → 모두 중단(Ctrl+Alt+Break)을 눌러 보세요.", Text.T(what), timeoutMs));
+            Console.WriteLine("  >> " + Text.L($"{what}: {timeoutMs} ms가 지나도 안 끝난다. 지금 디버그 → 모두 중단(Ctrl+Alt+Break)을 눌러 보세요.", $"{what}: {timeoutMs} ms たっても終わりません。今 デバッグ → すべて中断(Ctrl+Alt+Break)を押してみてください。"));
             worker.Join();
             return true;
         }
 
         FailCount++;
-        Text.WriteLineRaw("  " + Text.F("[FAIL] 응답 없음 ({0} ms 초과): {1}", timeoutMs, Text.T(what)));
-        PauseForTools(Text.F("멈춘 스레드는 아직 그대로입니다. 다른 터미널에서 dotnet-stack report -p {0} 로 스택을 보거나, VS에서 디버그 → 프로세스에 연결 → 모두 중단 해 보세요.", Environment.ProcessId));
+        Console.WriteLine("  " + Text.L($"[FAIL] 응답 없음 ({timeoutMs} ms 초과): {what}", $"[FAIL] 応答なし ({timeoutMs} ms 超過): {what}"));
+        PauseForTools(Text.L($"멈춘 스레드는 아직 그대로입니다. 다른 터미널에서 dotnet-stack report -p {Environment.ProcessId} 로 스택을 보거나, VS에서 디버그 → 프로세스에 연결 → 모두 중단 해 보세요.", $"止まったスレッドはまだそのままです。別のターミナルで dotnet-stack report -p {Environment.ProcessId} でスタックを見るか、VS で デバッグ → プロセスにアタッチ → すべて中断 をしてみてください。"));
         return false;
     }
 
     // 이 환경에서는 판정할 수 없는 랩. 채점기는 SKIP으로 센다.
-    public static void Skip(string reason) => Text.WriteLineRaw("  [SKIP] " + Text.T(reason));
+    public static void Skip(string reason) => Console.WriteLine("  [SKIP] " + reason);
 
     // 사람이 실행할 때만 잠깐 멈춰서, 그동안 진단 도구(스냅샷, dotnet-dump 등)를 쓸 수 있게 한다.
     public static void PauseForTools(string message)
     {
         if (IsGrading || Console.IsInputRedirected)
             return;
-        Text.WriteLineRaw("  >> " + Text.T(message));
-        Text.WriteRaw("  >> " + Text.F("(PID {0}) 계속하려면 Enter:", Environment.ProcessId) + " ");
+        Console.WriteLine("  >> " + message);
+        Console.Write("  >> " + Text.L($"(PID {Environment.ProcessId}) 계속하려면 Enter:", $"(PID {Environment.ProcessId}) 続けるには Enter:") + " ");
         Console.ReadLine();
     }
 

@@ -32,7 +32,7 @@ public static class Lab67
     {
         Profile profile = await FetchProfileAsync().ConfigureAwait(false);
         hud.SetGold(profile.Gold);
-        Console.WriteLine($"  HUD 갱신: {profile.Name} {profile.Gold}G");
+        Console.WriteLine(Text.L($"  HUD 갱신: {profile.Name} {profile.Gold}G", $"  HUD 更新: {profile.Name} {profile.Gold}G"));
     }
 
     public static void Run()
@@ -42,9 +42,9 @@ public static class Lab67
 
         bool finished = main.Run(() => RefreshHudAsync(hud)).Wait(TimeSpan.FromSeconds(10));
 
-        Expect("HUD 갱신 완료", true, finished);
-        Expect("골드 표시", 1500, hud.Gold);
-        Expect("메인 스레드가 아닌 곳에서 HUD 를 만진 횟수", 0, hud.WrongThreadUpdates);
+        Expect(Text.L("HUD 갱신 완료", "HUD 更新完了"), true, finished);
+        Expect(Text.L("골드 표시", "ゴールド表示"), 1500, hud.Gold);
+        Expect(Text.L("메인 스레드가 아닌 곳에서 HUD 를 만진 횟수", "メインスレッド以外で HUD を触った回数"), 0, hud.WrongThreadUpdates);
     }
 }
 

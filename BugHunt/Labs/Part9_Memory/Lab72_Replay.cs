@@ -12,7 +12,7 @@ public static class Lab72
         var writer = new StreamWriter(path);
         foreach (string frame in frames)
             writer.WriteLine(frame);
-        Console.WriteLine($"  리플레이 저장: {path}");
+        Console.WriteLine(Text.L($"  리플레이 저장: {path}", $"  リプレイ保存: {path}"));
     }
 
     // 리플레이 뷰어. 게임이 파일을 쓰는 중이어도 읽을 수 있게 FileShare.ReadWrite 로 연다.
@@ -34,9 +34,9 @@ public static class Lab72
 
         SaveReplay(ReplayPath, frames);
         int read = CountFrames(ReplayPath);
-        Console.WriteLine($"  뷰어가 읽은 프레임: {read}");
+        Console.WriteLine(Text.L($"  뷰어가 읽은 프레임: {read}", $"  ビューアーが読んだフレーム: {read}"));
 
-        Expect("리플레이 프레임 수", frames.Length, read);
+        Expect(Text.L("리플레이 프레임 수", "リプレイのフレーム数"), frames.Length, read);
     }
 }
 

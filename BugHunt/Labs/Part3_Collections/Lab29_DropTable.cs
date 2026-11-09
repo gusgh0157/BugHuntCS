@@ -12,7 +12,7 @@ public static class Lab29
         {
             string[] parts = line.Split('=');
             if (parts.Length != 2 || !int.TryParse(parts[1], out int weight))
-                throw new FormatException(Text.F("드롭 테이블 줄이 이상하다: \"{0}\"", line));
+                throw new FormatException(Text.L($"드롭 테이블 줄이 이상하다: \"{line}\"", $"ドロップテーブルの行がおかしい: \"{line}\""));
             yield return new Drop(parts[0].Trim(), weight);
         }
     }
@@ -27,7 +27,7 @@ public static class Lab29
         }
         catch (FormatException ex)
         {
-            Console.WriteLine($"  고장 난 드롭 테이블, 기본 테이블 사용: {ex.Message}");
+            Console.WriteLine(Text.L($"  고장 난 드롭 테이블, 기본 테이블 사용: {ex.Message}", $"  壊れたドロップテーブル、既定のテーブルを使用: {ex.Message}"));
             return DefaultTable;
         }
     }
@@ -41,16 +41,16 @@ public static class Lab29
         var tables = new List<IEnumerable<Drop>>();
         foreach (string file in files)
             tables.Add(LoadDropTable(file));
-        Console.WriteLine($"  드롭 테이블 {tables.Count}개 읽음");
+        Console.WriteLine(Text.L($"  드롭 테이블 {tables.Count}개 읽음", $"  ドロップテーブルを {tables.Count} 個読み込み"));
 
         // 몬스터를 잡을 때마다 테이블을 본다.
         int totalWeight = 0;
         foreach (IEnumerable<Drop> table in tables)
             totalWeight += table.Sum(d => d.Weight);
-        Console.WriteLine($"  전체 가중치 합: {totalWeight}");
+        Console.WriteLine(Text.L($"  전체 가중치 합: {totalWeight}", $"  全体の重みの合計: {totalWeight}"));
 
         int expected = files.Sum(f => f == broken ? 1 : f.Split('\n').Sum(l => int.Parse(l.Split('=')[1])));
-        Expect("전체 가중치 합 (고장 난 파일은 기본 테이블 1)", expected, totalWeight);
+        Expect(Text.L("전체 가중치 합 (고장 난 파일은 기본 테이블 1)", "全体の重みの合計 (壊れたファイルは既定のテーブル 1)"), expected, totalWeight);
     }
 }
 

@@ -44,14 +44,14 @@ public static class ChallengeB3
         Cell.Comparisons = 0;
         int reached = 0;
         (_, long ms) = Measure(() => reached = Flood(size, Wall));
-        Console.WriteLine($"  {size}x{size} 맵, 도달한 칸 {reached:N0}개, 비교 {Cell.Comparisons:N0}번, {ms}ms");
+        Console.WriteLine(Text.L($"  {size}x{size} 맵, 도달한 칸 {reached:N0}개, 비교 {Cell.Comparisons:N0}번, {ms}ms", $"  {size}x{size} マップ、到達したマス {reached:N0} 個、比較 {Cell.Comparisons:N0} 回、{ms}ms"));
 
         int open = 0;
         for (int x = 0; x < size; x++)
             for (int y = 0; y < size; y++)
                 if (!Wall(x, y))
                     open++;
-        Expect("도달한 칸 수", open, reached);
-        ExpectAtMost("칸 하나당 비교 횟수", 4, Cell.Comparisons / reached);
+        Expect(Text.L("도달한 칸 수", "到達したマスの数"), open, reached);
+        ExpectAtMost(Text.L("칸 하나당 비교 횟수", "マス 1 個あたりの比較回数"), 4, Cell.Comparisons / reached);
     }
 }

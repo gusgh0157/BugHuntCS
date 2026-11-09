@@ -25,25 +25,25 @@ public static partial class Lab55
 
     static string Save(Character c) => JsonSerializer.Serialize(c, Options);
 
-    static Character Load(string json) => JsonSerializer.Deserialize<Character>(json, Options) ?? throw new FormatException(Text.T("빈 세이브"));
+    static Character Load(string json) => JsonSerializer.Deserialize<Character>(json, Options) ?? throw new FormatException(Text.L("빈 세이브", "空のセーブ"));
 
     public static void Run()
     {
-        var hero = new Character { Name = Pick(Text.T("아린"), Text.T("케인"), Text.T("미라"), Text.T("도란")), Gold = Pick(1500, 1, 99_999) };
+        var hero = new Character { Name = Pick(Text.L("아린", "アリン"), Text.L("케인", "ケイン"), Text.L("미라", "ミラ"), Text.L("도란", "ドラン")), Gold = Pick(1500, 1, 99_999) };
         int levels = Pick(4, 1, 30);
         for (int i = 0; i < levels; i++)
             hero.LevelUp();
-        Console.WriteLine($"  저장 전: {hero.Name}, 레벨 {hero.Level}, {hero.Gold}G");
+        Console.WriteLine(Text.L($"  저장 전: {hero.Name}, 레벨 {hero.Level}, {hero.Gold}G", $"  保存前: {hero.Name}、レベル {hero.Level}、{hero.Gold}G"));
 
         string json = Save(hero);
-        Console.WriteLine($"  세이브 파일: {json}");
+        Console.WriteLine(Text.L($"  세이브 파일: {json}", $"  セーブファイル: {json}"));
 
         Character loaded = Load(json);
-        Console.WriteLine($"  불러온 뒤: {loaded.Name}, 레벨 {loaded.Level}, {loaded.Gold}G");
+        Console.WriteLine(Text.L($"  불러온 뒤: {loaded.Name}, 레벨 {loaded.Level}, {loaded.Gold}G", $"  ロード後: {loaded.Name}、レベル {loaded.Level}、{loaded.Gold}G"));
 
-        Expect("이름", hero.Name, loaded.Name);
-        Expect("골드", hero.Gold, loaded.Gold);
-        Expect("레벨", hero.Level, loaded.Level);
+        Expect(Text.L("이름", "名前"), hero.Name, loaded.Name);
+        Expect(Text.L("골드", "ゴールド"), hero.Gold, loaded.Gold);
+        Expect(Text.L("레벨", "レベル"), hero.Level, loaded.Level);
     }
 }
 

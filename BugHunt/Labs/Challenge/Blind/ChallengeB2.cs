@@ -8,18 +8,18 @@ public static class ChallengeB2
 {
     static readonly Dictionary<string, string> Commands = new()
     {
-        ["/QUIT"] = Text.T("종료"),
-        ["/INVITE"] = Text.T("초대"),
-        ["/WHISPER"] = Text.T("귓속말"),
-        ["/LIST"] = Text.T("목록"),
-        ["/HELP"] = Text.T("도움말"),
-        ["/MAP"] = Text.T("지도"),
+        ["/QUIT"] = Text.L("종료", "終了"),
+        ["/INVITE"] = Text.L("초대", "招待"),
+        ["/WHISPER"] = Text.L("귓속말", "ささやき"),
+        ["/LIST"] = Text.L("목록", "一覧"),
+        ["/HELP"] = Text.L("도움말", "ヘルプ"),
+        ["/MAP"] = Text.L("지도", "マップ"),
     };
 
     static string Handle(string input)
     {
         string key = input.Trim().Split(' ')[0].ToUpper();
-        return Commands.TryGetValue(key, out string? action) ? action : Text.T("알 수 없는 명령");
+        return Commands.TryGetValue(key, out string? action) ? action : Text.L("알 수 없는 명령", "不明なコマンド");
     }
 
     public static void Run()
@@ -28,7 +28,7 @@ public static class ChallengeB2
         try
         {
             CultureInfo.CurrentCulture = new CultureInfo(Pick("tr-TR", "tr-TR", "az-Latn-AZ"));
-            Console.WriteLine($"  플레이어 문화권: {CultureInfo.CurrentCulture.Name}");
+            Console.WriteLine(Text.L($"  플레이어 문화권: {CultureInfo.CurrentCulture.Name}", $"  プレイヤーのカルチャ: {CultureInfo.CurrentCulture.Name}"));
 
             string[] typed = Seed == 0
                 ? ["/quit", "/map", "/Invite Kael", "/help"]

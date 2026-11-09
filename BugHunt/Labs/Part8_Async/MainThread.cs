@@ -19,7 +19,7 @@ public sealed class MainThread : SynchronizationContext
 
     public MainThread()
     {
-        _thread = new Thread(Loop) { Name = Text.T("Main Thread (게임 루프)"), IsBackground = true };
+        _thread = new Thread(Loop) { Name = Text.L("Main Thread (게임 루프)", "Main Thread (ゲームループ)"), IsBackground = true };
         _thread.Start();
     }
 
@@ -38,7 +38,7 @@ public sealed class MainThread : SynchronizationContext
     public override void Post(SendOrPostCallback d, object? state) => _queue.Add(() => d(state));
 
     public override void Send(SendOrPostCallback d, object? state) =>
-        throw new NotSupportedException(Text.T("이 예제에서는 Send 를 쓰지 않는다."));
+        throw new NotSupportedException(Text.L("이 예제에서는 Send 를 쓰지 않는다.", "この例では Send を使わない。"));
 
     public override SynchronizationContext CreateCopy() => this;
 

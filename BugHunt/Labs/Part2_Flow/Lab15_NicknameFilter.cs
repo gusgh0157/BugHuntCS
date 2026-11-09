@@ -13,7 +13,7 @@ public static class Lab15
             if (nickname.Contains(word, StringComparison.OrdinalIgnoreCase))
             {
                 nickname.Replace(word, "***", StringComparison.OrdinalIgnoreCase);
-                Console.WriteLine($"  금칙어 \"{word}\" 가림");
+                Console.WriteLine(Text.L($"  금칙어 \"{word}\" 가림", $"  禁止ワード \"{word}\" を隠しました"));
             }
         }
         return nickname.Trim();
@@ -30,7 +30,7 @@ public static class Lab15
             registered.Add(clean);
         }
 
-        Expect("등록된 닉네임", "***Slayer, Kael, xX***erXx", string.Join(", ", registered));
+        Expect(Text.L("등록된 닉네임", "登録されたニックネーム"), "***Slayer, Kael, xX***erXx", string.Join(", ", registered));
     }
 }
 

@@ -43,7 +43,7 @@ public static class Lab80
 
     public static void Run()
     {
-        string[] pool = [Text.T("안녕하세요"), "GG", Text.T("보스 잡으러 갈 사람"), Text.T("ㅋㅋㅋ"), "Need healer!", Text.T("내일 8시 레이드")];
+        string[] pool = [Text.L("안녕하세요", "こんにちは"), "GG", Text.L("보스 잡으러 갈 사람", "ボス狩りに行く人"), Text.L("ㅋㅋㅋ", "www"), "Need healer!", Text.L("내일 8시 레이드", "明日8時にレイド")];
         int count = Pick(3, 2, 6);
         ushort firstSeq = (ushort)Pick(41, 1, 60000);
 
@@ -64,15 +64,15 @@ public static class Lab80
             }
             catch (ArgumentException ex)
             {
-                Console.WriteLine($"  손상된 패킷 버림 ({packet.Length}바이트): {ex.GetType().Name}");
+                Console.WriteLine(Text.L($"  손상된 패킷 버림 ({packet.Length}바이트): {ex.GetType().Name}", $"  破損したパケットを破棄 ({packet.Length}バイト): {ex.GetType().Name}"));
             }
         }
 
         foreach (string chat in shown)
-            Console.WriteLine($"  채팅 {chat}");
+            Console.WriteLine(Text.L($"  채팅 {chat}", $"  チャット {chat}"));
 
-        Expect("화면에 나온 채팅 수", count, shown.Count);
-        Expect("채팅 내용", string.Join(" / ", expected), string.Join(" / ", shown));
+        Expect(Text.L("화면에 나온 채팅 수", "画面に表示されたチャット数"), count, shown.Count);
+        Expect(Text.L("채팅 내용", "チャット内容"), string.Join(" / ", expected), string.Join(" / ", shown));
     }
 }
 

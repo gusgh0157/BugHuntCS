@@ -39,10 +39,10 @@ public static class Lab20
         }
 
         int expected = play.Split('M').Max(run => run.Length);
-        Console.WriteLine($"  플레이: {play}");
-        Console.WriteLine($"  최고 콤보 {counter.Best}, 등급 {Grade(counter.Best, play.Length)}");
-        Expect("최고 콤보", expected, counter.Best);
-        Expect("등급", Grade(expected, play.Length), Grade(counter.Best, play.Length));
+        Console.WriteLine(Text.L($"  플레이: {play}", $"  プレイ: {play}"));
+        Console.WriteLine(Text.L($"  최고 콤보 {counter.Best}, 등급 {Grade(counter.Best, play.Length)}", $"  最高コンボ {counter.Best}、評価 {Grade(counter.Best, play.Length)}"));
+        Expect(Text.L("최고 콤보", "最高コンボ"), expected, counter.Best);
+        Expect(Text.L("등급", "評価"), Grade(expected, play.Length), Grade(counter.Best, play.Length));
     }
 }
 

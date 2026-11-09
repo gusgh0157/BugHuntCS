@@ -21,7 +21,7 @@ public static partial class Lab52
         foreach (Item item in items)
         {
             if (item.Count < 0)
-                throw new InvalidDataException(Text.F("손상된 아이템: {0} x{1}", item.Name, item.Count));
+                throw new InvalidDataException(Text.L($"손상된 아이템: {item.Name} x{item.Count}", $"破損したアイテム: {item.Name} x{item.Count}"));
             writer.WriteLine($"{item.Name}|{item.Count.ToString(CultureInfo.InvariantCulture)}");
         }
     }
@@ -35,7 +35,7 @@ public static partial class Lab52
         return [.. lines.Skip(1).Select(l => l.Split('|')).Select(p => new Item(p[0], int.Parse(p[1], CultureInfo.InvariantCulture)))];
     }
 
-    static string Show(IEnumerable<Item>? items) => items == null ? Text.T("(손상됨)") : string.Join(", ", items.Select(i => $"{i.Name} x{i.Count}"));
+    static string Show(IEnumerable<Item>? items) => items == null ? Text.L("(손상됨)", "(破損)") : string.Join(", ", items.Select(i => $"{i.Name} x{i.Count}"));
 
     public static void Run()
     {
@@ -43,13 +43,13 @@ public static partial class Lab52
         string path = Path.Combine(Root, "inventory.sav");
         try
         {
-            string[] names = [Text.T("철광석"), Text.T("회복 물약"), Text.T("마나 물약"), Text.T("용의 비늘"), Text.T("화살"), Text.T("빵")];
+            string[] names = [Text.L("철광석", "鉄鉱石"), Text.L("회복 물약", "回復ポーション"), Text.L("마나 물약", "マナポーション"), Text.L("용의 비늘", "竜のうろこ"), Text.L("화살", "矢"), Text.L("빵", "パン")];
             int n = Pick(4, 3, names.Length);
             List<Item> good = [.. names.Take(n).Select((name, i) => new Item(name, Pick(5 * (i + 1), 1, 99)))];
 
             // 1) 정상 저장
             Save(path, good);
-            Console.WriteLine($"  지난번 세이브: {Show(Load(path))}");
+            Console.WriteLine(Text.L($"  지난번 세이브: {Show(Load(path))}", $"  前回のセーブ: {Show(Load(path))}"));
 
             // 2) 다음 저장: 아이템 하나가 손상됐다 (수량 음수)
             List<Item> broken = [.. good.Select(i => i with { Count = i.Count + 1 })];
@@ -61,18 +61,18 @@ public static partial class Lab52
             }
             catch (InvalidDataException ex)
             {
-                Console.WriteLine($"  저장 실패: {ex.Message} → 지난번 세이브를 그대로 쓴다");
+                Console.WriteLine(Text.L($"  저장 실패: {ex.Message} → 지난번 세이브를 그대로 쓴다", $"  保存失敗: {ex.Message} → 前回のセーブをそのまま使う"));
             }
 
             List<Item>? afterFail = Load(path);
-            Console.WriteLine($"  불러오기: {Show(afterFail)}");
-            Expect("저장이 실패해도 지난번 세이브는 그대로", Show(good), Show(afterFail));
+            Console.WriteLine(Text.L($"  불러오기: {Show(afterFail)}", $"  ロード: {Show(afterFail)}"));
+            Expect(Text.L("저장이 실패해도 지난번 세이브는 그대로", "保存に失敗しても前回のセーブはそのまま"), Show(good), Show(afterFail));
 
             // 3) 손상을 고치고 다시 저장하면 새 내용이 저장된다
             broken[bad] = broken[bad] with { Count = 7 };
             Save(path, broken);
-            Expect("고친 뒤 다시 저장", Show(broken), Show(Load(path)));
-            Expect("세이브 폴더에 남은 임시 파일 없음", 0, Directory.GetFiles(Root, "*.tmp").Length);
+            Expect(Text.L("고친 뒤 다시 저장", "直したあと再保存"), Show(broken), Show(Load(path)));
+            Expect(Text.L("세이브 폴더에 남은 임시 파일 없음", "セーブフォルダーに一時ファイルが残っていない"), 0, Directory.GetFiles(Root, "*.tmp").Length);
         }
         finally
         {

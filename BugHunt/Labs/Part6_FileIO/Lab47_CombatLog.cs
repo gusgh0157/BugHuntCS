@@ -14,7 +14,7 @@ public static partial class Lab47
         var writer = new StreamWriter(stream);
         foreach (string line in lines)
             writer.WriteLine(line);
-        Console.WriteLine($"  전투 기록 {lines.Count}줄 저장: {path}");
+        Console.WriteLine(Text.L($"  전투 기록 {lines.Count}줄 저장: {path}", $"  戦闘ログ {lines.Count}行を保存: {path}"));
     }
 
     public static void Run()
@@ -24,20 +24,20 @@ public static partial class Lab47
         try
         {
             int count = Pick(120, 60, 400);
-            string[] attackers = [Text.T("기사"), Text.T("궁수"), Text.T("마법사"), Text.T("도적")];
+            string[] attackers = [Text.L("기사", "騎士"), Text.L("궁수", "弓兵"), Text.L("마법사", "魔法使い"), Text.L("도적", "盗賊")];
             var lines = new List<string>();
             for (int i = 1; i <= count; i++)
-                lines.Add($"[{i:0000}] " + Text.F("{0}의 공격: 피해 {1}", attackers[i % attackers.Length], Pick(17 * i % 100, 1, 999)));
+                lines.Add($"[{i:0000}] " + Text.L($"{(attackers[i % attackers.Length])}의 공격: 피해 {Pick(17 * i % 100, 1, 999)}", $"{(attackers[i % attackers.Length])}の攻撃: ダメージ {Pick(17 * i % 100, 1, 999)}"));
             // 줄 길이 합이 우연히 버퍼 크기의 배수가 되지 않게 한 줄 더
             if (lines.Sum(l => l.Length + 2) % 1024 == 0)
-                lines.Add(Text.T("[끝] 전투 종료"));
+                lines.Add(Text.L("[끝] 전투 종료", "[終] 戦闘終了"));
 
             SaveLog(path, lines);
             string[] read = File.ReadAllLines(path);
-            Console.WriteLine($"  파일에서 읽은 줄 수: {read.Length}");
+            Console.WriteLine(Text.L($"  파일에서 읽은 줄 수: {read.Length}", $"  ファイルから読んだ行数: {read.Length}"));
 
-            Expect("저장된 줄 수", lines.Count, read.Length);
-            Expect("마지막 줄", lines[^1], read.Length > 0 ? read[^1] : "");
+            Expect(Text.L("저장된 줄 수", "保存された行数"), lines.Count, read.Length);
+            Expect(Text.L("마지막 줄", "最後の行"), lines[^1], read.Length > 0 ? read[^1] : "");
         }
         finally
         {

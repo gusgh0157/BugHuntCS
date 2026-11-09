@@ -12,7 +12,7 @@ public static class Lab09
     };
 
     static string CastSlot(int slot) =>
-        SkillBar.TryGetValue(slot, out string? skill) ? skill : Text.T("(빈 슬롯)");
+        SkillBar.TryGetValue(slot, out string? skill) ? skill : Text.L("(빈 슬롯)", "(空きスロット)");
 
     static Dictionary<ConsoleKey, Func<string>> BindHotkeys()
     {
@@ -37,7 +37,7 @@ public static class Lab09
             cast.Add(skill);
         }
 
-        Expect("1, 2, 3 을 눌러 쓴 스킬", "Fireball, Ice Lance, Heal", string.Join(", ", cast));
+        Expect(Text.L("1, 2, 3 을 눌러 쓴 스킬", "1, 2, 3 を押して使ったスキル"), "Fireball, Ice Lance, Heal", string.Join(", ", cast));
     }
 }
 

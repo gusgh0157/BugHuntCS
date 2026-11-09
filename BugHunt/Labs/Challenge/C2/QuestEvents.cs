@@ -6,7 +6,7 @@ public sealed class QuestProgress
     public int Amount;
     public int Frame;
 
-    public override string ToString() => $"{QuestId} +{Amount} ({Text.T("프레임")} {Frame})";
+    public override string ToString() => $"{QuestId} +{Amount} ({Text.L("프레임", "フレーム")} {Frame})";
 }
 
 // 퀘스트 진행 알림. 몬스터가 한꺼번에 수백 마리 잡히는 프레임도 있어서,

@@ -15,7 +15,7 @@ public static class Lab69
         {
             await Task.Delay(1);   // 네트워크
             if (boundItems.Contains(item))
-                throw new InvalidOperationException(Text.F("{0}: 귀속 아이템은 창고에 넣을 수 없습니다", item));
+                throw new InvalidOperationException(Text.L($"{item}: 귀속 아이템은 창고에 넣을 수 없습니다", $"{item}: 帰属アイテムは倉庫に入れられません"));
             Stored[item] = Stored.GetValueOrDefault(item) + count;
         }
 
@@ -34,7 +34,7 @@ public static class Lab69
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"  [로그] 창고 업로드 경고: {ex.Message}");
+            Console.WriteLine(Text.L($"  [로그] 창고 업로드 경고: {ex.Message}", $"  [ログ] 倉庫アップロード警告: {ex.Message}"));
         }
         return true;
     }
@@ -49,12 +49,12 @@ public static class Lab69
             if (stored)
             {
                 bag.Remove(item);
-                Console.WriteLine($"  {item} 보관 완료");
+                Console.WriteLine(Text.L($"  {item} 보관 완료", $"  {item} 保管完了"));
             }
             else
             {
                 notStored.Add(item);
-                Console.WriteLine($"  {item} 보관 실패 - 가방에 그대로 둡니다");
+                Console.WriteLine(Text.L($"  {item} 보관 실패 - 가방에 그대로 둡니다", $"  {item} 保管失敗 - バッグにそのまま残します"));
             }
         }
         return notStored;
@@ -64,8 +64,8 @@ public static class Lab69
 
     public static void Run()
     {
-        string[] items = [Text.T("철광석"), Text.T("회복 물약"), Text.T("영웅의 증표"), Text.T("용의 비늘")];
-        string bound = Pick(Text.T("영웅의 증표"), Text.T("철광석"), Text.T("회복 물약"), Text.T("용의 비늘"));
+        string[] items = [Text.L("철광석", "鉄鉱石"), Text.L("회복 물약", "回復ポーション"), Text.L("영웅의 증표", "英雄の証"), Text.L("용의 비늘", "竜のうろこ")];
+        string bound = Pick(Text.L("영웅의 증표", "英雄の証"), Text.L("철광석", "鉄鉱石"), Text.L("회복 물약", "回復ポーション"), Text.L("용의 비늘", "竜のうろこ"));
         var bag = new Dictionary<string, int>();
         foreach (string item in items)
             bag[item] = Pick(3, 1, 20);
@@ -76,15 +76,15 @@ public static class Lab69
 
         // 2단계: 접속 종료. 가방을 서버에 저장한다.
         server.SaveBagAsync(bag).GetAwaiter().GetResult();
-        Console.WriteLine("  (접속 종료 ... 다시 접속)");
+        Console.WriteLine(Text.L("  (접속 종료 ... 다시 접속)", "  (切断 ... 再接続)"));
 
         // 3단계: 다시 접속. 서버에 있는 것이 전부다.
         Dictionary<string, int> bagAfter = server.SavedBag;
-        Console.WriteLine($"  가방: {string.Join(", ", bagAfter.Select(p => $"{p.Key} {p.Value}"))}");
-        Console.WriteLine($"  창고: {string.Join(", ", server.Stored.Select(p => $"{p.Key} {p.Value}"))}");
+        Console.WriteLine(Text.L($"  가방: {string.Join(", ", bagAfter.Select(p => $"{p.Key} {p.Value}"))}", $"  バッグ: {string.Join(", ", bagAfter.Select(p => $"{p.Key} {p.Value}"))}"));
+        Console.WriteLine(Text.L($"  창고: {string.Join(", ", server.Stored.Select(p => $"{p.Key} {p.Value}"))}", $"  倉庫: {string.Join(", ", server.Stored.Select(p => $"{p.Key} {p.Value}"))}"));
 
-        Expect("다시 접속한 뒤 가방 + 창고의 아이템 수", before, Total(bagAfter, server.Stored));
-        Expect("못 맡겼다고 알려 준 아이템", bound, string.Join(", ", notStored));
+        Expect(Text.L("다시 접속한 뒤 가방 + 창고의 아이템 수", "再接続後のバッグ + 倉庫のアイテム数"), before, Total(bagAfter, server.Stored));
+        Expect(Text.L("못 맡겼다고 알려 준 아이템", "預けられなかったと知らせたアイテム"), bound, string.Join(", ", notStored));
     }
 }
 

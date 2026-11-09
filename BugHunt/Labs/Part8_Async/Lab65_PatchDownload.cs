@@ -11,7 +11,7 @@ public static class Lab65
     {
         await Task.Delay(file.Length * 10);
         if (BrokenOnServer.Contains(file))
-            throw new IOException(Text.F("{0} 다운로드 실패 (체크섬 불일치)", file));
+            throw new IOException(Text.L($"{file} 다운로드 실패 (체크섬 불일치)", $"{file} ダウンロード失敗 (チェックサム不一致)"));
         return file;
     }
 
@@ -25,7 +25,7 @@ public static class Lab65
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"  [로그] {ex.Message}");
+            Console.WriteLine(Text.L($"  [로그] {ex.Message}", $"  [ログ] {ex.Message}"));
             failed.Add(ex.Message.Split(' ')[0]);
         }
         return failed;
@@ -35,7 +35,7 @@ public static class Lab65
     {
         List<string> failed = DownloadAllAsync().GetAwaiter().GetResult();
         failed.Sort();
-        Expect("다시 받아야 할 파일", "locale.pak, sounds.pak", string.Join(", ", failed));
+        Expect(Text.L("다시 받아야 할 파일", "ダウンロードし直すべきファイル"), "locale.pak, sounds.pak", string.Join(", ", failed));
     }
 }
 

@@ -26,14 +26,14 @@ public static partial class Lab51
             {
                 // 운영자가 메모장(CRLF) 또는 다른 편집기(LF)로 저장한 파일
                 File.WriteAllText(path, string.Join(newline, blocked) + (trailing ? newline : ""));
-                string layout = $"{(newline == "\r\n" ? "CRLF" : "LF")}, 끝 줄바꿈 {(trailing ? "있음" : "없음")}";
-                Console.WriteLine($"  차단 목록 파일: {new FileInfo(path).Length}바이트, {layout}");
+                string layout = Text.L($"{(newline == "\r\n" ? "CRLF" : "LF")}, 끝 줄바꿈 {(trailing ? "있음" : "없음")}", $"{(newline == "\r\n" ? "CRLF" : "LF")}、末尾の改行 {(trailing ? "あり" : "なし")}");
+                Console.WriteLine(Text.L($"  차단 목록 파일: {new FileInfo(path).Length}바이트, {layout}", $"  ブロックリストファイル: {new FileInfo(path).Length}バイト、{layout}"));
 
                 HashSet<string> list = LoadBlockList(path);
-                Console.WriteLine($"  읽은 항목: {string.Join(", ", list.Select(n => $"\"{n}\""))}");
+                Console.WriteLine(Text.L($"  읽은 항목: {string.Join(", ", list.Select(n => $"\"{n}\""))}", $"  読んだ項目: {string.Join(", ", list.Select(n => $"\"{n}\""))}"));
 
-                Expect($"[{layout}] 차단 목록 항목 수", blocked.Length, list.Count);
-                Expect($"[{layout}] {target} 의 귓속말 차단", true, list.Contains(target));
+                Expect(Text.L($"[{layout}] 차단 목록 항목 수", $"[{layout}] ブロックリストの項目数"), blocked.Length, list.Count);
+                Expect(Text.L($"[{layout}] {target} 의 귓속말 차단", $"[{layout}] {target} のささやきをブロック"), true, list.Contains(target));
             }
         }
         finally

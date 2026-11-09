@@ -24,16 +24,16 @@ public static class Lab84
         var items = new List<Item>();
         for (int i = 0; i < slots; i++)
             items.Add(new Item($"item{i}", i % 99 + 1));
-        Console.WriteLine($"  인벤토리 슬롯 {items.Count}개 저장 시작");
+        Console.WriteLine(Text.L($"  인벤토리 슬롯 {items.Count}개 저장 시작", $"  インベントリ スロット {items.Count} 個の保存を開始"));
 
         var saveFile = new string[items.Count];
         int written = 0;
-        if (!FinishesWithin("인벤토리 저장", () => written = SaveInventory(items, saveFile)))
+        if (!FinishesWithin(Text.L("인벤토리 저장", "インベントリの保存"), () => written = SaveInventory(items, saveFile)))
             return;
 
-        Console.WriteLine($"  저장 끝: {written}슬롯, 마지막 슬롯 \"{saveFile[^1]}\"");
-        Expect("저장한 슬롯 수", items.Count, written);
-        Expect("마지막 슬롯", $"{items.Count - 1}:{items[^1].Name}x{items[^1].Count}", saveFile[^1]);
+        Console.WriteLine(Text.L($"  저장 끝: {written}슬롯, 마지막 슬롯 \"{saveFile[^1]}\"", $"  保存終了: {written} スロット、最後のスロット \"{saveFile[^1]}\""));
+        Expect(Text.L("저장한 슬롯 수", "保存したスロット数"), items.Count, written);
+        Expect(Text.L("마지막 슬롯", "最後のスロット"), $"{items.Count - 1}:{items[^1].Name}x{items[^1].Count}", saveFile[^1]);
     }
 }
 

@@ -29,8 +29,8 @@ public static partial class Lab57
     static Party Restore(Party party)
     {
         string json = JsonSerializer.Serialize(party, Options);
-        Console.WriteLine($"  스냅샷: {json}");
-        return JsonSerializer.Deserialize<Party>(json, Options) ?? throw new FormatException(Text.T("빈 스냅샷"));
+        Console.WriteLine(Text.L($"  스냅샷: {json}", $"  スナップショット: {json}"));
+        return JsonSerializer.Deserialize<Party>(json, Options) ?? throw new FormatException(Text.L("빈 스냅샷", "空のスナップショット"));
     }
 
     public static void Run()
@@ -51,11 +51,11 @@ public static partial class Lab57
         int leaderHits = leader == tank ? 2 : 1;
 
         Member leaderInList = restored.Members[leader];
-        Console.WriteLine($"  파티 창: {string.Join(", ", restored.Members.Select(m => $"{m.Name} {m.Hp}"))}");
+        Console.WriteLine(Text.L($"  파티 창: {string.Join(", ", restored.Members.Select(m => $"{m.Name} {m.Hp}"))}", $"  パーティー画面: {string.Join(", ", restored.Members.Select(m => $"{m.Name} {m.Hp}"))}"));
 
-        Expect("리더가 파티원 목록의 그 사람", true, ReferenceEquals(restored.Leader, leaderInList));
-        Expect("메인 탱커가 파티원 목록의 그 사람", true, ReferenceEquals(restored.MainTank, restored.Members[tank]));
-        Expect("파티 창의 리더 체력", party.Members[leader].Hp - damage * leaderHits, leaderInList.Hp);
+        Expect(Text.L("리더가 파티원 목록의 그 사람", "リーダーがパーティーメンバー一覧のその人"), true, ReferenceEquals(restored.Leader, leaderInList));
+        Expect(Text.L("메인 탱커가 파티원 목록의 그 사람", "メインタンクがパーティーメンバー一覧のその人"), true, ReferenceEquals(restored.MainTank, restored.Members[tank]));
+        Expect(Text.L("파티 창의 리더 체력", "パーティー画面のリーダーのHP"), party.Members[leader].Hp - damage * leaderHits, leaderInList.Hp);
     }
 }
 
@@ -99,10 +99,10 @@ public static partial class Lab57
 {
     static readonly string[][] Rosters =
     [
-        [Text.T("아린"), Text.T("케인"), Text.T("미라")],
-        [Text.T("도란"), Text.T("리라"), Text.T("오렌"), Text.T("케인")],
-        [Text.T("미라"), Text.T("아린")],
-        [Text.T("케인"), Text.T("도란"), Text.T("리라"), Text.T("아린"), Text.T("오렌")],
+        [Text.L("아린", "アリン"), Text.L("케인", "ケイン"), Text.L("미라", "ミラ")],
+        [Text.L("도란", "ドラン"), Text.L("리라", "リラ"), Text.L("오렌", "オレン"), Text.L("케인", "ケイン")],
+        [Text.L("미라", "ミラ"), Text.L("아린", "アリン")],
+        [Text.L("케인", "ケイン"), Text.L("도란", "ドラン"), Text.L("리라", "リラ"), Text.L("아린", "アリン"), Text.L("오렌", "オレン")],
     ];
 }
 #endregion

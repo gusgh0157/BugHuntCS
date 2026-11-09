@@ -10,7 +10,7 @@ public static class ChallengeC3
     {
         string[] names = ["Aria", "Bram", "Cleo", "Dax", "Elin", "Finn", "Gwen", "Hugo", "Iris", "Jude", "Kael", "Lena",
                           "Milo", "Nora", "Owen", "Pia", "Quin", "Rhea", "Sven", "Tess", "Ugo", "Vera", "Wynn", "Yuna"];
-        string[] guilds = [Text.T("새벽"), Text.T("늑대"), Text.T("별빛")];
+        string[] guilds = [Text.L("새벽", "暁"), Text.L("늑대", "オオカミ"), Text.L("별빛", "星明かり")];
         var rng = new Random(Seed == 0 ? 1234 : Seed);
         var players = names.Select(n => (n, guilds[rng.Next(guilds.Length)], rng.Next(10, 100) * 10)).ToList();
         const string region = "KR";
@@ -50,30 +50,30 @@ public static class ChallengeC3
                 case Screen.Friends:
                 {
                     List<string> shown = friendScreen.Show(region, friends);
-                    Console.WriteLine($"  [친구 랭킹] {string.Join(", ", shown)}");
+                    Console.WriteLine(Text.L($"  [친구 랭킹] {string.Join(", ", shown)}", $"  [フレンド ランキング] {string.Join(", ", shown)}"));
                     var expected = truth.Where(t => friends.Contains(t.Name)).Select((t, i) => $"{i + 1}. {t.Name}");
-                    Expect("친구 랭킹 창", string.Join(", ", expected), string.Join(", ", shown));
+                    Expect(Text.L("친구 랭킹 창", "フレンド ランキング ウィンドウ"), string.Join(", ", expected), string.Join(", ", shown));
                     break;
                 }
                 case Screen.Guild:
                 {
                     List<string> shown = guildScreen.Show(region, myGuild);
-                    Console.WriteLine($"  [길드 랭킹: {myGuild}] {string.Join(", ", shown)}");
+                    Console.WriteLine(Text.L($"  [길드 랭킹: {myGuild}] {string.Join(", ", shown)}", $"  [ギルド ランキング: {myGuild}] {string.Join(", ", shown)}"));
                     var expected = truth.Where(t => t.Guild == myGuild).Select(t => $"{t.Rank}. {t.Name}");
-                    Expect("길드 랭킹 창", string.Join(", ", expected), string.Join(", ", shown));
+                    Expect(Text.L("길드 랭킹 창", "ギルド ランキング ウィンドウ"), string.Join(", ", expected), string.Join(", ", shown));
                     break;
                 }
                 case Screen.Mail:
                 {
                     List<string> outbox = mailer.Send(region);
                     foreach (string mail in outbox)
-                        Console.WriteLine($"  [우편] {mail}");
-                    var expected = truth.Take(WeeklyRewardMailer.Winners).Select(t => $"{t.Name}: {(t.Rank == 1 ? Text.T("황금 왕관") : t.Rank <= 3 ? Text.T("은 트로피") : Text.T("동 메달"))}");
-                    Expect("주간 보상 우편", string.Join(" / ", expected), string.Join(" / ", outbox));
+                        Console.WriteLine(Text.L($"  [우편] {mail}", $"  [郵便] {mail}"));
+                    var expected = truth.Take(WeeklyRewardMailer.Winners).Select(t => $"{t.Name}: {(t.Rank == 1 ? Text.L("황금 왕관", "黄金の王冠") : t.Rank <= 3 ? Text.L("은 트로피", "銀のトロフィー") : Text.L("동 메달", "銅メダル"))}");
+                    Expect(Text.L("주간 보상 우편", "週間報酬の郵便"), string.Join(" / ", expected), string.Join(" / ", outbox));
                     break;
                 }
             }
         }
-        Console.WriteLine($"  DB 질의 {db.Queries}번");
+        Console.WriteLine(Text.L($"  DB 질의 {db.Queries}번", $"  DB クエリ {db.Queries} 回"));
     }
 }

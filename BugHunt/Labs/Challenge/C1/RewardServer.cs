@@ -47,7 +47,7 @@ public sealed class RewardServer(UnreliableLink link)
                 continue;
             if (outgoing.Attempts >= MaxAttempts)
             {
-                Console.WriteLine($"  [서버] 포기: {outgoing.Packet}");
+                Console.WriteLine(Text.L($"  [서버] 포기: {outgoing.Packet}", $"  [サーバー] 断念: {outgoing.Packet}"));
                 _unacked.Remove(outgoing.Packet.Id);
                 continue;
             }

@@ -49,15 +49,15 @@ public static class Lab85
         Guild top = guilds[order[0]];
         Guild bottom = guilds[order[^1]];
         bool accepted = top.JoinUnder(bottom);
-        Console.WriteLine($"  {top.Name} → {bottom.Name} 밑으로 가입 신청: {(accepted ? "승인" : "거절")}");
+        Console.WriteLine(Text.L($"  {top.Name} → {bottom.Name} 밑으로 가입 신청: {(accepted ? "승인" : "거절")}", $"  {top.Name} → {bottom.Name} の下への加入申請: {(accepted ? "承認" : "拒否")}"));
 
         string leaders = "";
-        if (!FinishesWithin("동맹 맹주 찾기", () => leaders = string.Join(", ", guilds.Select(g => g.Leader().Name))))
+        if (!FinishesWithin(Text.L("동맹 맹주 찾기", "同盟の盟主探し"), () => leaders = string.Join(", ", guilds.Select(g => g.Leader().Name))))
             return;
 
-        Console.WriteLine($"  각 길드의 맹주: {leaders}");
-        Expect("고리를 만드는 가입은 거절", false, accepted);
-        Expect("각 길드의 맹주", string.Join(", ", guilds.Select(_ => top.Name)), leaders);
+        Console.WriteLine(Text.L($"  각 길드의 맹주: {leaders}", $"  各ギルドの盟主: {leaders}"));
+        Expect(Text.L("고리를 만드는 가입은 거절", "輪を作る加入は拒否"), false, accepted);
+        Expect(Text.L("각 길드의 맹주", "各ギルドの盟主"), string.Join(", ", guilds.Select(_ => top.Name)), leaders);
     }
 }
 

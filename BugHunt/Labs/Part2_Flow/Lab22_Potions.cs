@@ -32,9 +32,9 @@ public static class Lab22
             else refused++;
         }
 
-        Console.WriteLine($"  물약 {start}개로 시작, 단축키 {presses}번: 마심 {drunk}, 거절 {refused}, 남은 물약 {bag.Potions}");
-        Expect("마신 물약", start, drunk);
-        Expect("남은 물약", 0, (int)bag.Potions);
+        Console.WriteLine(Text.L($"  물약 {start}개로 시작, 단축키 {presses}번: 마심 {drunk}, 거절 {refused}, 남은 물약 {bag.Potions}", $"  ポーション {start} 個で開始、ショートカット {presses} 回: 飲んだ {drunk}、拒否 {refused}、残りポーション {bag.Potions}"));
+        Expect(Text.L("마신 물약", "飲んだポーション"), start, drunk);
+        Expect(Text.L("남은 물약", "残りポーション"), 0, (int)bag.Potions);
     }
 }
 

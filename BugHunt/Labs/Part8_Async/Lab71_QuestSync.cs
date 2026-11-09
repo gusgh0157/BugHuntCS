@@ -24,7 +24,7 @@ public static class Lab71
             catch (Exception ex)
             {
                 last = ex;
-                Console.WriteLine($"  [재시도 {attempt}/{Attempts}] {ex.GetType().Name}: {ex.Message}");
+                Console.WriteLine(Text.L($"  [재시도 {attempt}/{Attempts}] {ex.GetType().Name}: {ex.Message}", $"  [再試行 {attempt}/{Attempts}] {ex.GetType().Name}: {ex.Message}"));
                 await Task.Delay(5);
             }
         }
@@ -34,7 +34,7 @@ public static class Lab71
     static async Task<string> DownloadAsync(Dictionary<string, string?> server, string id)
     {
         await Task.Delay(1);
-        return server[id] ?? throw new IOException(Text.F("{0}: 서버 연결이 끊겼습니다", id));
+        return server[id] ?? throw new IOException(Text.L($"{id}: 서버 연결이 끊겼습니다", $"{id}: サーバーとの接続が切れました"));
     }
 
     static async Task<string> ParseHeaderAsync(string text)
@@ -42,7 +42,7 @@ public static class Lab71
         await Task.Yield();
         int bar = text.IndexOf('|');
         if (bar < 0)
-            throw new InvalidDataException(Text.F("헤더가 없습니다: \"{0}\"", text));
+            throw new InvalidDataException(Text.L($"헤더가 없습니다: \"{text}\"", $"ヘッダーがありません: \"{text}\""));
         return text[..bar];
     }
 
@@ -73,20 +73,20 @@ public static class Lab71
     {
         var server = new Dictionary<string, string?>
         {
-            ["q1"] = Text.T("늑대 사냥") + "|120",
-            ["q2"] = Text.T("약초 채집") + "|80",
-            ["q3"] = Text.T("광산 정찰") + "|" + Text.T("두백"),
+            ["q1"] = Text.L("늑대 사냥", "オオカミ狩り") + "|120",
+            ["q2"] = Text.L("약초 채집", "薬草採取") + "|80",
+            ["q3"] = Text.L("광산 정찰", "鉱山の偵察") + "|" + Text.L("두백", "二百"),
         };
         string broken = "q3";
         string expected = "FormatException @ ParseRewardAsync";
         if (Seed != 0)
         {
-            server["q3"] = Text.T("광산 정찰") + "|200";
+            server["q3"] = Text.L("광산 정찰", "鉱山の偵察") + "|200";
             broken = Pick("q1", "q1", "q2", "q3");
             (server[broken], expected) = Pick(1, 1, 2) switch   // 숨은 케이스는 기본 케이스와 다른 곳에서 실패한다
             {
-                0 => ((string?)(Text.T("고장 난 데이터") + "|??"), "FormatException @ ParseRewardAsync"),
-                1 => (Text.T("헤더 없는 데이터"), "InvalidDataException @ ParseHeaderAsync"),
+                0 => ((string?)(Text.L("고장 난 데이터", "壊れたデータ") + "|??"), "FormatException @ ParseRewardAsync"),
+                1 => (Text.L("헤더 없는 데이터", "ヘッダーのないデータ"), "InvalidDataException @ ParseHeaderAsync"),
                 _ => (null, "IOException @ DownloadAsync"),
             };
         }
@@ -102,13 +102,13 @@ public static class Lab71
             catch (Exception ex)
             {
                 report = Report(ex);
-                Console.WriteLine($"  --- {id} 오류 보고서: {report} ---\n{ex.StackTrace}\n  ---------------------------");
+                Console.WriteLine(Text.L($"  --- {id} 오류 보고서: {report} ---\n{ex.StackTrace}\n  ---------------------------", $"  --- {id} エラーレポート: {report} ---\n{ex.StackTrace}\n  ---------------------------"));
             }
         }
 
-        Console.WriteLine($"  불러온 퀘스트: {string.Join(", ", loaded.Select(q => q.Title))}");
-        Expect($"불러온 퀘스트 수 ({broken} 빼고)", server.Count - 1, loaded.Count);
-        Expect("오류 보고서 (예외 @ 실패한 함수)", expected, report);
+        Console.WriteLine(Text.L($"  불러온 퀘스트: {string.Join(", ", loaded.Select(q => q.Title))}", $"  読み込んだクエスト: {string.Join(", ", loaded.Select(q => q.Title))}"));
+        Expect(Text.L($"불러온 퀘스트 수 ({broken} 빼고)", $"読み込んだクエスト数 ({broken} を除く)"), server.Count - 1, loaded.Count);
+        Expect(Text.L("오류 보고서 (예외 @ 실패한 함수)", "エラーレポート (例外 @ 失敗した関数)"), expected, report);
     }
 }
 

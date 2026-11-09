@@ -44,7 +44,7 @@ public static class Lab03
         void Despawn(Enemy enemy)
         {
             _enemies.Remove(enemy);
-            Console.WriteLine($"  {enemy.Name} 쓰러짐 (+{enemy.Gold}G)");
+            Console.WriteLine(Text.L($"  {enemy.Name} 쓰러짐 (+{enemy.Gold}G)", $"  {enemy.Name} 撃破 (+{enemy.Gold}G)"));
         }
     }
 
@@ -52,8 +52,8 @@ public static class Lab03
     {
         var battle = new Battle();
         battle.CastExplosion(30);
-        Expect("살아남은 적 (Orc, Troll)", 2, battle.Survivors);
-        Expect("전리품 골드 (5 + 3 + 12)", 20, battle.LootGold);
+        Expect(Text.L("살아남은 적 (Orc, Troll)", "生き残った敵 (Orc, Troll)"), 2, battle.Survivors);
+        Expect(Text.L("전리품 골드 (5 + 3 + 12)", "ドロップ品のゴールド (5 + 3 + 12)"), 20, battle.LootGold);
     }
 }
 

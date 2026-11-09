@@ -96,7 +96,7 @@ public sealed class RankEntry(string name, string guild, int score)
     public int Score { get; } = score;
     public int Rank { get; init; }   // 만들 때만 정한다
 
-    public override string ToString() => $"{Rank}{Text.T("위")} {Name} ({Score})";
+    public override string ToString() => $"{Rank}{Text.L("위", "位")} {Name} ({Score})";
 }
 
 public sealed class RankingService(RankingDatabase db)
@@ -190,7 +190,7 @@ public sealed class FriendRankingScreen(RankingService service)
     static void StartAutoSave(int intervalMs)
     {
         _autoSave = new Timer(_ => Interlocked.Increment(ref _saves), null, intervalMs, intervalMs);
-        Console.WriteLine($"  자동 저장 시작 ({intervalMs}ms마다)");
+        Console.WriteLine(Text.L($"  자동 저장 시작 ({intervalMs}ms마다)", $"  オートセーブ開始 ({intervalMs}ms ごと)"));
     }
 
     // Run의 마지막 줄 (if/else 뒤)
@@ -224,12 +224,12 @@ public sealed class FriendRankingScreen(RankingService service)
     static async Task SendCompensationAsync(MailServer server, IEnumerable<string> players)
     {
         await Parallel.ForEachAsync(players, async (player, ct) => await server.SendAsync(player));
-        Console.WriteLine("  보상 우편 발송 완료");
+        Console.WriteLine(Text.L("  보상 우편 발송 완료", "  補償の郵便 発送完了"));
     }
 
     // Run
         SendCompensationAsync(server, players).GetAwaiter().GetResult();
-        Expect("'발송 완료' 시점에 도착한 우편", count, server.Delivered);
+        Expect(Text.L("'발송 완료' 시점에 도착한 우편", "「発送完了」の時点で届いた郵便"), count, server.Delivered);
 ```
 또는 `await Task.WhenAll(players.Select(server.SendAsync));`로 전부 띄우고 한꺼번에 기다린다.
 

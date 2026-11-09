@@ -37,12 +37,12 @@ public static class Lab10
             .Take(3)
             .Select(e => mailbox.Send(e.Name, 500));
 
-        Console.WriteLine($"  보상 대상 {rewards.Count()}명");
+        Console.WriteLine(Text.L($"  보상 대상 {rewards.Count()}명", $"  報酬対象 {rewards.Count()} 人"));
         foreach (Mail mail in rewards)
-            Console.WriteLine($"  {mail.To}: {mail.Gold}G 발송");
+            Console.WriteLine(Text.L($"  {mail.To}: {mail.Gold}G 발송", $"  {mail.To}: {mail.Gold}G 送付"));
 
-        Expect("보낸 우편 수", 3, mailbox.Sent.Count);
-        Expect("보낸 골드 합계", 1500, mailbox.Sent.Sum(m => m.Gold));
+        Expect(Text.L("보낸 우편 수", "送った郵便の数"), 3, mailbox.Sent.Count);
+        Expect(Text.L("보낸 골드 합계", "送ったゴールドの合計"), 1500, mailbox.Sent.Sum(m => m.Gold));
     }
 }
 

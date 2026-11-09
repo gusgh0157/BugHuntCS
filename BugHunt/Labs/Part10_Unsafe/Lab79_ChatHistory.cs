@@ -22,7 +22,7 @@ public static class Lab79
     public static void Run()
     {
         string[] senders = ["Kael", "Mira", "Doran", "Lia", "Sven"];
-        string[] texts = [Text.T("안녕"), Text.T("보스 어디야?"), Text.T("2시 방향"), Text.T("포션 남는 사람"), Text.T("ㄱㄱ"), Text.T("잠깐만 기다려 줘"), Text.T("길드전 8시")];
+        string[] texts = [Text.L("안녕", "やあ"), Text.L("보스 어디야?", "ボスどこ?"), Text.L("2시 방향", "2時の方向"), Text.L("포션 남는 사람", "ポーション余ってる人"), Text.L("ㄱㄱ", "いこいこ"), Text.L("잠깐만 기다려 줘", "ちょっと待って"), Text.L("길드전 8시", "ギルド戦は8時")];
 
         int count = Pick(4, 3, 8);
         var expected = new List<string>();
@@ -35,12 +35,12 @@ public static class Lab79
             expected.Add($"[{sender}] {text}");
         }
 
-        Console.WriteLine("  채팅 기록:");
+        Console.WriteLine(Text.L("  채팅 기록:", "  チャット履歴:"));
         foreach (ReadOnlyMemory<char> line in history)
             Console.WriteLine($"    {line}");
 
-        Expect("첫 메시지", expected[0], history[0].ToString());
-        Expect("전체 기록", string.Join(" / ", expected), string.Join(" / ", history.Select(m => m.ToString())));
+        Expect(Text.L("첫 메시지", "最初のメッセージ"), expected[0], history[0].ToString());
+        Expect(Text.L("전체 기록", "履歴全体"), string.Join(" / ", expected), string.Join(" / ", history.Select(m => m.ToString())));
     }
 }
 

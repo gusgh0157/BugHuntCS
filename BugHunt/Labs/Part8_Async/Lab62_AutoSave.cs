@@ -12,9 +12,9 @@ public static class Lab62
         {
             await Task.Delay(50);   // 디스크에 쓰는 척
             if (slot == "checkpoint_3")
-                throw new IOException(Text.F("{0}: 디스크 공간이 부족합니다", slot));
+                throw new IOException(Text.L($"{slot}: 디스크 공간이 부족합니다", $"{slot}: ディスクの空き容量が不足しています"));
             Interlocked.Increment(ref SavedCount);
-            Console.WriteLine($"  {slot} 저장 완료");
+            Console.WriteLine(Text.L($"  {slot} 저장 완료", $"  {slot} セーブ完了"));
         }
     }
 
@@ -30,7 +30,7 @@ public static class Lab62
             catch (IOException ex)
             {
                 failures++;
-                Console.WriteLine($"  [알림] 저장 실패: {ex.Message}");
+                Console.WriteLine(Text.L($"  [알림] 저장 실패: {ex.Message}", $"  [通知] セーブ失敗: {ex.Message}"));
             }
         }
         return failures;
@@ -43,8 +43,8 @@ public static class Lab62
 
         Thread.Sleep(500);   // 게임은 계속 진행된다
 
-        Expect("저장 성공", 2, saves.SavedCount);
-        Expect("실패 알림", 1, failures);
+        Expect(Text.L("저장 성공", "セーブ成功"), 2, saves.SavedCount);
+        Expect(Text.L("실패 알림", "失敗の通知"), 1, failures);
     }
 }
 

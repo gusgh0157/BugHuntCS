@@ -35,8 +35,8 @@ public sealed class WeeklyRewardMailer(RankingService service)
 
     static string RewardFor(int rank) => rank switch
     {
-        1 => Text.T("황금 왕관"),
-        <= 3 => Text.T("은 트로피"),
-        _ => Text.T("동 메달"),
+        1 => Text.L("황금 왕관", "黄金の王冠"),
+        <= 3 => Text.L("은 트로피", "銀のトロフィー"),
+        _ => Text.L("동 메달", "銅メダル"),
     };
 }

@@ -23,7 +23,7 @@ public static class Lab66
         var meter = new DamageMeter();
         if (Environment.ProcessorCount < 2)
         {
-            Skip("CPU 코어가 하나라 스레드가 동시에 돌지 않는다");
+            Skip(Text.L("CPU 코어가 하나라 스레드가 동시에 돌지 않는다", "CPU コアが一つなのでスレッドが同時に動かない"));
             return;
         }
 
@@ -40,9 +40,9 @@ public static class Lab66
         foreach (Thread worker in workers) worker.Start();
         foreach (Thread worker in workers) worker.Join();
 
-        Console.WriteLine($"  타격 {meter.Hits:N0}회, 총 피해 {meter.TotalDamage:N0}");
-        Expect("타격 횟수", party.Length * HitsPerMember, meter.Hits);
-        Expect("총 피해량", party.Length * HitsPerMember * 10L, meter.TotalDamage);
+        Console.WriteLine(Text.L($"  타격 {meter.Hits:N0}회, 총 피해 {meter.TotalDamage:N0}", $"  ヒット {meter.Hits:N0} 回、総ダメージ {meter.TotalDamage:N0}"));
+        Expect(Text.L("타격 횟수", "ヒット回数"), party.Length * HitsPerMember, meter.Hits);
+        Expect(Text.L("총 피해량", "総ダメージ量"), party.Length * HitsPerMember * 10L, meter.TotalDamage);
     }
 }
 

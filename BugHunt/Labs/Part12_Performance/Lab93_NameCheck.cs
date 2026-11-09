@@ -23,7 +23,7 @@ public static class Lab93
                 if (IsValidName(names[(i + offset) % names.Length]))
                     valid++;
         });
-        Console.WriteLine($"  메시지 {messages:N0}개 중 이름이 올바른 것 {valid:N0}개. 할당 {bytes:N0}바이트 (메시지당 {bytes / messages}), {ms}ms");
+        Console.WriteLine(Text.L($"  메시지 {messages:N0}개 중 이름이 올바른 것 {valid:N0}개. 할당 {bytes:N0}바이트 (메시지당 {bytes / messages}), {ms}ms", $"  メッセージ {messages:N0} 個中、名前が正しいもの {valid:N0} 個。割り当て {bytes:N0} バイト (メッセージあたり {bytes / messages})、{ms}ms"));
 
         int expected = 0;
         for (int i = 0; i < messages; i++)
@@ -32,8 +32,8 @@ public static class Lab93
             if (n.Length is >= 3 and <= 16 && char.IsAsciiLetter(n[0]) && n.All(c => char.IsAsciiLetterOrDigit(c) || c == '_'))
                 expected++;
         }
-        Expect("올바른 이름 수", expected, valid);
-        ExpectAtMost("메시지당 할당 (바이트)", 64, bytes / messages);
+        Expect(Text.L("올바른 이름 수", "正しい名前の数"), expected, valid);
+        ExpectAtMost(Text.L("메시지당 할당 (바이트)", "メッセージあたりの割り当て (バイト)"), 64, bytes / messages);
     }
 }
 

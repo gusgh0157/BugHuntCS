@@ -46,14 +46,14 @@ public static partial class Lab38
         foreach (Skill s in bar)
         {
             int each = s switch { FireSkill f => f.Damage(attack), IceSkill i => i.Damage(attack), _ => s.Damage(attack) };
-            Console.WriteLine($"  {s.Name,-6} ({s.GetType().Name,-9}) 위력 {s.Power,2} → {each}");
+            Console.WriteLine(Text.L($"  {s.Name,-6} ({s.GetType().Name,-9}) 위력 {s.Power,2} → {each}", $"  {s.Name,-6} ({s.GetType().Name,-9}) 威力 {s.Power,2} → {each}"));
             expected += each;
         }
 
         int actual = TotalDamage(bar, attack);
-        Console.WriteLine($"  스킬 바 총 피해: {actual}");
+        Console.WriteLine(Text.L($"  스킬 바 총 피해: {actual}", $"  スキルバーの合計ダメージ: {actual}"));
 
-        Expect("스킬 바 총 피해", expected, actual);
+        Expect(Text.L("스킬 바 총 피해", "スキルバーの合計ダメージ"), expected, actual);
     }
 }
 
@@ -101,10 +101,10 @@ public static partial class Lab38
 {
     static readonly (string Kind, string Name)[][] Compositions =
     [
-        [("basic", Text.T("베기")), ("fire", Text.T("화염구")), ("basic", Text.T("찌르기"))],
-        [("basic", Text.T("베기")), ("ice", Text.T("서리창")), ("fire", Text.T("화염구"))],
-        [("ice", Text.T("눈보라")), ("ice", Text.T("서리창"))],
-        [("fire", Text.T("화염구")), ("basic", Text.T("베기")), ("ice", Text.T("빙결")), ("fire", Text.T("용의 숨결"))],
+        [("basic", Text.L("베기", "斬撃")), ("fire", Text.L("화염구", "ファイアボール")), ("basic", Text.L("찌르기", "突き"))],
+        [("basic", Text.L("베기", "斬撃")), ("ice", Text.L("서리창", "フロストランス")), ("fire", Text.L("화염구", "ファイアボール"))],
+        [("ice", Text.L("눈보라", "ブリザード")), ("ice", Text.L("서리창", "フロストランス"))],
+        [("fire", Text.L("화염구", "ファイアボール")), ("basic", Text.L("베기", "斬撃")), ("ice", Text.L("빙결", "氷結")), ("fire", Text.L("용의 숨결", "竜の息吹"))],
     ];
 }
 #endregion

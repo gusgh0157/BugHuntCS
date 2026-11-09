@@ -42,16 +42,16 @@ public static class Lab06
         }
         catch (FormatException ex)
         {
-            Console.WriteLine($"  고장 난 파일 건너뜀: {ex.Message}");
+            Console.WriteLine(Text.L($"  고장 난 파일 건너뜀: {ex.Message}", $"  壊れたファイルを飛ばしました: {ex.Message}"));
             skipped++;
         }
 
         foreach (LootTable table in loaded.OrderBy(t => t.Region))
             Console.WriteLine($"  {table.Region}: {table.Gold}G");
 
-        Expect("읽은 테이블 수", 3, loaded.Count);
-        Expect("건너뛴 파일 수", 1, skipped);
-        Expect("골드 합계 (120 + 80 + 300)", 500, loaded.Sum(t => t.Gold));
+        Expect(Text.L("읽은 테이블 수", "読んだテーブル数"), 3, loaded.Count);
+        Expect(Text.L("건너뛴 파일 수", "飛ばしたファイル数"), 1, skipped);
+        Expect(Text.L("골드 합계 (120 + 80 + 300)", "ゴールドの合計 (120 + 80 + 300)"), 500, loaded.Sum(t => t.Gold));
     }
 }
 

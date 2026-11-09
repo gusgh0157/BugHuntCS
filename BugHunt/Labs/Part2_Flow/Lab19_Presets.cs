@@ -17,15 +17,15 @@ public static class Lab19
 
     public static void Run()
     {
-        CharacterPreset kael = Customize(Warrior, Text.T("Kael의 전사"), "Whirlwind");
-        CharacterPreset mira = Customize(Warrior, Text.T("Mira의 전사"), "Taunt");
+        CharacterPreset kael = Customize(Warrior, Text.L("Kael의 전사", "Kaelの戦士"), "Whirlwind");
+        CharacterPreset mira = Customize(Warrior, Text.L("Mira의 전사", "Miraの戦士"), "Taunt");
 
         Console.WriteLine($"  {Warrior.Name}: {string.Join(", ", Warrior.Skills)}");
         Console.WriteLine($"  {kael.Name}: {string.Join(", ", kael.Skills)}");
         Console.WriteLine($"  {mira.Name}: {string.Join(", ", mira.Skills)}");
 
-        Expect("기본 프리셋 스킬", "Slash, Guard", string.Join(", ", Warrior.Skills));
-        Expect("Mira 프리셋 스킬", "Slash, Guard, Taunt", string.Join(", ", mira.Skills));
+        Expect(Text.L("기본 프리셋 스킬", "基本プリセットのスキル"), "Slash, Guard", string.Join(", ", Warrior.Skills));
+        Expect(Text.L("Mira 프리셋 스킬", "Mira のプリセットのスキル"), "Slash, Guard, Taunt", string.Join(", ", mira.Skills));
     }
 }
 

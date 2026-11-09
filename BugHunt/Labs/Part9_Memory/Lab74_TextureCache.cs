@@ -40,13 +40,13 @@ public static class Lab74
         {
             foreach (string tex in new[] { "ground", "trees", "water", "sky" })
                 _textures.Add(new Texture($"{name}/{tex}", 16L * 1024 * 1024));
-            Console.WriteLine($"  {name} 입장: GPU {GpuMemory.BytesInUse / (1024 * 1024)}MB");
+            Console.WriteLine(Text.L($"  {name} 입장: GPU {GpuMemory.BytesInUse / (1024 * 1024)}MB", $"  {name} 入場: GPU {GpuMemory.BytesInUse / (1024 * 1024)}MB"));
         }
 
         public void Exit()
         {
             _textures.Clear();
-            Console.WriteLine($"  {name} 퇴장: GPU {GpuMemory.BytesInUse / (1024 * 1024)}MB");
+            Console.WriteLine(Text.L($"  {name} 퇴장: GPU {GpuMemory.BytesInUse / (1024 * 1024)}MB", $"  {name} 退場: GPU {GpuMemory.BytesInUse / (1024 * 1024)}MB"));
         }
     }
 
@@ -61,9 +61,9 @@ public static class Lab74
         long duringCave = GpuMemory.BytesInUse;
         cave.Exit();
 
-        Console.WriteLine($"  지금까지 GC 횟수(0세대): {GC.CollectionCount(0)}");
-        Expect("동굴에 있을 때 GPU 메모리 (MB)", 64L, duringCave / (1024 * 1024));
-        Expect("레벨을 다 나온 뒤 GPU 메모리 (MB)", 0L, GpuMemory.BytesInUse / (1024 * 1024));
+        Console.WriteLine(Text.L($"  지금까지 GC 횟수(0세대): {GC.CollectionCount(0)}", $"  これまでの GC 回数(第 0 世代): {GC.CollectionCount(0)}"));
+        Expect(Text.L("동굴에 있을 때 GPU 메모리 (MB)", "洞窟にいるときの GPU メモリ (MB)"), 64L, duringCave / (1024 * 1024));
+        Expect(Text.L("레벨을 다 나온 뒤 GPU 메모리 (MB)", "レベルをすべて出たあとの GPU メモリ (MB)"), 0L, GpuMemory.BytesInUse / (1024 * 1024));
     }
 }
 
