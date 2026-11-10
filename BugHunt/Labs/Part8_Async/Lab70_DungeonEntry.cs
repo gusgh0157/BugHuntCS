@@ -13,8 +13,8 @@ public static class Lab70
     static async Task LoadDungeonAsync(Kind kind, CancellationToken token)
     {
         if (kind == Kind.Normal)
-            return;   // 서버가 바로 응답한다
-        await Task.Delay(Timeout.Infinite, token);   // 응답 없는 서버, 또는 플레이어가 취소할 때까지 로딩 중
+            return;   // 서버가 바로 응답한다 / サーバーがすぐに応答する
+        await Task.Delay(Timeout.Infinite, token);   // 응답 없는 서버, 또는 플레이어가 취소할 때까지 로딩 중 / 応答しないサーバー、またはプレイヤーがキャンセルするまでロード中
     }
 
     static async Task<string> TryEnterAsync(Kind kind, CancellationToken userCancel)
@@ -28,7 +28,7 @@ public static class Lab70
         }
         catch (OperationCanceledException)
         {
-            return Text.L("취소됨", "キャンセル済み");   // 플레이어가 취소했다
+            return Text.L("취소됨", "キャンセル済み");   // 플레이어가 취소했다 / プレイヤーがキャンセルした
         }
     }
 
@@ -37,7 +37,7 @@ public static class Lab70
         using var userCancel = new CancellationTokenSource();
         Task<string> entering = TryEnterAsync(kind, userCancel.Token);
         if (kind == Kind.UserCancels)
-            userCancel.Cancel();   // 로딩 중에 취소 버튼을 누른다
+            userCancel.Cancel();   // 로딩 중에 취소 버튼을 누른다 / ロード中にキャンセルボタンを押す
 
         string result = await entering;
         if (result == "timeout")
@@ -59,7 +59,7 @@ public static class Lab70
             Kind[] kinds = [Kind.Normal, Kind.UserCancels, Kind.ServerHangs];
             for (int i = 0; i < party.Count; i++)
                 party[i] = (party[i].Name, Pick(Kind.Normal, kinds));
-            party.Add(("Sera", Kind.ServerHangs));   // 숨은 케이스에도 응답 없는 서버는 꼭 하나 있다
+            party.Add(("Sera", Kind.ServerHangs));   // 숨은 케이스에도 응답 없는 서버는 꼭 하나 있다 / 隠しケースにも応答しないサーバーが必ず一つある
             party.Add(("Bran", Kind.UserCancels));
         }
 

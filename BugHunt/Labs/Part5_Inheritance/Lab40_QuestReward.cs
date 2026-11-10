@@ -17,16 +17,20 @@ public static partial class Lab40
         public string Title => title;
 
         // 이벤트 배율 (1.0 = 평상시)
+        // [JA] イベント倍率 (1.0 = 通常時)
         public double EventRate { get; set; } = 1.0;
 
         // 퀘스트 창에 보여 주는 보상: 배율 적용
+        // [JA] クエスト画面に表示する報酬: 倍率を適用
         public int Gold => (int)Math.Round(baseGold * EventRate);
 
         // 정산 파이프라인용 보상
+        // [JA] 精算パイプライン用の報酬
         int IReward.Gold => baseGold;
     }
 
     // 정산: 완료한 퀘스트의 보상을 모두 더해 지급한다.
+    // [JA] 精算: 完了したクエストの報酬をすべて足して支給します。
     static int Payout(IEnumerable<IReward> completed) => completed.Sum(r => r.Gold);
 
     public static void Run()

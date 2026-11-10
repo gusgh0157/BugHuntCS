@@ -24,6 +24,7 @@ public static class Text
     public static bool IsJa => Lang == "ja";
 
     // args에서 --lang X 를 빼고 언어를 정한다. 잘못된 값이면 null을 돌려준다
+    // [JA] args から --lang X を取り除いて言語を決めます。不正な値なら null を返します
     public static string[]? TakeLangArg(string[] args)
     {
         int at = Array.IndexOf(args, "--lang");
@@ -65,6 +66,7 @@ public static class Text
     public static string L(ref KoText ko, ref JaText ja) => IsJa ? ja.ToStringAndClear() : ko.ToStringAndClear();
 
     // ---- 번역 빠짐 검사 ----
+    // [JA] ---- 翻訳漏れチェック ----
 
     public static bool HasHangul(string s)
     {
@@ -75,11 +77,15 @@ public static class Text
     }
 
     // 이 표시가 붙은 줄의 한글 문자열은 두 언어를 이미 한 문자열에 같이 적은 것이라 검사하지 않는다.
+    // [JA] この印が付いた行のハングル文字列は、二つの言語をすでに一つの文字列に一緒に書いたものなのでチェックしません。
     public const string BothLangMark = "// ko+ja";
 
     // 소스(.cs)에서 Text.L(...) 밖에 있거나 일본어 쪽(둘째 인자)에 들어간 한글 문자열 리터럴을 찾는다. 주석과 BothLangMark 줄은 건너뛴다.
-    // 돌려주는 값: "파일:줄: 리터럴" (일본어 쪽이면 앞에 "[ja] ")
+    // 일본어 짝이 없는 한글 주석도 찾는다 (UnpairedComments).
+    // 돌려주는 값: "파일:줄: 리터럴" (일본어 쪽이면 앞에 "[ja] ", 주석이면 앞에 CommentTag)
     // [JA] ソース(.cs)で Text.L(...) の外にある、または日本語側(2 番目の引数)に入ったハングルの文字列リテラルを探します。コメントと BothLangMark の行は飛ばします。
+    // [JA] 日本語のペアがないハングルのコメントも探します (UnpairedComments)。
+    // [JA] 戻り値: "ファイル:行: リテラル" (日本語側なら前に "[ja] "、コメントなら前に CommentTag)
     public static List<string> FindUnpairedHangul(string root)
     {
         var found = new List<string>();
@@ -95,23 +101,83 @@ public static class Text
                     continue;
                 string src = File.ReadAllText(file);
                 string[] lines = src.Split('\n');
-                foreach ((int at, int length, bool inJa) in new LiteralScanner(src).UnpairedHangul())
+                var scanner = new LiteralScanner(src);
+                foreach ((int at, int length, bool inJa) in scanner.UnpairedHangul())
                 {
                     int line = src.AsSpan(0, at).Count('\n');
                     if (lines[line].Contains(BothLangMark))
                         continue;
                     found.Add($"{rel}:{line + 1}: {(inJa ? "[ja] " : "")}{src.Substring(at, Math.Min(length, 80)).ReplaceLineEndings(" ")}");
                 }
+                foreach ((int line, string text) in UnpairedComments(src, scanner.Comments))
+                    found.Add($"{rel}:{line + 1}: {CommentTag}{text[..Math.Min(text.Length, 80)].ReplaceLineEndings(" ")}");
             }
         }
         return found;
     }
 
+    // 찾은 것 가운데 주석에서 나온 것 앞에 붙는 표시
+    // [JA] 見つかったもののうち、コメントから出たものの前に付く印
+    public const string CommentTag = "[comment] ";
+
+    static bool HasJapanese(string s) =>
+        s.Contains("[JA]", StringComparison.Ordinal) || s.Any(c => c is >= '぀' and <= 'ヿ' or >= 'ｦ' and <= 'ﾟ');
+
+    static bool IsKoreanOnly(string s) => HasHangul(s) && !HasJapanese(s);
+
+    // 주석 짝 검사: 한글만 있는 주석에는 일본어 짝이 있어야 한다.
+    // 줄 전체가 // 주석인 줄이 이어진 묶음은, 일본어 줄([JA] 또는 가나가 있는 줄)이 한글만 있는 줄보다 적으면 그 묶음의 한글 줄을 돌려준다.
+    // 코드 뒤에 붙은 // 주석, /* */ 주석, #region 같은 지시문 줄은 그 주석 하나 안에 일본어가 같이 있어야 한다.
+    // [JA] コメントのペア チェック: ハングルだけのコメントには日本語のペアが必要です。
+    // [JA] 行全体が // コメントの行が続くまとまりでは、日本語の行([JA] かかなのある行)がハングルだけの行より少なければ、そのまとまりのハングルの行を返します。
+    // [JA] コードの後ろに付いた // コメント、/* */ コメント、#region のようなディレクティブ行は、そのコメント一つの中に日本語も一緒に必要です。
+    static List<(int Line, string Text)> UnpairedComments(string src, List<(int At, int Length)> comments)
+    {
+        var result = new List<(int Line, string Text)>();
+        var block = new List<(int Line, string Text)>();
+        int korean = 0, japanese = 0, lastLine = -2;
+        void Flush()
+        {
+            if (korean > japanese)
+                result.AddRange(block.Where(b => IsKoreanOnly(b.Text)));
+            block.Clear();
+            korean = japanese = 0;
+        }
+        foreach ((int at, int length) in comments)
+        {
+            string text = src.Substring(at, length).TrimEnd('\r');
+            int line = src.AsSpan(0, at).Count('\n');
+            int lineStart = at == 0 ? 0 : src.LastIndexOf('\n', at - 1) + 1;
+            bool wholeLine = text.StartsWith("//", StringComparison.Ordinal) && src.AsSpan(lineStart, at - lineStart).IsWhiteSpace();
+            if (!wholeLine)
+            {
+                // 한 주석 안에 한글과 한자가 같이 있으면 "참고 / 参考" 처럼 두 언어를 적은 것으로 본다
+                // [JA] 一つのコメントにハングルと漢字が一緒にあれば、「참고 / 参考」のように二つの言語で書いたものと見なします
+                if (IsKoreanOnly(text) && !text.Any(c => c is >= '一' and <= '鿿'))
+                    result.Add((line, text));
+                continue;
+            }
+            if (line != lastLine + 1)
+                Flush();
+            lastLine = line;
+            block.Add((line, text));
+            if (IsKoreanOnly(text))
+                korean++;
+            else if (HasJapanese(text))
+                japanese++;
+        }
+        Flush();
+        return [.. result.OrderBy(r => r.Line)];
+    }
+
     // C# 소스를 훑으며 한글 문자열 리터럴이 Text.L( 한국어, 일본어 ) 의 첫 인자 안에 있는지 본다.
     // Text.L 밖이거나 일본어 쪽(둘째 인자) 안에 있으면 찾은 것으로 친다. (주석, 문자 리터럴, 보간 구멍과 그 서식, 원시 문자열 처리)
+    // [JA] C# ソースを読み進めながら、ハングルの文字列リテラルが Text.L( 韓国語, 日本語 ) の最初の引数の中にあるかを見ます。
+    // [JA] Text.L の外か日本語側(2 番目の引数)の中にあれば、見つかったものとして数えます。(コメント、文字リテラル、補間の穴とその書式、生文字列を処理)
     sealed class LiteralScanner(string src)
     {
         // 여는 괄호 ( [ { 마다 하나. Pair: 그 괄호가 Text.L( 인가, Arg: 그 괄호 안에서 지금 몇 번째 인자인가(0부터)
+        // [JA] 開き括弧 ( [ { ごとに一つ。Pair: その括弧が Text.L( かどうか、Arg: その括弧の中で今何番目の引数か(0 から)
         sealed class Frame(bool pair)
         {
             public bool Pair { get; } = pair;
@@ -122,6 +188,10 @@ public static class Text
         readonly List<Frame> _frames = [];
         readonly List<(int, int, bool)> _found = [];
 
+        // 지나가며 본 주석과 지시문 줄의 (시작, 길이). UnpairedHangul() 을 부른 뒤에 채워져 있다
+        // [JA] 通りがかりに見たコメントとディレクティブ行の(開始, 長さ)。UnpairedHangul() を呼んだ後に埋まっています
+        public List<(int At, int Length)> Comments { get; } = [];
+
         public List<(int At, int Length, bool InJa)> UnpairedHangul()
         {
             Code(inHole: false);
@@ -129,6 +199,7 @@ public static class Text
         }
 
         // 가장 안쪽 Text.L 이 없으면 Text.L 밖, 있으면 그 인자 번호로 판단한다
+        // [JA] 一番内側の Text.L がなければ Text.L の外、あればその引数の番号で判断します
         (bool Outside, bool InJa) Where()
         {
             for (int k = _frames.Count - 1; k >= 0; k--)
@@ -138,6 +209,7 @@ public static class Text
         }
 
         // inHole: 보간 구멍 안. 맨 바깥에서 } 를 만나거나 서식(:)·정렬(,)이 시작되면 돌아간다
+        // [JA] inHole: 補間の穴の中。一番外側で } に出会うか、書式(:)・配置(,)が始まったら戻ります
         void Code(bool inHole)
         {
             int bottom = _frames.Count;
@@ -150,12 +222,16 @@ public static class Text
                 if (!inHole && (Starts("//") || (c == '#' && LineStartBefore(_i))))
                 {
                     int nl = src.IndexOf('\n', _i);
-                    _i = nl < 0 ? src.Length : nl;
+                    int end = nl < 0 ? src.Length : nl;
+                    Comments.Add((_i, end - _i));
+                    _i = end;
                 }
                 else if (Starts("/*"))
                 {
                     int end = src.IndexOf("*/", _i + 2, StringComparison.Ordinal);
-                    _i = end < 0 ? src.Length : end + 2;
+                    end = end < 0 ? src.Length : end + 2;
+                    Comments.Add((_i, end - _i));
+                    _i = end;
                 }
                 else if (c == '\'')
                 {
@@ -250,6 +326,7 @@ public static class Text
         }
 
         // 보간 구멍 { 식 , 정렬 : 서식 } 에서 식만 코드로 읽고, 정렬·서식은 닫는 } 까지 건너뛴다 (} 는 braces 개)
+        // [JA] 補間の穴 { 式 , 配置 : 書式 } では式だけをコードとして読み、配置・書式は閉じる } まで飛ばします (} は braces 個)
         void Hole(int braces)
         {
             Code(inHole: true);
@@ -278,6 +355,8 @@ public static class Text
 
     // ---- 보간 문자열 핸들러 (Text.L 전용) ----
     // 고른 언어가 아니면 shouldAppend = false 라서 컴파일러가 그쪽 구멍의 식을 아예 계산하지 않는다.
+    // [JA] ---- 補間文字列ハンドラー (Text.L 専用) ----
+    // [JA] 選んだ言語でなければ shouldAppend = false なので、コンパイラーはそちらの穴の式をまったく計算しません。
 
     [InterpolatedStringHandler, DebuggerStepThrough]
     public ref struct KoText
@@ -288,6 +367,7 @@ public static class Text
         {
             shouldAppend = !IsJa;
             // 고르지 않은 쪽은 버퍼도 빌리지 않는다 (Append* 와 ToStringAndClear 가 불리지 않는다)
+            // [JA] 選ばなかった側はバッファーも借りません (Append* と ToStringAndClear が呼ばれません)
             _inner = shouldAppend ? new DefaultInterpolatedStringHandler(literalLength, formattedCount) : default;
         }
 
@@ -313,6 +393,7 @@ public static class Text
         {
             shouldAppend = IsJa;
             // 고르지 않은 쪽은 버퍼도 빌리지 않는다 (Append* 와 ToStringAndClear 가 불리지 않는다)
+            // [JA] 選ばなかった側はバッファーも借りません (Append* と ToStringAndClear が呼ばれません)
             _inner = shouldAppend ? new DefaultInterpolatedStringHandler(literalLength, formattedCount) : default;
         }
 

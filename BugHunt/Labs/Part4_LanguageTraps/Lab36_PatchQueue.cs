@@ -14,12 +14,13 @@ public static partial class Lab36
         var tasks = new List<Task>();
 
         // 조각마다 다운로드 작업을 하나씩 띄운다.
+        // [JA] 断片ごとにダウンロードタスクを1つずつ起動します。
         for (int i = 0; i < pieces; i++)
         {
             tasks.Add(Task.Run(() =>
             {
-                gate.Wait();          // 모든 작업이 만들어진 뒤 동시에 시작하도록
-                downloaded.Add(i);    // 이 조각 번호를 받았다고 기록
+                gate.Wait();          // 모든 작업이 만들어진 뒤 동시에 시작하도록 / すべてのタスクが作られたあと同時に始まるように
+                downloaded.Add(i);    // 이 조각 번호를 받았다고 기록 / この断片番号を受け取ったと記録
             }));
         }
 

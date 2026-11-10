@@ -10,10 +10,12 @@ namespace BugHunt;
 public static partial class Lab61
 {
     // 보내는 쪽: 초대장 XML 만들기
+    // [JA] 送る側: 招待状の XML を作る
     static string BuildInvite(string guild, string from, string message) =>
         $"<invite guild=\"{guild}\" from=\"{from}\"><message>{message}</message></invite>";
 
     // 받는 쪽: 읽을 수 없는 메시지는 버린다.
+    // [JA] 受け取る側: 読めないメッセージは捨てます。
     static (string Guild, string From, string Message)? Receive(string xml)
     {
         try

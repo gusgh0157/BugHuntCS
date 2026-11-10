@@ -5,6 +5,7 @@ namespace BugHunt;
 public static partial class Lab37
 {
     // 장바구니 합계. 가격은 "원" 단위 소수.
+    // [JA] カートの合計。価格は小数。
     static double Total(decimal[] prices)
     {
         double sum = 0;
@@ -14,6 +15,7 @@ public static partial class Lab37
     }
 
     // 세금을 정수로 반올림한다.
+    // [JA] 税を整数に丸める。
     static decimal RoundTax(decimal tax) => Math.Round(tax);
 
     public static void Run()

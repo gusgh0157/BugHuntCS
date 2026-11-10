@@ -11,6 +11,7 @@ public static partial class Lab48
     static readonly string Root = Path.Combine(Path.GetTempPath(), "BugHunt", $"Lab48_ChatUpload_{Environment.ProcessId}");
 
     // 게임이 켜져 있는 동안 열어 두는 로그
+    // [JA] ゲームが起動している間ずっと開いておくログ
     sealed class ChatLogger(string path) : IDisposable
     {
         readonly StreamWriter _writer = new(path, append: true) { AutoFlush = true };
@@ -21,6 +22,7 @@ public static partial class Lab48
     }
 
     // 신고: 지금까지의 로그를 읽어 서버로 보낸다.
+    // [JA] 通報: これまでのログを読んでサーバーに送ります。
     static string[] Upload(string path)
     {
         try
@@ -39,6 +41,7 @@ public static partial class Lab48
     public static void Run()
     {
         // FileShare 는 Windows 에서만 운영 체제가 강제한다. Linux/macOS 는 공유 모드를 대부분 무시해서 판정할 수 없다.
+        // [JA] FileShare は Windows でだけ OS が強制します。Linux/macOS は共有モードをほとんど無視するので判定できません。
         if (!OperatingSystem.IsWindows())
         {
             Skip(Text.L("FileShare 충돌은 Windows 에서만 재현됩니다", "FileShare の競合は Windows でのみ再現します"));
@@ -60,6 +63,7 @@ public static partial class Lab48
             string[] uploaded = Upload(path);
 
             // 신고 뒤에도 채팅은 계속된다.
+            // [JA] 通報のあともチャットは続きます。
             for (int i = 1; i <= after; i++)
                 logger.Write(senders[i % senders.Length], Text.L($"신고 뒤 메시지 {i}", $"通報後のメッセージ {i}"));
 

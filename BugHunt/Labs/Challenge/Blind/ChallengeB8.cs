@@ -26,6 +26,7 @@ public static class ChallengeB8
         ~Texture() => NativePool.Release(_block);
 
         // 핫 경로라서 처음부터 최적화해서 컴파일한다
+        // [JA] ホットパスなので最初から最適化してコンパイルする
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public uint FillAndChecksum(byte color, Action everyFewRows)
         {
@@ -46,6 +47,7 @@ public static class ChallengeB8
     static readonly List<Texture> Streamed = [];
 
     // 다른 텍스처를 스트리밍해 온다. 그 사이 GC 가 돈다.
+    // [JA] 別のテクスチャをストリーミングしてきます。その間に GC が走ります。
     static void StreamOne()
     {
         GC.Collect();
@@ -67,6 +69,7 @@ public static class ChallengeB8
     }
 
     // 미리보기용 체크섬: 임시 텍스처에 색을 채우고 체크섬만 받아 간다. 매 프레임 불린다
+    // [JA] プレビュー用チェックサム: 一時テクスチャに色を塗り、チェックサムだけ受け取ります。毎フレーム呼ばれます
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     static uint PreviewChecksum(byte color) => new Texture().FillAndChecksum(color, StreamOne);
 

@@ -13,6 +13,7 @@ public static partial class Lab49
     sealed record Profile(string Name, string Folder);
 
     // 프로필의 세이브 폴더: 세이브 루트 아래 프로필 폴더
+    // [JA] プロフィールのセーブフォルダー: セーブルートの下のプロフィールフォルダー
     static string SaveDir(string saveRoot, Profile profile) => Path.Combine(saveRoot, profile.Folder);
 
     static void Save(string saveRoot, Profile profile)
@@ -24,6 +25,7 @@ public static partial class Lab49
     }
 
     // 세이브 루트 아래의 모든 .sav 를 백업 폴더로 복사
+    // [JA] セーブルートの下のすべての .sav をバックアップフォルダーにコピー
     static int Backup(string saveRoot, string backupDir)
     {
         int copied = 0;

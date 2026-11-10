@@ -11,7 +11,7 @@ public static class ChallengeB7
 
         public async Task SendAsync(string player)
         {
-            await Task.Delay(latencyMs);   // 우편 서버 왕복
+            await Task.Delay(latencyMs);   // 우편 서버 왕복 / 郵便サーバーとの往復
             Interlocked.Increment(ref _delivered);
         }
     }

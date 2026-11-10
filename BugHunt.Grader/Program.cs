@@ -9,11 +9,14 @@ namespace BugHunt.Grader;
 // BugHunt 채점기.
 // 랩마다 BugHunt.exe를 새 프로세스로 띄워서 크래시와 멈춤을 격리하고, 숨은 케이스(무작위 시드)로도 다시 돌린다.
 // 결과는 콘솔 표와 grade-report.json(다른 BugHunt 판과 같은 형식)으로 낸다.
+// [JA] BugHunt の採点器。
+// [JA] ラボごとに BugHunt.exe を新しいプロセスで起動してクラッシュと停止を隔離し、隠しケース(ランダムなシード)でももう一度回します。
+// [JA] 結果はコンソールの表と grade-report.json(ほかの BugHunt 版と同じ形式)で出します。
 static class Program
 {
     const string Edition = "cs";
     const string ReportVersion = "1";
-    const int ChallengePart = 0;   // 챌린지 랩의 part 번호(번호 붙은 부가 아님). id는 C-n = 100+n, B-n = 200+n
+    const int ChallengePart = 0;   // 챌린지 랩의 part 번호(번호 붙은 부가 아님). id는 C-n = 100+n, B-n = 200+n / チャレンジ ラボの part 番号(番号の付いたパートではない)。id は C-n = 100+n、B-n = 200+n
 
     static string PartName(int part) => part == ChallengePart ? Text.L("챌린지", "チャレンジ") : Text.L($"{part}부", $"第{part}部");
 
@@ -24,12 +27,13 @@ static class Program
     record Report(string Edition, string Version, int Total, int Passed, List<LabResult> Labs);
 
     // 한 번 실행할 조건: 빌드 구성과 시드(0 = 화면에 보이는 기본 케이스)
+    // [JA] 1 回の実行の条件: ビルド構成とシード(0 = 画面に見える基本ケース)
     record Case(string Config, int Seed);
 
     class Options
     {
         public HashSet<int>? Only;
-        public string? Config;          // null이면 Debug + (Release 표시된 랩은) Release
+        public string? Config;          // null이면 Debug + (Release 표시된 랩은) Release / null なら Debug + (Release の印が付いたラボは) Release
         public bool Build = true;
         public bool Hidden = true;
         public int? Seed;
@@ -42,6 +46,7 @@ static class Program
         Console.OutputEncoding = Encoding.UTF8;
 
         // 출력 언어: --lang ja|ko > BUGHUNT_LANG > 화면 언어 > 한국어. 랩 프로세스에도 같은 언어를 넘긴다
+        // [JA] 出力言語: --lang ja|ko > BUGHUNT_LANG > 画面の言語 > 韓国語。ラボのプロセスにも同じ言語を渡します
         string[]? rest = Text.TakeLangArg(args);
         if (rest == null)
         {
@@ -92,6 +97,7 @@ static class Program
             results.Add(result);
             string detail = result.Detail.Length > 0 ? $"\n{"",26}└ {result.Detail}" : "";
             // 제목과 상세는 랩 프로세스가 이미 고른 언어로 찍은 것이다
+            // [JA] タイトルと詳細は、ラボのプロセスがすでに選んだ言語で出力したものです
             Console.WriteLine($"  {lab.Id,3}  {(lab.Part == ChallengePart ? "C" : lab.Part.ToString()),2}  {result.Result,-8}{result.Ms,6}ms  {lab.Title}{detail}");
         }
 
@@ -111,6 +117,7 @@ static class Program
             Console.WriteLine("  " + Text.L($"숨은 케이스를 그대로 다시 돌리려면: --seed {baseSeed}", $"隠しケースをそのまま再実行するには: --seed {baseSeed}"));
 
         // 일본어로 채점하면 번역이 빠진 문구를 모아 보여 준다 (판정과는 별개. 종료 코드 3)
+        // [JA] 日本語で採点すると、翻訳の抜けた文言を集めて見せます (判定とは別。終了コード 3)
         if (Text.IsJa)
         {
             foreach (string u in Text.FindUnpairedHangul(root))
@@ -210,6 +217,7 @@ static class Program
                     foreach (string part in a.Split(',', StringSplitOptions.RemoveEmptyEntries))
                     {
                         // 챌린지: C, B (전부) 또는 C-2, B-5
+                        // [JA] チャレンジ: C、B (全部) または C-2、B-5
                         if (part.Length >= 1 && (char.ToUpperInvariant(part[0]) is 'C' or 'B') && (part.Length == 1 || part[1] == '-'))
                         {
                             int baseId = char.ToUpperInvariant(part[0]) == 'C' ? 100 : 200;
@@ -233,6 +241,8 @@ static class Program
 
     // 채점기 자신이 들어 있는 저장소를 먼저 찾는다. 현재 폴더를 먼저 보면, 다른 폴더에서 grade.bat 을 부를 때
     // 엉뚱한 체크아웃(다른 worktree)을 채점한다. 채점기 exe 를 저장소 밖으로 복사해 쓸 때만 현재 폴더로 찾는다.
+    // [JA] 採点器自身が入っているリポジトリを先に探します。現在のフォルダーを先に見ると、別のフォルダーから grade.bat を呼んだときに
+    // [JA] 関係のないチェックアウト(別の worktree)を採点してしまいます。採点器の exe をリポジトリの外にコピーして使うときだけ現在のフォルダーで探します。
     static string? FindRepoRoot()
     {
         foreach (string start in new[] { AppContext.BaseDirectory, Directory.GetCurrentDirectory() })
@@ -259,6 +269,7 @@ static class Program
         foreach (string arg in new[] { "build", Path.Combine(root, "BugHunt", "BugHunt.csproj"), "-c", config, "-nologo", "-v", "q", "-clp:NoSummary" })
             psi.ArgumentList.Add(arg);
         // 빌드 메시지를 영어로 받아서 "error"/"warning" 줄을 고를 수 있게 한다.
+        // [JA] ビルドのメッセージを英語で受け取り、"error"/"warning" の行を選べるようにします。
         psi.Environment["DOTNET_CLI_UI_LANGUAGE"] = "en";
 
         using Process p = Process.Start(psi)!;
@@ -280,6 +291,7 @@ static class Program
     }
 
     // bin/<구성>/<대상 프레임워크>/ 아래의 BugHunt 실행 파일. Windows가 아니면 apphost 대신 dotnet BugHunt.dll로 실행한다.
+    // [JA] bin/<構成>/<ターゲット フレームワーク>/ の下の BugHunt 実行ファイル。Windows でなければ apphost の代わりに dotnet BugHunt.dll で実行します。
     static string? FindLabExe(string root, string config)
     {
         string bin = Path.Combine(root, "BugHunt", "bin", config);
@@ -344,6 +356,7 @@ static class Program
                 return new LabResult(lab.Id, lab.Title, lab.Part, "SKIP", totalMs, Text.L($"{c.Config} 빌드가 없음 (--no-build 없이 실행하세요)", $"{c.Config} のビルドがありません (--no-build なしで実行してください)"));
 
             // 랩 8(스택 오버플로)은 PC가 바쁘면 런타임이 넘친 스택을 찍는 데만 20초 가까이 걸린다. 이 랩만 제한 시간을 60초 이상으로
+            // [JA] ラボ 8(スタック オーバーフロー)は、PC が忙しいとランタイムがあふれたスタックを出力するだけで 20 秒近くかかります。このラボだけ制限時間を 60 秒以上に
             int timeoutMs = lab.Id == 8 ? Math.Max(options.TimeoutMs, 60_000) : options.TimeoutMs;
             (string result, string detail, long ms) = RunOnce(dll, lab.Id, c.Seed, timeoutMs);
             totalMs += ms;
@@ -362,6 +375,7 @@ static class Program
                 where.Add(Text.L($"숨은 케이스 seed {c.Seed}", $"隠しケース seed {c.Seed}"));
             string prefix = where.Count > 0 ? $"[{string.Join(", ", where)}] " : "";
             // 기본 케이스는 통과했는데 숨은 케이스에서 실패: 보이는 증상만 막고 원인은 그대로 둔 수정일 가능성이 크다
+            // [JA] 基本ケースは通ったのに隠しケースで失敗: 見える症状だけを防いで原因はそのままにした修正の可能性が高いです
             if (c.Seed != 0)
                 prefix = Text.L("증상은 사라졌지만 원인이 남아 있음", "症状は消えたが原因が残っている") + " " + prefix;
             return new LabResult(lab.Id, lab.Title, lab.Part, result, totalMs, prefix + detail);
@@ -370,6 +384,7 @@ static class Program
     }
 
     // 랩 번호와 순번이 같아도 기준 시드가 다르면 다른 입력이 나온다. 0은 기본 케이스라서 피한다.
+    // [JA] ラボ番号と順番が同じでも、基準のシードが違えば違う入力になります。0 は基本ケースなので避けます。
     static int HiddenSeed(int baseSeed, int lab, int k)
     {
         int seed = (int)((uint)(baseSeed * 7919 + lab * 104_729 + k * 15_485_863) % 1_000_000_000);
@@ -377,6 +392,7 @@ static class Program
     }
 
     // PASS: 종료 코드 0, [FAIL] 없음, [PASS] 1개 이상, 제한 시간 안에 끝남
+    // [JA] PASS: 終了コード 0、[FAIL] なし、[PASS] 1 個以上、制限時間内に終わる
     static (string Result, string Detail, long Ms) RunOnce(string dll, int lab, int seed, int timeoutMs)
     {
         ProcessStartInfo psi = LabProcess(dll, lab.ToString());
@@ -386,6 +402,7 @@ static class Program
         var watch = Stopwatch.StartNew();
         using Process p = Process.Start(psi)!;
         // 랩 프로세스는 우선순위를 한 단계 높여 돌린다. PC가 바빠도 결과(특히 스택 오버플로 같은 크래시 처리)가 제한 시간 안에 나오게 하려는 것뿐이다
+        // [JA] ラボのプロセスは優先度を一段上げて回します。PC が忙しくても、結果(特にスタック オーバーフローのようなクラッシュの処理)が制限時間内に出るようにするためだけです
         try { p.PriorityClass = ProcessPriorityClass.AboveNormal; } catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception) { }
         p.StandardInput.Close();
         Task<string> stdout = p.StandardOutput.ReadToEndAsync();
@@ -397,6 +414,7 @@ static class Program
             CollectHangul(lab, stdout.Result);
             CollectHangul(lab, stderr.Result);
             // 스택 오버플로는 이미 넘친 뒤 런타임이 스택을 찍는 데 PC가 바쁘면 오래 걸릴 수 있다. 넘쳤다면 멈춤이 아니라 크래시다
+            // [JA] スタック オーバーフローは、あふれた後にランタイムがスタックを出力するのに、PC が忙しいと時間がかかることがあります。あふれたのなら停止ではなくクラッシュです
             if (stderr.Result.StartsWith("Stack overflow.", StringComparison.Ordinal))
                 return ("CRASH", "Stack overflow.", watch.ElapsedMilliseconds);
             return ("TIMEOUT", Text.L($"{timeoutMs} ms 안에 끝나지 않아 강제 종료", $"{timeoutMs} ms 以内に終わらなかったため強制終了"), watch.ElapsedMilliseconds);
@@ -409,6 +427,7 @@ static class Program
         CollectHangul(lab, stderr.Result);
         string[] lines = output.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         // 응답 없음 표시는 랩의 출력 언어로 나온다
+        // [JA] 応答なしの表示はラボの出力言語で出ます
         string hangMark = Text.L("[FAIL] 응답 없음", "[FAIL] 応答なし");
         string? hang = lines.FirstOrDefault(l => l.StartsWith(hangMark));
         string? firstFail = lines.FirstOrDefault(l => l.StartsWith("[FAIL]"));
@@ -426,6 +445,7 @@ static class Program
         }
 
         // 처리되지 않은 예외, 스택 오버플로, FailFast, 접근 위반 등
+        // [JA] 処理されない例外、スタック オーバーフロー、FailFast、アクセス違反など
         string[] err = stderr.Result.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         string reason = string.Join(" ", err.Where(l => !l.StartsWith("at ") && !l.StartsWith("---")).Take(2));
         return ("CRASH", $"0x{p.ExitCode:X8} {reason}".TrimEnd(), elapsed);

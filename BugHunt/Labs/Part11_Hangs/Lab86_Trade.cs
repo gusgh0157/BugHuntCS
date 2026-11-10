@@ -13,6 +13,7 @@ public static class Lab86
     }
 
     // 거래 기록을 서버에 남긴다(느리다). 이 함수에는 버그가 없다.
+    // [JA] 取引記録をサーバーに残します(遅いです)。この関数にバグはありません。
     static void WriteTradeLog(Player from, Player to, int gold) => Thread.Sleep(100);
 
     static void Transfer(Player from, Player to, int gold)

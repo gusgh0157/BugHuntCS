@@ -15,6 +15,7 @@ public static class ChallengeB3
     }
 
     // 벽이 없는 맵에서 (0,0)부터 넓이 우선 탐색. 도달한 칸 수를 돌려준다
+    // [JA] 壁のないマップで (0,0) から幅優先探索します。到達したマスの数を返します
     static int Flood(int size, Func<int, int, bool> wall)
     {
         var visited = new HashSet<Cell> { new(0, 0) };

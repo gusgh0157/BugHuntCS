@@ -12,6 +12,7 @@ public static class Lab16
         $"moveSpeed={o.MoveSpeed}\nmouseSensitivity={o.MouseSensitivity}";
 
     // 파일 형식은 모든 나라에서 같아야 하니까 읽을 때는 InvariantCulture 로 읽는다.
+    // [JA] ファイル形式はどの国でも同じでなければならないので、読むときは InvariantCulture で読みます。
     static Options Load(string text)
     {
         var values = new Dictionary<string, double>();
@@ -29,6 +30,7 @@ public static class Lab16
         try
         {
             // 플레이어 PC 의 지역 설정을 흉내 낸다.
+            // [JA] プレイヤー PC の地域設定をまねます。
             CultureInfo.CurrentCulture = new CultureInfo(playerCulture);
             string file = Save(options);
             return Load(file);

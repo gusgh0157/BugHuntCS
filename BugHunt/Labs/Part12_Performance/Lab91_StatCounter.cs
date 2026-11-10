@@ -7,6 +7,7 @@ public static class Lab91
     class Stats
     {
         // 숫자도 문자열도 담을 수 있게 object 로 만들었다. (지금은 숫자만 쓴다)
+        // [JA] 数値も文字列も入れられるように object にしました。(今は数値だけ使います)
         readonly Dictionary<string, object> _values = [];
 
         public void Add(string key, int amount) => _values[key] = (int)_values.GetValueOrDefault(key, 0) + amount;
@@ -20,7 +21,7 @@ public static class Lab91
         int events = Pick(100_000, 50_000, 200_000);
         int step = Pick(1, 1, 7);
         var stats = new Stats();
-        stats.Add("hit", 0);   // 처음 한 번만 드는 비용 빼기
+        stats.Add("hit", 0);   // 처음 한 번만 드는 비용 빼기 / 最初の一回だけかかるコストを除く
 
         (long bytes, long ms) = Measure(() =>
         {

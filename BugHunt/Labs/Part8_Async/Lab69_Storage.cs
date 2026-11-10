@@ -13,7 +13,7 @@ public static class Lab69
 
         public async Task UploadAsync(string item, int count)
         {
-            await Task.Delay(1);   // 네트워크
+            await Task.Delay(1);   // 네트워크 / ネットワーク
             if (boundItems.Contains(item))
                 throw new InvalidOperationException(Text.L($"{item}: 귀속 아이템은 창고에 넣을 수 없습니다", $"{item}: 帰属アイテムは倉庫に入れられません"));
             Stored[item] = Stored.GetValueOrDefault(item) + count;
@@ -40,6 +40,7 @@ public static class Lab69
     }
 
     // 1단계: 맡기기. 맡겼다고 판단한 아이템만 가방에서 뺀다.
+    // [JA] 段階 1: 預ける。預けたと判断したアイテムだけバッグから取り出します。
     static async Task<List<string>> DepositAllAsync(StorageServer server, Dictionary<string, int> bag, string[] items)
     {
         var notStored = new List<string>();
@@ -75,10 +76,12 @@ public static class Lab69
         List<string> notStored = DepositAllAsync(server, bag, items).GetAwaiter().GetResult();
 
         // 2단계: 접속 종료. 가방을 서버에 저장한다.
+        // [JA] 段階 2: 切断。バッグをサーバーに保存します。
         server.SaveBagAsync(bag).GetAwaiter().GetResult();
         Console.WriteLine(Text.L("  (접속 종료 ... 다시 접속)", "  (切断 ... 再接続)"));
 
         // 3단계: 다시 접속. 서버에 있는 것이 전부다.
+        // [JA] 段階 3: 再接続。サーバーにあるものがすべてです。
         Dictionary<string, int> bagAfter = server.SavedBag;
         Console.WriteLine(Text.L($"  가방: {string.Join(", ", bagAfter.Select(p => $"{p.Key} {p.Value}"))}", $"  バッグ: {string.Join(", ", bagAfter.Select(p => $"{p.Key} {p.Value}"))}"));
         Console.WriteLine(Text.L($"  창고: {string.Join(", ", server.Stored.Select(p => $"{p.Key} {p.Value}"))}", $"  倉庫: {string.Join(", ", server.Stored.Select(p => $"{p.Key} {p.Value}"))}"));

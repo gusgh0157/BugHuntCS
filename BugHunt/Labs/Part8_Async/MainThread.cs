@@ -26,6 +26,7 @@ public sealed class MainThread : SynchronizationContext
     public int ThreadId => _thread.ManagedThreadId;
 
     // 실행을 기다리는 일의 개수. 조사식에 넣어 보면 큐에 무엇이 쌓였는지 알 수 있다.
+    // [JA] 実行を待っている仕事の数。ウォッチに入れてみると、キューに何がたまっているかわかります。
     public int PendingCount => _queue.Count;
 
     void Loop()
@@ -43,6 +44,7 @@ public sealed class MainThread : SynchronizationContext
     public override SynchronizationContext CreateCopy() => this;
 
     // 메인 스레드에서 work 를 실행한다. 돌려준 Task 는 work 가 끝나면 완료된다.
+    // [JA] メインスレッドで work を実行します。返した Task は work が終わると完了します。
     public Task Run(Action work)
     {
         var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -55,6 +57,7 @@ public sealed class MainThread : SynchronizationContext
     }
 
     // 메인 스레드에서 비동기 work 를 시작한다. 돌려준 Task 는 work 의 Task 가 끝나면 완료된다.
+    // [JA] メインスレッドで非同期の work を開始します。返した Task は work の Task が終わると完了します。
     public Task Run(Func<Task> work)
     {
         var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);

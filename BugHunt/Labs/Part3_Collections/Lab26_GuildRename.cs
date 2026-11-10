@@ -10,6 +10,7 @@ public static class Lab26
         public string Tag { get; set; } = tag;
 
         // 같은 태그면 같은 길드로 본다.
+        // [JA] 同じタグなら同じギルドとみなします。
         public override bool Equals(object? obj) => obj is Guild g && g.Tag == Tag;
         public override int GetHashCode() => Tag.GetHashCode();
     }
@@ -25,6 +26,7 @@ public static class Lab26
             storage[guilds[i]] = Pick(100 * (i + 1), 1, 999);
 
         // 길드장이 태그를 바꿨다.
+        // [JA] ギルドマスターがタグを変えました。
         int renamed = Pick(0, 0, count - 1);
         int expectedGold = storage[guilds[renamed]];
         guilds[renamed].Tag = Pick("DWN2", "NEW1", "ZZZZ", "QWER");

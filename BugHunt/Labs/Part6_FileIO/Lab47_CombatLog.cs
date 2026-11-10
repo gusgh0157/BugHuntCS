@@ -33,6 +33,7 @@ public static partial class Lab47
                 lines.Add($"[{i:0000}] " + Text.L($"{attacker}의 공격: 피해 {damage}", $"{attacker}の攻撃: ダメージ {damage}"));
             }
             // 줄 길이 합이 우연히 버퍼 크기의 배수가 되지 않게 한 줄 더
+            // [JA] 行の長さの合計がたまたまバッファーサイズの倍数にならないように、もう一行追加
             if (lines.Sum(l => l.Length + 2) % 1024 == 0)
                 lines.Add(Text.L("[끝] 전투 종료", "[終] 戦闘終了"));
 

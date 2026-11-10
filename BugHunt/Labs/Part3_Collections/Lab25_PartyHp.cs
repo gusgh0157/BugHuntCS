@@ -15,6 +15,7 @@ public static class Lab25
     static void AreaAttack(List<Member> party, int damage)
     {
         // party[i].Hp -= damage; 라고 쓰면 컴파일 오류(CS1612)가 나서 메서드로 바꿨다.
+        // [JA] party[i].Hp -= damage; と書くとコンパイルエラー(CS1612)になるので、メソッドに変えました。
         for (int i = 0; i < party.Count; i++)
             party[i].TakeDamage(damage);
     }

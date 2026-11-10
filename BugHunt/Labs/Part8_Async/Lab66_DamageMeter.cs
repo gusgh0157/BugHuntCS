@@ -29,6 +29,8 @@ public static class Lab66
 
         // 파티원마다 전투 기록 처리 스레드를 하나씩 두고, 다 준비되면 동시에 시작한다.
         // (우선순위를 높여 두는 것은 PC가 바빠도 네 스레드가 정말 동시에 돌게 하려는 것뿐이다)
+        // [JA] パーティーメンバーごとに戦闘記録処理スレッドを一つずつ用意し、全部準備できたら同時に開始します。
+        // [JA] (優先度を上げておくのは、PC が忙しくても4つのスレッドが本当に同時に動くようにするためだけです)
         using var startTogether = new Barrier(party.Length);
         Thread[] workers = party.Select(member => new Thread(() =>
         {

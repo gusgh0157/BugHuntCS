@@ -10,6 +10,7 @@ public static class ChallengeC1
         string[] loot = [Text.L("전설 망토", "伝説のマント"), Text.L("용의 비늘", "竜のうろこ"), Text.L("고대 금화", "古代の金貨"), Text.L("회복 물약", "回復ポーション"), Text.L("마나 결정", "マナの結晶"), Text.L("흑요석 반지", "黒曜石の指輪")];
 
         // 드롭 목록: 기본 케이스는 화면에 보이는 그대로. 숨은 케이스는 무작위(같은 사람에게 같은 아이템이 두 번 떨어지기도 한다)
+        // [JA] ドロップ一覧: 基本ケースは画面に見えるとおりです。隠しケースはランダムです(同じ人に同じアイテムが二度落ちることもあります)
         var drops = new List<(string Member, string Item)>
         {
             ("Kael", Text.L("전설 망토", "伝説のマント")), ("Mira", Text.L("용의 비늘", "竜のうろこ")), ("Doran", Text.L("고대 금화", "古代の金貨")),
@@ -21,11 +22,12 @@ public static class ChallengeC1
             drops.Clear();
             int n = rng.Next(6, 13);
             for (int i = 0; i < n; i++)
-                drops.Add((party[rng.Next(party.Length)], loot[rng.Next(3)]));   // 종류를 줄여서 같은 보상이 겹치게
-            drops.Add(drops[0]);   // 같은 사람이 같은 아이템을 정말로 두 번 받는 경우
+                drops.Add((party[rng.Next(party.Length)], loot[rng.Next(3)]));   // 종류를 줄여서 같은 보상이 겹치게 / 種類を減らして同じ報酬が重なるように
+            drops.Add(drops[0]);   // 같은 사람이 같은 아이템을 정말로 두 번 받는 경우 / 同じ人が同じアイテムを本当に二度受け取るケース
         }
 
         // 회선 상태: 기본 케이스는 패킷이 사라지지 않는다. 숨은 케이스는 패킷이나 ack 가 가끔 사라진다
+        // [JA] 回線の状態: 基本ケースはパケットが消えません。隠しケースはパケットや ack がときどき消えます
         var lossRng = new Random(Seed);
         bool lossy = Seed != 0;
         var link = new UnreliableLink(

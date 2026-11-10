@@ -27,6 +27,7 @@ public static partial class Lab52
     }
 
     // 세이브가 손상됐으면 null
+    // [JA] セーブが壊れていれば null
     static List<Item>? Load(string path)
     {
         string[] lines = File.ReadAllLines(path);
@@ -48,10 +49,12 @@ public static partial class Lab52
             List<Item> good = [.. names.Take(n).Select((name, i) => new Item(name, Pick(5 * (i + 1), 1, 99)))];
 
             // 1) 정상 저장
+            // [JA] 1) 正常な保存
             Save(path, good);
             Console.WriteLine(Text.L($"  지난번 세이브: {Show(Load(path))}", $"  前回のセーブ: {Show(Load(path))}"));
 
             // 2) 다음 저장: 아이템 하나가 손상됐다 (수량 음수)
+            // [JA] 2) 次の保存: アイテムが一つ壊れている (数量が負)
             List<Item> broken = [.. good.Select(i => i with { Count = i.Count + 1 })];
             int bad = Pick(2, 1, n - 1);
             broken[bad] = broken[bad] with { Count = -1 };
@@ -69,6 +72,7 @@ public static partial class Lab52
             Expect(Text.L("저장이 실패해도 지난번 세이브는 그대로", "保存に失敗しても前回のセーブはそのまま"), Show(good), Show(afterFail));
 
             // 3) 손상을 고치고 다시 저장하면 새 내용이 저장된다
+            // [JA] 3) 壊れた部分を直してもう一度保存すると、新しい内容が保存されます
             broken[bad] = broken[bad] with { Count = 7 };
             Save(path, broken);
             Expect(Text.L("고친 뒤 다시 저장", "直したあと再保存"), Show(broken), Show(Load(path)));

@@ -16,12 +16,14 @@ public static class ChallengeC3
         const string region = "KR";
 
         // 기본 케이스: 친구 랭킹을 보고 나서 주간 보상을 보낸다. 숨은 케이스: 여러 창을 무작위 순서로 연다
+        // [JA] 基本ケース: フレンド ランキングを見てから週間報酬を送ります。隠しケース: いくつものウィンドウをランダムな順番で開きます
         var friends = new HashSet<string>(Seed == 0 ? ["Cleo", "Kael", "Nora", "Tess", "Yuna"] : names.Where(_ => rng.Next(4) == 0));
         string myGuild = guilds[rng.Next(guilds.Length)];
         List<Screen> actions = [Screen.Friends, Screen.Mail];
         if (Seed != 0)
         {
             // 친구 창 바로 다음에 길드 창. 길드에는 친구가 아닌 사람이 적어도 하나 있다
+            // [JA] フレンド ウィンドウのすぐ次にギルド ウィンドウ。ギルドにはフレンドでない人が少なくとも一人います
             string outsider = players.First(p => p.Item2 == myGuild).n;
             friends.Remove(outsider);
             friends.Add(names.First(n => n != outsider));
@@ -40,6 +42,7 @@ public static class ChallengeC3
         var mailer = new WeeklyRewardMailer(service);
 
         // 기대값은 DB 원본으로 따로 계산한다
+        // [JA] 期待値は DB の元データで別に計算します
         var truth = players.OrderByDescending(p => p.Item3).ThenBy(p => p.Item1, StringComparer.Ordinal)
                            .Select((p, i) => (Name: p.Item1, Guild: p.Item2, Rank: i + 1)).ToList();
 

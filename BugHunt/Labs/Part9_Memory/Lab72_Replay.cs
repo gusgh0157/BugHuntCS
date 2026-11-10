@@ -16,6 +16,7 @@ public static class Lab72
     }
 
     // 리플레이 뷰어. 게임이 파일을 쓰는 중이어도 읽을 수 있게 FileShare.ReadWrite 로 연다.
+    // [JA] リプレイ ビューアー。ゲームがファイルを書いている途中でも読めるように FileShare.ReadWrite で開きます。
     static int CountFrames(string path)
     {
         using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);

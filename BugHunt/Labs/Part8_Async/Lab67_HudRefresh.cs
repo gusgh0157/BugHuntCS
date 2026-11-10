@@ -14,6 +14,7 @@ public static class Lab67
         public void SetGold(int gold)
         {
             // 실제 엔진이었다면 여기서 바로 크래시가 나거나, 화면이 가끔 깨진다.
+            // [JA] 実際のエンジンなら、ここですぐクラッシュするか、画面がときどき崩れます。
             if (Environment.CurrentManagedThreadId != main.ThreadId)
                 WrongThreadUpdates++;
             Gold = gold;
@@ -24,7 +25,7 @@ public static class Lab67
 
     static async Task<Profile> FetchProfileAsync()
     {
-        await Task.Delay(50);   // 네트워크
+        await Task.Delay(50);   // 네트워크 / ネットワーク
         return new Profile("Kael", 1500);
     }
 

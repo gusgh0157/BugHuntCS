@@ -63,6 +63,7 @@ public static class Lab71
         await ParseQuestAsync(id, await DownloadAsync(server, id));
 
     // 오류 보고서: 예외 형식과, 스택 트레이스에서 이 랩의 코드 중 맨 위에 있는 함수
+    // [JA] エラーレポート: 例外の型と、スタックトレースの中でこのラボのコードのうち一番上にある関数
     static string Report(Exception ex)
     {
         Match top = Regex.Match(ex.StackTrace ?? "", @"at BugHunt\.Lab71\.(\w+)");
@@ -83,7 +84,7 @@ public static class Lab71
         {
             server["q3"] = Text.L("광산 정찰", "鉱山の偵察") + "|200";
             broken = Pick("q1", "q1", "q2", "q3");
-            (server[broken], expected) = Pick(1, 1, 2) switch   // 숨은 케이스는 기본 케이스와 다른 곳에서 실패한다
+            (server[broken], expected) = Pick(1, 1, 2) switch   // 숨은 케이스는 기본 케이스와 다른 곳에서 실패한다 / 隠しケースは基本ケースとは別の場所で失敗する
             {
                 0 => ((string?)(Text.L("고장 난 데이터", "壊れたデータ") + "|??"), "FormatException @ ParseRewardAsync"),
                 1 => (Text.L("헤더 없는 데이터", "ヘッダーのないデータ"), "InvalidDataException @ ParseHeaderAsync"),

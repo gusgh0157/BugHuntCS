@@ -5,6 +5,7 @@ namespace BugHunt;
 public static class Lab74
 {
     // GPU 메모리 사용량. (실제로는 그래픽 드라이버가 관리하는 비관리 자원이라고 치자)
+    // [JA] GPU メモリ使用量。(実際にはグラフィック ドライバーが管理するアンマネージド リソースだと考えてください)
     static class GpuMemory
     {
         static long _bytesInUse;
@@ -26,6 +27,7 @@ public static class Lab74
         }
 
         // C++ 소멸자처럼, 텍스처를 다 쓰면 GPU 메모리를 돌려준다.
+        // [JA] C++ のデストラクターのように、テクスチャを使い終えたら GPU メモリを返します。
         ~Texture()
         {
             GpuMemory.Free(Bytes);

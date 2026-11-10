@@ -13,6 +13,7 @@ public static class ChallengeB5
     }
 
     // 게임 한 프레임: 이것저것 만들고 버린다. 가끔 GC 가 돈다.
+    // [JA] ゲームの 1 フレーム: あれこれ作っては捨てます。ときどき GC が走ります。
     static void PlayFrame(int frame)
     {
         _ = new byte[64 * 1024];
@@ -33,6 +34,7 @@ public static class ChallengeB5
         StartAutoSave(interval);
 
         // 자동 저장이 wanted 번 될 때까지 게임을 계속한다.
+        // [JA] オートセーブが wanted 回行われるまでゲームを続けます。
         int frames = 0;
         if (FinishesWithin(Text.L($"자동 저장 {wanted}번", $"オートセーブ {wanted} 回"), () =>
             {

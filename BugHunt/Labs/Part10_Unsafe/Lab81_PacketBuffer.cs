@@ -7,6 +7,7 @@ namespace BugHunt;
 public static partial class Lab81
 {
     // 패킷 내용을 임시 버퍼에 복사하고 바이트 합(체크섬)을 돌려준다.
+    // [JA] パケットの内容を一時バッファにコピーし、バイトの合計(チェックサム)を返します。
     static long Checksum(byte[] packet)
     {
         Span<byte> scratch = stackalloc byte[packet.Length];

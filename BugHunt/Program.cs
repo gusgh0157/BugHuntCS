@@ -4,6 +4,7 @@ using System.Text.Json;
 namespace BugHunt;
 
 // Hidden: 채점기가 돌릴 숨은 케이스(무작위 시드) 수. Release: Release 빌드에서도 판정해야 하는 랩
+// [JA] Hidden: 採点器が回す隠しケース(ランダムなシード)の数。Release: Release ビルドでも判定しなければならないラボ
 record LabEntry(string Title, string Symptom, Action Run, int Hidden = 0, bool Release = false);
 
 static class Program
@@ -14,6 +15,7 @@ static class Program
     static LabEntry[] Labs => _labs ??=
     [
         // 1부: 예외와 스택 트레이스
+        // [JA] パート 1: 例外とスタック トレース
         new(Text.L("친구 프로필", "フレンドのプロフィール"),      Text.L("세 번째 프로필에서 NullReferenceException", "3人目のプロフィールで NullReferenceException"),      Lab01.Run),
         new(Text.L("상점 장바구니", "ショップのカート"),    Text.L("세이브에서 불러온 장바구니 계산 중 죽는다", "セーブから読み込んだカートの計算中に落ちる"),       Lab02.Run),
         new(Text.L("죽은 적 정리", "倒した敵の片付け"),     Text.L("적이 쓰러지는 순간 컬렉션 예외가 난다", "敵が倒れた瞬間にコレクションの例外が出る"),          Lab03.Run),
@@ -23,6 +25,7 @@ static class Program
         new(Text.L("세이브 불러오기", "セーブの読み込み"),  Text.L("크래시 리포트가 엉뚱한 곳을 가리킨다", "クラッシュレポートが見当違いの場所を指す"),           Lab07.Run),
         new(Text.L("피해 라벨", "ダメージラベル"),        Text.L("피해 라벨을 만드는 순간 프로그램이 사라진다", "ダメージラベルを作った瞬間にプログラムが消える"),         Lab08.Run, Hidden: 3),
         // 2부: 흐름 추적
+        // [JA] パート 2: 流れの追跡
         new(Text.L("스킬 단축키", "スキルのショートカット"),      Text.L("단축키 1, 2, 3이 전부 같은 스킬을 쓴다", "ショートカット 1, 2, 3 がすべて同じスキルを使う"),          Lab09.Run),
         new(Text.L("주간 랭킹 보상", "週間ランキング報酬"),   Text.L("1~3위가 보상을 두 번씩 받는다", "1~3位が報酬を2回ずつ受け取る"),                  Lab10.Run),
         new(Text.L("스태미나", "スタミナ"),         Text.L("달려도 스태미나가 줄지 않는다", "走ってもスタミナが減らない"),                  Lab11.Run),
@@ -39,6 +42,7 @@ static class Program
         new(Text.L("물약 단축키", "ポーションのショートカット"),    Text.L("물약이 다 떨어졌는데 계속 마실 수 있다", "ポーションが尽きたのに飲み続けられる"),              Lab22.Run, Hidden: 3),
         new(Text.L("아이콘 캐시", "アイコンキャッシュ"),    Text.L("아이콘 캐시를 켰는데 디스크 읽기가 그대로다", "アイコンキャッシュを有効にしたのにディスク読み込みが減らない"),         Lab23.Run, Hidden: 3),
         // 3부: 컨테이너와 컬렉션
+        // [JA] パート 3: コンテナーとコレクション
         new(Text.L("퀘스트 정산", "クエスト精算"),      Text.L("퀘스트를 다 깨기 전에 정산하면 죽는다", "クエストを全部クリアする前に精算すると落ちる"),            Lab24.Run, Hidden: 3),
         new(Text.L("광역 공격", "範囲攻撃"),        Text.L("광역 공격을 맞아도 파티 HP가 그대로다", "範囲攻撃を受けてもパーティーの HP がそのまま"),            Lab25.Run, Hidden: 3),
         new(Text.L("길드 창고", "ギルド倉庫"),        Text.L("길드 태그를 바꾸자 창고가 사라졌다", "ギルドタグを変えたら倉庫が消えた"),               Lab26.Run, Hidden: 3),
@@ -47,6 +51,7 @@ static class Program
         new(Text.L("드롭 테이블", "ドロップテーブル"),      Text.L("고장 난 파일을 건너뛰게 했는데 다른 곳에서 죽는다", "壊れたファイルを飛ばすようにしたのに、別の場所で落ちる"), Lab29.Run, Hidden: 3),
         new(Text.L("레이드 보상", "レイド報酬"),      Text.L("레이드에 없던 사람이 보상을 받는다", "レイドにいなかった人が報酬を受け取る"),               Lab30.Run, Hidden: 3),
         // 4부: C# 언어 함정
+        // [JA] パート 4: C# 言語の落とし穴
         new(Text.L("즐겨찾기 스킬", "お気に入りスキル"),    Text.L("재접속하면 즐겨찾기 별표가 전부 사라진다", "再接続するとお気に入りの星がすべて消える"),            Lab31.Run, Hidden: 3),
         new(Text.L("콤보 보너스", "コンボボーナス"),      Text.L("콤보가 없는 공격은 피해가 0으로 나온다", "コンボのない攻撃はダメージが 0 になる"),              Lab32.Run, Hidden: 3),
         new(Text.L("드롭 등급", "ドロップ等級"),        Text.L("모르는 등급의 아이템이 일반 등급처럼 쏟아진다", "知らない等級のアイテムがノーマル等級のように大量に出る"),       Lab33.Run, Hidden: 3),
@@ -55,6 +60,7 @@ static class Program
         new(Text.L("패치 다운로드", "パッチ ダウンロード"),    Text.L("받은 조각 번호가 뒤죽박죽이고 범위 밖까지 섞인다", "受け取った断片番号がばらばらで、範囲外の番号まで混ざる"),    Lab36.Run, Hidden: 3),
         new(Text.L("캐시 상점", "キャッシュショップ"),        Text.L("합계가 조금씩 어긋나고 세금 반올림이 내려간다", "合計が少しずつずれ、税の四捨五入が切り捨てになる"),       Lab37.Run, Hidden: 3),
         // 5부: 인터페이스와 상속
+        // [JA] パート 5: インターフェイスと継承
         new(Text.L("스킬 피해", "スキルダメージ"),        Text.L("불 스킬을 써도 화상 보너스가 안 붙는다", "炎スキルを使っても火傷ボーナスが付かない"),             Lab38.Run, Hidden: 3),
         new(Text.L("드롭 개수", "ドロップ数"),        Text.L("보스를 잡아도 아이템이 하나만 떨어진다", "ボスを倒してもアイテムが一つしか落ちない"),             Lab39.Run, Hidden: 3),
         new(Text.L("퀘스트 보상", "クエスト報酬"),      Text.L("이벤트 배율이 정산에서는 빠진다", "イベント倍率が精算では抜け落ちる"),                    Lab40.Run, Hidden: 3),
@@ -64,6 +70,7 @@ static class Program
         new(Text.L("처치 보상", "討伐報酬"),        Text.L("보스를 잡았는데 일반 적만큼만 준다", "ボスを倒したのに通常の敵と同じ額しかもらえない"),                 Lab44.Run, Hidden: 3),
         new(Text.L("시작 가방", "初期バッグ"),        Text.L("물약을 넣는 순간 ArrayTypeMismatchException", "ポーションを入れた瞬間に ArrayTypeMismatchException"),        Lab45.Run, Hidden: 3),
         // 6부: 파일 입출력
+        // [JA] パート 6: ファイル入出力
         new(Text.L("세이브 폴더", "セーブフォルダー"),      Text.L("폴더를 한 번 열고 나면 세이브가 없다고 한다", "フォルダーを一度開くとセーブがないと言われる"),         Lab46.Run, Hidden: 3),
         new(Text.L("전투 기록 파일", "戦闘ログファイル"),   Text.L("저장한 전투 기록의 마지막 몇 줄이 빠져 있다", "保存した戦闘ログの最後の数行が欠けている"),         Lab47.Run, Hidden: 3),
         new(Text.L("채팅 신고", "チャット通報"),        Text.L("신고하면 채팅 로그를 '사용 중'이라 못 읽는다", "通報するとチャットログが「使用中」で読めない"),        Lab48.Run, Hidden: 3),
@@ -73,6 +80,7 @@ static class Program
         new(Text.L("안전한 저장", "安全なセーブ"),      Text.L("저장이 실패하자 지난번 세이브까지 망가졌다", "保存に失敗したら前回のセーブまで壊れた"),          Lab52.Run, Hidden: 3),
         new(Text.L("클라우드 동기화", "クラウド同期"),  Text.L("서버에는 늘 한 번 전의 설정이 올라간다", "サーバーにはいつも一つ前の設定がアップロードされる"),              Lab53.Run, Hidden: 3),
         // 7부: 직렬화 (JSON/XML)
+        // [JA] パート 7: シリアル化 (JSON/XML)
         new(Text.L("길드 공지", "ギルドのお知らせ"),        Text.L("예외도 없는데 공지가 전부 빈 칸이다", "例外も出ないのにお知らせがすべて空欄になる"),                 Lab54.Run, Hidden: 3),
         new(Text.L("캐릭터 세이브", "キャラクターのセーブ"),    Text.L("불러오면 골드는 0, 레벨은 1이 된다", "ロードするとゴールドは 0、レベルは 1 になる"),                  Lab55.Run, Hidden: 3),
         new(Text.L("우편 보상", "メール報酬"),        Text.L("첨부한 보상이 전부 '알 수 없는 보상'이 된다", "添付した報酬がすべて「不明な報酬」になる"),         Lab56.Run, Hidden: 3),
@@ -82,6 +90,7 @@ static class Program
         new(Text.L("퀘스트 XML", "クエスト XML"),       Text.L("XML에 스키마를 붙인 뒤로 보상이 전부 0G다", "XML にスキーマを付けてから報酬がすべて 0G になる"),            Lab60.Run, Hidden: 3),
         new(Text.L("길드 초대장", "ギルド招待状"),      Text.L("어떤 길드의 초대장은 보내도 도착하지 않는다", "あるギルドの招待状は送っても届かない"),         Lab61.Run, Hidden: 3),
         // 8부: 비동기와 동시성
+        // [JA] パート 8: 非同期と並行処理
         new(Text.L("자동 저장", "オートセーブ"),        Text.L("try/catch로 감쌌는데 저장 실패로 죽는다", "try/catch で囲んだのに、セーブ失敗で落ちる"),         Lab62.Run),
         new(Text.L("로딩 화면", "ロード画面"),        Text.L("로딩 바가 100%에서 멈춘다", "ロードバーが 100% で止まる"),                      Lab63.Run),
         new(Text.L("업적 전송", "実績送信"),        Text.L("업적을 세 개 보냈는데 서버는 0개 받았다", "実績を三つ送ったのに、サーバーは 0 個しか受け取っていない"),         Lab64.Run),
@@ -93,10 +102,12 @@ static class Program
         new(Text.L("던전 입장", "ダンジョン入場"),      Text.L("취소를 누르지 않았는데 '취소됨'이 뜬다", "キャンセルを押していないのに「キャンセル済み」と表示される"),          Lab70.Run, Hidden: 3),
         new(Text.L("퀘스트 동기화", "クエスト同期"),  Text.L("오류 보고서가 늘 재시도 함수만 가리킨다", "エラーレポートがいつも再試行関数だけを指す"),          Lab71.Run, Hidden: 3),
         // 9부: 리소스와 메모리
+        // [JA] パート 9: リソースとメモリ
         new(Text.L("리플레이 저장", "リプレイ保存"),    Text.L("저장한 리플레이 파일이 비어 있다", "保存したリプレイ ファイルが空になっている"),               Lab72.Run),
         new(Text.L("전투 기록 창", "戦闘ログ ウィンドウ"),     Text.L("닫은 창들이 메모리에서 사라지지 않는다", "閉じたウィンドウがメモリから消えない"),          Lab73.Run),
         new(Text.L("텍스처 캐시", "テクスチャ キャッシュ"),      Text.L("레벨을 나갔는데 텍스처 메모리가 그대로다", "レベルを出たのに、テクスチャ メモリがそのまま"),        Lab74.Run),
         // 10부: unsafe와 네이티브 메모리
+        // [JA] パート 10: unsafe とネイティブ メモリ
         new(Text.L("미니맵 경로", "ミニマップの経路"),      Text.L("경로를 구했는데 미니맵에는 엉뚱한 타일이 찍힌다", "経路を求めたのに、ミニマップには見当違いのタイルが描かれる"),  Lab75.Run, Hidden: 3, Release: true),
         new(Text.L("효과음 믹서", "効果音ミキサー"),      Text.L("레벨을 넘어가면 효과음 볼륨이 엉망이 된다", "レベルが切り替わると効果音の音量がめちゃくちゃになる"),       Lab76.Run, Hidden: 3, Release: true),
         new(Text.L("패킷 수신", "パケット受信"),        Text.L("손상된 패킷을 버렸는데 메모리가 안 줄어든다", "破損したパケットを捨てたのにメモリが減らない"),      Lab77.Run, Hidden: 3),
@@ -106,6 +117,7 @@ static class Program
         new(Text.L("패킷 버퍼", "パケットバッファ"),        Text.L("큰 패킷이 오면 프로그램이 통째로 사라진다", "大きなパケットが来るとプログラムが丸ごと消える"),            Lab81.Run, Hidden: 3),
         new(Text.L("콤보 버퍼", "コンボバッファ"),        Text.L("콤보가 넘치면 옆 칸 값이 저절로 바뀐다", "コンボがあふれると隣のマスの値が勝手に変わる"),              Lab82.Run, Hidden: 3),
         // 11부: 멈춤 - 무한루프와 데드락
+        // [JA] パート 11: 停止 - 無限ループとデッドロック
         new(Text.L("보스 등장 연출", "ボス登場演出"),   Text.L("보스가 나오면 카메라 줌이 끝나지 않는다", "ボスが出るとカメラのズームが終わらない"),          Lab83.Run, Hidden: 3),
         new(Text.L("인벤토리 저장", "インベントリの保存"),    Text.L("확장 가방을 산 플레이어만 저장하다 멈춘다", "拡張バッグを買ったプレイヤーだけ保存中に止まる"),        Lab84.Run, Hidden: 3),
         new(Text.L("길드 동맹", "ギルド同盟"),        Text.L("동맹 가입 뒤 맹주 찾기가 끝나지 않는다", "同盟加入後、盟主探しが終わらない"),           Lab85.Run, Hidden: 3),
@@ -113,6 +125,7 @@ static class Program
         new(Text.L("패치 슬롯", "パッチ スロット"),        Text.L("몇 개 실패하더니 다운로드가 통째로 멈춘다", "いくつか失敗したと思ったら、ダウンロードが丸ごと止まる"),         Lab87.Run, Hidden: 3),
         new(Text.L("로딩 대기", "ロード待ち"),        Text.L("Release 출시판에서만 로딩 화면이 끝나지 않는다", "Release の製品版でだけロード画面が終わらない"),   Lab88.Run, Hidden: 1, Release: true),
         // 12부: 성능 - 틀리지는 않는데 느리다
+        // [JA] パート 12: 性能 - 間違ってはいないのに遅い
         new(Text.L("위협도 표시", "脅威度表示"),      Text.L("전투가 길어지면 프레임이 툭툭 끊긴다", "戦闘が長引くとフレームがカクカク途切れる"),               Lab89.Run, Hidden: 2),
         new(Text.L("채팅 내보내기", "チャットの書き出し"),    Text.L("기록이 길면 내보내기가 한참 걸린다", "履歴が長いと書き出しにかなり時間がかかる"),                 Lab90.Run, Hidden: 2),
         new(Text.L("전투 통계", "戦闘統計"),        Text.L("통계를 켜면 GC 횟수가 확 늘어난다", "統計をオンにすると GC の回数がぐっと増える"),                  Lab91.Run, Hidden: 2),
@@ -123,9 +136,11 @@ static class Program
     ];
 
     // 챌린지: 힌트 없음. 기본 랩 번호와 따로 센다. C-n = 깊은 추적, B-n = 블라인드
+    // [JA] チャレンジ: ヒントなし。基本ラボの番号とは別に数えます。C-n = 深い追跡、B-n = ブラインド
     record ChallengeEntry(string Code, string Symptom, Action Run, int Hidden, bool Release = false)
     {
         // --list 와 채점 보고서의 id. 정수를 유지하려고 C-n은 100+n, B-n은 200+n
+        // [JA] --list と採点レポートの id。整数のままにするため C-n は 100+n、B-n は 200+n
         public int Id => (Code[0] == 'C' ? 100 : 200) + int.Parse(Code[2..]);
         public string Title => Text.L($"챌린지 {Code}", $"チャレンジ {Code}");
     }
@@ -146,7 +161,7 @@ static class Program
         new("B-8", Text.L("출시판에서만 텍스처 미리보기가 가끔 깨진다", "製品版でだけテクスチャのプレビューがときどき壊れる"),            ChallengeB8.Run, Hidden: 3, Release: true),
     ];
 
-    const int ChallengePart = 0;   // --list 의 part 값. 번호 붙은 부가 아니라는 뜻. 채점기는 "챌린지"로 표시한다
+    const int ChallengePart = 0;   // --list 의 part 값. 번호 붙은 부가 아니라는 뜻. 채점기는 "챌린지"로 표시한다 / --list の part の値。番号の付いたパートではないという意味。採点器は「チャレンジ」と表示します
 
     const int Part2Start = 9, Part3Start = 24, Part4Start = 31, Part5Start = 38, Part6Start = 46, Part7Start = 54, Part8Start = 62, Part9Start = 72, Part10Start = 75, Part11Start = 83, Part12Start = 89;
 
@@ -189,6 +204,7 @@ static class Program
         Console.OutputEncoding = Encoding.UTF8;
 
         // 출력 언어: --lang ja|ko > BUGHUNT_LANG > 화면 언어(CurrentUICulture) > 한국어
+        // [JA] 出力言語: --lang ja|ko > BUGHUNT_LANG > 画面の言語(CurrentUICulture) > 韓国語
         string[]? rest = Text.TakeLangArg(args);
         if (rest == null)
         {
@@ -203,11 +219,12 @@ static class Program
             return ListLabs();
         if (args.Length > 0 && args[0] == "grade")
         {
-            Console.WriteLine(Text.L("채점기는 별도 프로젝트로 옮겼습니다: grade.bat 또는 dotnet run --project BugHunt.Grader (README의 \"채점기\" 참고)", "採点器は別プロジェクトに移しました: grade.bat または dotnet run --project BugHunt.Grader (README の「採点器」を参照)"));
+            Console.WriteLine(Text.L("채점기는 별도 프로젝트로 옮겼습니다: grade.bat 또는 dotnet run --project BugHunt.Grader (README의 \"채점기\" 참고)", "採点ツールは別プロジェクトに移しました: grade.bat または dotnet run --project BugHunt.Grader (README の「採点ツール」を参照)"));
             return 2;
         }
 
         // 숨은 케이스 재현: BugHunt.exe 84 --seed 1234
+        // [JA] 隠しケースの再現: BugHunt.exe 84 --seed 1234
         int seedAt = Array.IndexOf(args, "--seed");
         if (seedAt >= 0 && seedAt + 1 < args.Length && int.TryParse(args[seedAt + 1], out int seed))
         {
@@ -256,6 +273,7 @@ static class Program
     }
 
     // 채점기(BugHunt.Grader)가 랩 목록을 읽어 가는 출력
+    // [JA] 採点器(BugHunt.Grader)がラボ一覧を読み取るための出力
     static int ListLabs()
     {
         var labs = Labs.Select((lab, i) => new
@@ -271,8 +289,10 @@ static class Program
     }
 
     // 번역 검사: 소스에서 Text.L(...) 밖이나 일본어 쪽(둘째 인자)에 남은 한글 문자열 리터럴을 찾는다. (주석과 "// ko+ja" 표시가 붙은 줄은 제외)
+    // 일본어 짝([JA] 줄)이 없는 한글 주석도 찾는다.
     // 랩을 실행할 때 일본어 출력에 한글이 섞이는지는 채점기 --lang ja 가 랩마다 본다.
     // [JA] 翻訳チェック: ソースで Text.L(...) の外か日本語側(2 番目の引数)に残ったハングルの文字列リテラルを探します。(コメントと "// ko+ja" の付いた行は除外)
+    // [JA] 日本語のペア([JA] の行)がないハングルのコメントも探します。
     // [JA] ラボ実行時に日本語の出力にハングルが混じるかどうかは、採点器の --lang ja がラボごとに見ます。
     static int CheckLang()
     {
@@ -288,7 +308,9 @@ static class Program
         List<string> unpaired = Text.FindUnpairedHangul(root);
         foreach (string u in unpaired)
             Console.WriteLine(u);
-        Console.WriteLine(Text.L($"check-lang: Text.L 밖이나 일본어 쪽에 남은 한글 문자열 {unpaired.Count}개", $"check-lang: Text.L の外か日本語側に残ったハングル文字列 {unpaired.Count} 個"));
+        int comments = unpaired.Count(u => u.Contains(": " + Text.CommentTag, StringComparison.Ordinal));
+        int literals = unpaired.Count - comments;
+        Console.WriteLine(Text.L($"check-lang: Text.L 밖이나 일본어 쪽에 남은 한글 문자열 {literals}개, 일본어 짝이 없는 한글 주석 {comments}개", $"check-lang: Text.L の外か日本語側に残ったハングル文字列 {literals} 個、日本語のペアがないハングルのコメント {comments} 個"));
         return unpaired.Count == 0 ? 0 : 1;
     }
 

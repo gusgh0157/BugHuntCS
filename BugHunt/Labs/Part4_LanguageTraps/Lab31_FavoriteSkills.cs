@@ -7,6 +7,7 @@ namespace BugHunt;
 public static partial class Lab31
 {
     // 지난 세션이 저장해 둔 즐겨찾기 해시(그 프로세스의 GetHashCode 값). 재현을 위해 안정 해시로 대신 둔다.
+    // [JA] 前回のセッションが保存しておいたお気に入りのハッシュ(そのプロセスの GetHashCode の値)です。再現のため安定したハッシュで代用します。
     static int OldSessionHash(string s)
     {
         uint h = 2166136261;
@@ -18,10 +19,12 @@ public static partial class Lab31
     {
         string[] favorites = Pick(Sets[0], Sets[1..]);
         // 세이브 파일에 저장된 즐겨찾기 해시 (지난 세션의 GetHashCode 결과)
+        // [JA] セーブファイルに保存されたお気に入りのハッシュ (前回のセッションの GetHashCode の結果)
         HashSet<int> savedHashes = [.. favorites.Select(OldSessionHash)];
 
         string[] allSkills = [Text.L("화염구", "ファイアボール"), Text.L("서리창", "フロストランス"), Text.L("치유", "ヒール"), Text.L("축복", "祝福"), Text.L("질풍베기", "疾風斬り"), Text.L("대지분쇄", "大地粉砕"), Text.L("그림자 일격", "シャドウストライク")];
         // 이번 세션: 스킬 이름의 해시로 즐겨찾기인지 판정한다.
+        // [JA] 今回のセッション: スキル名のハッシュでお気に入りかどうかを判定します。
         string[] starred = [.. allSkills.Where(s => savedHashes.Contains(s.GetHashCode()))];
 
         Console.WriteLine(Text.L($"  저장된 즐겨찾기: {string.Join(", ", favorites)}", $"  保存されたお気に入り: {string.Join(", ", favorites)}"));

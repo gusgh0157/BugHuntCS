@@ -19,11 +19,13 @@ public static partial class Lab57
     {
         public List<Member> Members { get; set; } = [];
         // 리더와 메인 탱커는 파티원 중 한 사람을 가리킨다.
+        // [JA] リーダーとメインタンクはパーティーメンバーのうちの一人を指します。
         public Member? Leader { get; set; }
         public Member? MainTank { get; set; }
     }
 
     // 한글을 이스케이프하지 않고 그대로 쓴다(콘솔에서 읽기 쉽게).
+    // [JA] ハングルをエスケープせずそのまま書く(コンソールで読みやすく)。
     static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web) { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
     static Party Restore(Party party)
@@ -45,6 +47,7 @@ public static partial class Lab57
         Party restored = Restore(party);
 
         // 복원 뒤 전투: 보스가 리더와 메인 탱커를 때린다.
+        // [JA] 復元後の戦闘: ボスがリーダーとメインタンクを攻撃します。
         int damage = Pick(30, 5, 90);
         restored.Leader!.Hp -= damage;
         restored.MainTank!.Hp -= damage;

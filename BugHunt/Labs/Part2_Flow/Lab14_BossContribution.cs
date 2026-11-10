@@ -11,6 +11,7 @@ public static class Lab14
     public static void Run()
     {
         // 월드 보스 HP 50,000,000
+        // [JA] ワールドボス HP 50,000,000
         Attacker[] party =
         [
             new("Kael", 30_000_000),

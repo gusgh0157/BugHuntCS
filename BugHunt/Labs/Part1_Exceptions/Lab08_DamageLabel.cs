@@ -9,6 +9,7 @@ public static partial class Lab08
         public int Amount { get; } = amount;
 
         // 금액 뒤에 " 피해"를 붙여 보여 준다.
+        // [JA] 数値の後ろに " ダメージ" を付けて表示します。
         public override string ToString() => $"{this} {Text.L("피해", "ダメージ")}";
     }
 
@@ -18,6 +19,7 @@ public static partial class Lab08
         var label = new DamageLabel(amount);
 
         // 라벨은 스택이 작은(256KB) 화면 갱신 스레드에서 만든다. (스택이 작으면 넘칠 때 빨리 넘쳐 채점이 오래 걸리지 않는다)
+        // [JA] ラベルはスタックが小さい(256KB)画面更新スレッドで作ります。(スタックが小さいとあふれるときにすぐあふれるので、採点に時間がかかりません)
         string text = "";
         var ui = new Thread(() => text = label.ToString(), maxStackSize: 256 * 1024) { Name = Text.L("UI 갱신", "UI 更新") };
         ui.Start();

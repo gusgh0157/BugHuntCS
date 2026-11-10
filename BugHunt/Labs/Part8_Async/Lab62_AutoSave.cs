@@ -10,7 +10,7 @@ public static class Lab62
 
         public async void SaveAsync(string slot)
         {
-            await Task.Delay(50);   // 디스크에 쓰는 척
+            await Task.Delay(50);   // 디스크에 쓰는 척 / ディスクに書くふり
             if (slot == "checkpoint_3")
                 throw new IOException(Text.L($"{slot}: 디스크 공간이 부족합니다", $"{slot}: ディスクの空き容量が不足しています"));
             Interlocked.Increment(ref SavedCount);
@@ -41,7 +41,7 @@ public static class Lab62
         var saves = new SaveSystem();
         int failures = AutoSave(saves, ["checkpoint_1", "checkpoint_2", "checkpoint_3"]);
 
-        Thread.Sleep(500);   // 게임은 계속 진행된다
+        Thread.Sleep(500);   // 게임은 계속 진행된다 / ゲームはそのまま進行する
 
         Expect(Text.L("저장 성공", "セーブ成功"), 2, saves.SavedCount);
         Expect(Text.L("실패 알림", "失敗の通知"), 1, failures);

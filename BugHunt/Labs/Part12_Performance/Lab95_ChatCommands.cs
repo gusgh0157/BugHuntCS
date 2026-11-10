@@ -22,7 +22,7 @@ public static class Lab95
         string[] commands = ["/roll 20", Text.L("/roll ㅋㅋㅋ", "/roll www"), "/roll", "/roll 6", Text.L("/roll 백", "/roll 百"), "/roll 1d6", "/roll 100"];
         int count = Pick(20_000, 10_000, 30_000);
         int offset = Pick(0, 0, commands.Length - 1);
-        ParseRollMax("/roll x");   // 처음 한 번만 드는 비용 빼기
+        ParseRollMax("/roll x");   // 처음 한 번만 드는 비용 빼기 / 最初の一回だけかかるコストを除く
 
         long exceptions = 0;
         EventHandler<System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs> counter = (_, _) => Interlocked.Increment(ref exceptions);

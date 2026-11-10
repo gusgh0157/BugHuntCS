@@ -22,6 +22,7 @@ public static partial class Lab45
     }
 
     // 가방: 시작 무기가 들어간 size 칸짜리 배열
+    // [JA] バッグ: 初期武器が入った size スロットの配列
     static Item[] CreateBag(Weapon starter, int size)
     {
         var bag = new Weapon[size];

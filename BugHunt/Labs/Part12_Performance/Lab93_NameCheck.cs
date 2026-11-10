@@ -7,6 +7,7 @@ namespace BugHunt;
 public static class Lab93
 {
     // 이름 규칙: 영문자로 시작, 영문자·숫자·밑줄 3~16자
+    // [JA] 名前の規則: 英字で始まり、英字・数字・アンダースコアで 3〜16 文字
     static bool IsValidName(string name) => new Regex("^[A-Za-z][A-Za-z0-9_]{2,15}$").IsMatch(name);
 
     public static void Run()
@@ -14,7 +15,7 @@ public static class Lab93
         string[] names = ["Kael", "Mira_02", "x", "9lives", "Doran", "dark_knight_99", "toolongname_123456", "Lia", "S v e n", "Yuna"];
         int messages = Pick(20_000, 10_000, 40_000);
         int offset = Pick(0, 0, names.Length - 1);
-        IsValidName("warmup");   // 처음 한 번만 드는 비용 빼기
+        IsValidName("warmup");   // 처음 한 번만 드는 비용 빼기 / 最初の一回だけかかるコストを除く
 
         int valid = 0;
         (long bytes, long ms) = Measure(() =>

@@ -39,6 +39,7 @@ public static class Lab30
         string expected = string.Join(", ", guild.Where(m => m.Online).Select(m => m.Name));
 
         // 레이드 도중: 한 명이 접속을 끊고, 접속 안 했던 사람이 들어오고, 새 길드원이 가입한다.
+        // [JA] レイドの途中: 1人が接続を切り、接続していなかった人が入ってきて、新しいギルドメンバーが加入します。
         guild[0].Online = false;
         foreach (Member m in guild.Where(m => !m.Online).Skip(1).Take(1))
             m.Online = true;

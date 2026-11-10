@@ -37,6 +37,7 @@ public static class Lab12
         Dictionary<string, object> before = Snapshot(settings);
 
         // 플레이어가 설정 창에서 볼륨만 70 으로 바꿨다.
+        // [JA] プレイヤーが設定画面で音量だけを 70 に変えました。
         settings.Volume = 70;
 
         Dictionary<string, object> after = Snapshot(settings);
