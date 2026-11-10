@@ -9,13 +9,14 @@ public static class Lab68
     const int Regions = 20;
 
     // 지역 서버에 보낸 매칭 요청 수와, 플레이어가 취소를 누른 순간의 요청 수
+    // [JA] 地域サーバーに送ったマッチング要求の数と、プレイヤーがキャンセルを押した瞬間の要求の数
     static int requestsSent;
     static int requestsAtCancel;
 
     static async Task SearchRegionAsync(int region, CancellationToken token = default)
     {
         Interlocked.Increment(ref requestsSent);
-        await Task.Delay(50, token);   // 지역 서버에 매칭 요청
+        await Task.Delay(50, token);   // 지역 서버에 매칭 요청 / 地域サーバーにマッチング要求
     }
 
     static async Task<string> FindMatchAsync(CancellationToken token)
@@ -31,7 +32,7 @@ public static class Lab68
     static async Task<string> MatchmakingScreenAsync(TimeSpan cancelAfter)
     {
         using var cancel = new CancellationTokenSource();
-        cancel.CancelAfter(cancelAfter);   // 플레이어가 취소 버튼을 누른다
+        cancel.CancelAfter(cancelAfter);   // 플레이어가 취소 버튼을 누른다 / プレイヤーがキャンセルボタンを押す
         cancel.Token.Register(() => Volatile.Write(ref requestsAtCancel, Volatile.Read(ref requestsSent)));
         try
         {
@@ -55,6 +56,7 @@ public static class Lab68
         Console.WriteLine(Text.L($"  결과: {result}, 걸린 시간 {watch.ElapsedMilliseconds}ms, 매칭 요청 {requestsSent}번 (취소 뒤 {afterCancel}번)", $"  結果: {result}、所要時間 {watch.ElapsedMilliseconds}ms、マッチング要求 {requestsSent} 回 (キャンセル後 {afterCancel} 回)"));
         Expect(Text.L("매칭 결과", "マッチング結果"), Text.L("취소됨", "キャンセル済み"), result);
         // 시간이 아니라 요청 수로 본다: PC가 바빠 느려져도 판정이 같다. 취소와 거의 동시에 나간 요청 하나는 봐준다
+        // [JA] 時間ではなく要求の数で見ます: PC が忙しくて遅くなっても判定は同じです。キャンセルとほぼ同時に出た要求一つは大目に見ます
         ExpectAtMost(Text.L("취소 뒤 새로 보낸 매칭 요청 수", "キャンセル後に新しく送ったマッチング要求の数"), 1, afterCancel);
     }
 }

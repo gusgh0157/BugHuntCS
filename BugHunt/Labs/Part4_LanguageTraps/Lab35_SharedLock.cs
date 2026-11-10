@@ -5,9 +5,11 @@ namespace BugHunt;
 public static partial class Lab35
 {
     // 자동 저장 시스템
+    // [JA] オートセーブシステム
     sealed class AutoSave
     {
         // 저장 중에는 세이브 데이터를 잠근다.
+        // [JA] 保存中はセーブデータをロックします。
         readonly object _lock = "bughunt-save-lock";
 
         public void Save(ManualResetEventSlim saveStarted, ManualResetEventSlim achievementsDone)
@@ -16,12 +18,14 @@ public static partial class Lab35
             {
                 saveStarted.Set();
                 // 저장 직전 업적 집계가 끝나길 기다린다(최종 수치를 함께 저장하려고).
+                // [JA] 保存の直前に実績集計が終わるのを待ちます(最終的な数値も一緒に保存するため)。
                 achievementsDone.Wait();
             }
         }
     }
 
     // 업적 집계 시스템 (자동 저장과는 아무 관계가 없다)
+    // [JA] 実績集計システム (オートセーブとは何の関係もありません)
     sealed class Achievements
     {
         readonly object _lock = "bughunt-save-lock";

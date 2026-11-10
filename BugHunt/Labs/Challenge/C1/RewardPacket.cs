@@ -7,6 +7,7 @@ namespace BugHunt.Challenge.C1;
 public sealed class RewardPacket
 {
     // 패킷마다 붙는 고유 번호. 재전송된 패킷을 알아보는 데 쓴다.
+    // [JA] パケットごとに付く固有の番号。再送されたパケットを見分けるのに使います。
     public Guid Id { get; private set; } = Guid.NewGuid();
 
     public int RaidId { get; set; }

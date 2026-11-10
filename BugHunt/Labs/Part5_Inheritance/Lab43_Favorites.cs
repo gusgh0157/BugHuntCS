@@ -19,9 +19,11 @@ public static partial class Lab43
         public int Quality => quality;
 
         // 같은 종류(Id)면 같은 아이템. 품질은 상관없다.
+        // [JA] 同じ種類(Id)なら同じアイテム。品質は関係ありません。
         public bool Equals(ItemStack? other) => other is not null && other.Id == Id;
 
         // 옛 코드: 품질까지 같아야 같은 아이템으로 봤다.
+        // [JA] 古いコード: 品質まで同じでなければ同じアイテムとみなしませんでした。
         public override bool Equals(object? obj) => obj is ItemStack s && s.Id == Id && s.Quality == Quality;
 
         public override int GetHashCode() => Id;

@@ -22,7 +22,7 @@ public sealed class RewardInbox(UnreliableLink link)
             }
             catch (FormatException)
             {
-                continue;   // 깨진 패킷은 ack 없이 버린다. 서버가 다시 보낸다.
+                continue;   // 깨진 패킷은 ack 없이 버린다. 서버가 다시 보낸다. / 壊れたパケットは ack を返さずに捨てます。サーバーが送り直します。
             }
 
             Received++;
@@ -31,7 +31,7 @@ public sealed class RewardInbox(UnreliableLink link)
             if (!_seen.Add(packet.Id))
             {
                 Duplicates++;
-                continue;   // 재전송된 패킷. ack 만 다시 보내고 무시
+                continue;   // 재전송된 패킷. ack 만 다시 보내고 무시 / 再送されたパケット。ack だけ送り直して無視
             }
             RewardArrived?.Invoke(packet);
         }

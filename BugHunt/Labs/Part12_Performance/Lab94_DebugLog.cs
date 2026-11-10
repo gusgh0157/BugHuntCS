@@ -6,7 +6,7 @@ public static class Lab94
 {
     static class Log
     {
-        public static bool DebugEnabled;   // 출시판에서는 false
+        public static bool DebugEnabled;   // 출시판에서는 false / リリース版では false
 
         public static void Debug(string format, params object?[] args)
         {
@@ -40,7 +40,7 @@ public static class Lab94
         var units = new Unit[count];
         for (int i = 0; i < count; i++)
             units[i] = new Unit(i, i, -i);
-        MoveAll(units, 0, 0, -1);   // 처음 한 번만 드는 비용 빼기
+        MoveAll(units, 0, 0, -1);   // 처음 한 번만 드는 비용 빼기 / 最初の一回だけかかるコストを除く
 
         (long bytes, long ms) = Measure(() =>
         {

@@ -14,7 +14,7 @@ public static partial class Lab42
         protected Unit(string name)
         {
             Name = name;
-            Hp = MaxHp();   // 소환 직후 체력을 꽉 채운다
+            Hp = MaxHp();   // 소환 직후 체력을 꽉 채운다 / 召喚直後に体力を満タンにする
         }
 
         public abstract int MaxHp();

@@ -11,7 +11,7 @@ public static class Lab21
     class GuildRoster
     {
         readonly List<Member> _members;
-        int _lastId;   // 지금까지 쓴 가장 큰 번호
+        int _lastId;   // 지금까지 쓴 가장 큰 번호 / 今まで使った一番大きい番号
 
         public GuildRoster(List<Member> saved)
         {

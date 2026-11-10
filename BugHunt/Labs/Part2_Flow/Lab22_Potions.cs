@@ -21,9 +21,10 @@ public static class Lab22
     public static void Run()
     {
         // 숨은 케이스는 칸이 거의 꽉 찬 가방
+        // [JA] 隠しケースは枠がほぼいっぱいのバッグ
         var bag = new Bag { Potions = (byte)Pick(3, 251, 255) };
         int start = bag.Potions;
-        int presses = start + Pick(4, 1, 6);   // 물약보다 많이 누른다
+        int presses = start + Pick(4, 1, 6);   // 물약보다 많이 누른다 / ポーションの数より多く押す
 
         int drunk = 0, refused = 0;
         for (int i = 0; i < presses; i++)

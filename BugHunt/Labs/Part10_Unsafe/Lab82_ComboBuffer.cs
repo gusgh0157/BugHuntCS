@@ -7,10 +7,13 @@ public static partial class Lab82
     const int Guard = unchecked((int)0xC0FFEE);
 
     // 들어온 콤보 점수를 버퍼에 담고, (담은 개수, 가드 칸의 값)을 돌려준다.
+    // [JA] 入ってきたコンボ スコアをバッファに入れ、(入れた個数, ガードのマスの値) を返します。
     static unsafe (int Stored, int GuardAfter) Fill(int[] incoming)
     {
         // 한 덩어리를 잡아 앞 4칸은 점수 버퍼, 바로 뒤 1칸은 가드(경계 표시)로 쓴다.
         // 가드 뒤의 여유 칸은 넘쳐 쓴 값이 이 덩어리 밖(스택의 다른 값)까지 가지 않게 하는 실습용 안전장치다.
+        // [JA] ひとかたまりを確保し、先頭 4 マスはスコア バッファ、そのすぐ後ろの 1 マスはガード(境界の目印)に使います。
+        // [JA] ガードの後ろの余りのマスは、はみ出して書いた値がこのかたまりの外(スタックの別の値)まで届かないようにする実習用の安全装置です。
         Span<int> block = stackalloc int[4 + 1 + 8];
         Span<int> scores = block[..4];
         block[4] = Guard;

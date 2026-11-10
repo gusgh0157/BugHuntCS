@@ -30,6 +30,7 @@ public static class Lab80
     }
 
     // 서버 쪽 코드 흉내: 문서대로 바이트를 하나씩 쓴다. 이 함수에는 버그가 없다.
+    // [JA] サーバー側のコードのまね: 文書どおりにバイトを一つずつ書きます。この関数にバグはありません。
     static byte[] ServerSend(ushort seq, string text)
     {
         byte[] body = Encoding.UTF8.GetBytes(text);

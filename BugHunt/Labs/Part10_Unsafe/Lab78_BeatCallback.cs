@@ -7,6 +7,7 @@ namespace BugHunt;
 public static unsafe class Lab78
 {
     // 네이티브 쪽이 부를 함수의 모양
+    // [JA] ネイティブ側が呼ぶ関数の形
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     delegate int BeatCallback(int beat);
 
@@ -43,6 +44,7 @@ public static unsafe class Lab78
     }
 
     // 곡 데이터를 읽고 임시 데이터를 정리한다. 이 함수에는 버그가 없다.
+    // [JA] 曲データを読み込み、一時データを整理します。この関数にバグはありません。
     static void LoadSong(string name)
     {
         var notes = new List<int[]>();

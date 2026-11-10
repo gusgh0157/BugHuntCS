@@ -18,6 +18,7 @@ public static class Lab28
             board.Add(new Entry($"P{i + 1:00}", Pick(i % 4, 0, 4) * 1000));
 
         // 기대 순위: 점수 내림차순, 같으면 들어온 순서 (OrderByDescending 은 안정 정렬이다)
+        // [JA] 期待する順位: スコアの降順、同じなら入ってきた順 (OrderByDescending は安定ソートです)
         string expected = string.Join(" ", board.OrderByDescending(e => e.Score).Select(e => e.Name));
 
         SortLeaderboard(board);

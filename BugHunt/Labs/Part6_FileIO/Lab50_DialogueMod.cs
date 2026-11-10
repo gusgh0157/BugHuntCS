@@ -13,6 +13,7 @@ public static partial class Lab50
     static readonly string Root = Path.Combine(Path.GetTempPath(), "BugHunt", $"Lab50_DialogueMod_{Environment.ProcessId}");
 
     // 대사 파일을 읽어 키 → 대사 표를 만든다. (모드 무결성 검사 때문에 바이트로 먼저 읽는다)
+    // [JA] セリフファイルを読んでキー → セリフの表を作ります。(MOD の整合性チェックのため、まずバイトで読みます)
     static Dictionary<string, string> LoadDialogue(string path)
     {
         byte[] bytes = File.ReadAllBytes(path);
@@ -33,6 +34,7 @@ public static partial class Lab50
     public static void Run()
     {
         // CP949(한국어 Windows 의 옛 "ANSI") 인코딩을 쓰려면 코드 페이지 공급자를 등록해야 한다. (모드 파일을 만드는 쪽 흉내)
+        // [JA] CP949(韓国語 Windows の昔の "ANSI")エンコーディングを使うにはコードページプロバイダーを登録する必要があります。(MOD ファイルを作る側のまね)
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
         Encoding cp949 = Encoding.GetEncoding(949);
 
@@ -43,12 +45,15 @@ public static partial class Lab50
             string content = string.Join("\n", lines.Select(l => $"{l.Key}={l.Line}")) + "\n";
 
             // 모드 A: 메모장에서 "UTF-8 (BOM)"으로 저장
+            // [JA] MOD A: メモ帳で "UTF-8 (BOM)" として保存
             string modA = Path.Combine(Root, "mod_a.txt");
             File.WriteAllText(modA, content, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
             // 모드 B: 옛 한국어 Windows 메모장에서 "ANSI"로 저장
+            // [JA] MOD B: 昔の韓国語 Windows のメモ帳で "ANSI" として保存
             string modB = Path.Combine(Root, "mod_b.txt");
             File.WriteAllBytes(modB, cp949.GetBytes(content));
             // 모드 C: BOM 없는 UTF-8 (요즘 편집기 기본값)
+            // [JA] MOD C: BOM なしの UTF-8 (最近のエディターの既定値)
             string modC = Path.Combine(Root, "mod_c.txt");
             File.WriteAllText(modC, content, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 

@@ -22,6 +22,7 @@ public static class Lab24
         Stage[] stages = [.. Enumerable.Range(1, count).Select(i => new Stage(Text.L($"{i}단계", $"ステージ{i}"), Pick(i * 100, 10, 500), 60))];
 
         // 플레이어는 아직 퀘스트를 다 깨지 않았다. 지금까지 깬 단계의 클리어 시간(초)
+        // [JA] プレイヤーはまだクエストを全部クリアしていません。これまでにクリアしたステージのクリア時間(秒)
         int cleared = Pick(3, 1, count - 1);
         var clearSeconds = new List<int>();
         for (int i = 0; i < cleared; i++)

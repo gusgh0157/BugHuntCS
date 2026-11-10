@@ -44,6 +44,7 @@ public static class Lab29
         Console.WriteLine(Text.L($"  드롭 테이블 {tables.Count}개 읽음", $"  ドロップテーブルを {tables.Count} 個読み込み"));
 
         // 몬스터를 잡을 때마다 테이블을 본다.
+        // [JA] モンスターを倒すたびにテーブルを見ます。
         int totalWeight = 0;
         foreach (IEnumerable<Drop> table in tables)
             totalWeight += table.Sum(d => d.Weight);

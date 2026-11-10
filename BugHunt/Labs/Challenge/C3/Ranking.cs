@@ -56,6 +56,7 @@ public static class RankFilters
     }
 
     // 걸러진 목록 안에서 다시 1위부터 매긴다 (친구 중 몇 위인지 보여 줄 때)
+    // [JA] 絞り込んだリストの中で改めて 1 位から順位を付けます (フレンドの中で何位かを見せるとき)
     public static List<RankEntry> Renumber(List<RankEntry> ranks)
     {
         for (int i = 0; i < ranks.Count; i++)

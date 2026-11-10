@@ -45,6 +45,7 @@ public static unsafe class Lab76
     }
 
     // 레벨 데이터를 읽고, 다 읽으면 임시 데이터를 버리고 힙을 정리한다. 이 함수에는 버그가 없다.
+    // [JA] レベル データを読み込み、読み終えたら一時データを捨ててヒープを整理します。この関数にバグはありません。
     static void LoadLevel(string name)
     {
         var temp = new List<byte[]>();
@@ -58,6 +59,7 @@ public static unsafe class Lab76
     public static void Run()
     {
         // 레벨 하나를 미리 읽어 두고(임시 데이터가 힙에 남아 있다) 오디오를 켠다.
+        // [JA] レベルを一つ先読みしておき(一時データがヒープに残っています)、オーディオをオンにします。
         var preload = new List<byte[]>();
         for (int i = 0; i < 2000; i++)
             preload.Add(new byte[64]);

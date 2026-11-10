@@ -7,6 +7,7 @@ namespace BugHunt;
 public static class Lab77
 {
     // "네이티브" 수신 함수 흉내. 주소에 패킷 바이트를 채운다. 마지막 바이트는 체크섬이다. 이 클래스에는 버그가 없다.
+    // [JA] "ネイティブ" 受信関数のまね。アドレスにパケットのバイトを詰めます。最後のバイトはチェックサムです。このクラスにバグはありません。
     static class NativeNet
     {
         public static void Receive(IntPtr buffer, int length, int packetId, bool corrupt)
@@ -23,6 +24,7 @@ public static class Lab77
     }
 
     // 메모리 진단용: 받은 버퍼가 GC 에 수거됐는지 지켜본다. 이 클래스에는 버그가 없다.
+    // [JA] メモリ診断用: 受け取ったバッファが GC に回収されたかを見張ります。このクラスにバグはありません。
     static readonly List<WeakReference> Tracked = [];
 
     static byte[] ReceivePacket(int packetId, bool corrupt)
@@ -71,6 +73,7 @@ public static class Lab77
         Console.WriteLine(Text.L($"  패킷 {count}개 중 {ok}개 처리", $"  パケット {count} 個中 {ok} 個を処理"));
 
         // 처리가 끝난 패킷 버퍼는 이제 아무도 쓰지 않는다. GC 를 돌리면 전부 수거되어야 한다.
+        // [JA] 処理し終えたパケット バッファはもう誰も使いません。GC を走らせれば全部回収されるはずです。
         GC.Collect();
         GC.WaitForPendingFinalizers();
         GC.Collect();

@@ -5,6 +5,7 @@ namespace BugHunt;
 public static class Lab17
 {
     // 플레이어의 시계. 화면에는 플레이어 지역의 시각을 보여 준다.
+    // [JA] プレイヤーの時計です。画面にはプレイヤーの地域の時刻を表示します。
     class PlayerClock(DateTime utcNow, TimeZoneInfo zone)
     {
         public DateTime UtcNow { get; } = utcNow;
@@ -24,9 +25,11 @@ public static class Lab17
         TimeZoneInfo seoul = TimeZoneInfo.FindSystemTimeZoneById("Korea Standard Time");
 
         // 서버 기준(UTC) 11월 3일 15:00 에 끝난다. 서울로는 11월 4일 자정.
+        // [JA] サーバー基準(UTC)で 11月3日 15:00 に終わります。ソウルでは 11月4日の午前0時です。
         var halloween = new LimitedEvent(Text.L("할로윈 사냥", "ハロウィン狩り"), new DateTime(2026, 11, 3, 15, 0, 0, DateTimeKind.Utc));
 
         // 지금은 UTC 12:00, 서울로는 밤 9시.
+        // [JA] 今は UTC 12:00、ソウルでは夜 9時です。
         var clock = new PlayerClock(new DateTime(2026, 11, 3, 12, 0, 0, DateTimeKind.Utc), seoul);
 
         TimeSpan remaining = halloween.Remaining(clock);

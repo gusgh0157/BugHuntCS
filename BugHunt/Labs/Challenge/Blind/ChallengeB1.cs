@@ -35,7 +35,7 @@ public static class ChallengeB1
         }
     }
 
-    static void PrepareScreen() => Thread.Sleep(100);   // 화면 준비 (UI 배치, 셰이더 예열)
+    static void PrepareScreen() => Thread.Sleep(100);   // 화면 준비 (UI 배치, 셰이더 예열) / 画面の準備 (UI 配置、シェーダーのウォームアップ)
 
     public static void Run()
     {

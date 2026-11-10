@@ -9,6 +9,7 @@ public static partial class Lab33
     enum Rarity { Common, Rare, Epic, Legendary }
 
     // 등급별 드롭 가중치. 모르는 등급은 "넣지 않음"(0)이어야 한다.
+    // [JA] 等級ごとのドロップの重みです。知らない等級は「入れない」(0)でなければなりません。
     static int Weight(Rarity r) => r switch
     {
         Rarity.Common => 100,
@@ -35,6 +36,7 @@ public static partial class Lab33
         }
 
         // 기대값: 클라이언트가 아는 등급만 가중치를 더한다.
+        // [JA] 期待値: クライアントが知っている等級だけ重みを足します。
         long expectedWeight = raw.Where(v => Enum.IsDefined((Rarity)v)).Sum(v => (long)Weight((Rarity)v));
         int expectedKnown = raw.Count(v => Enum.IsDefined((Rarity)v));
 

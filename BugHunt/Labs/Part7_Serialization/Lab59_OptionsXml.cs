@@ -7,6 +7,7 @@ namespace BugHunt;
 public static partial class Lab59
 {
     // XmlSerializer 가 다루는 형식은 public 이어야 한다.
+    // [JA] XmlSerializer が扱う型は public でなければならない。
     public sealed record GraphicsOptions(int Width, int Height, bool Fullscreen);
 
     public sealed class GameOptions

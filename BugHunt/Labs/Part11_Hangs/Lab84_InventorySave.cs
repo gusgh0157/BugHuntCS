@@ -10,6 +10,7 @@ public static class Lab84
     {
         int written = 0;
         // 옛 세이브 형식에서는 슬롯 번호를 1바이트로 썼다. 그때 짠 루프
+        // [JA] 昔のセーブ形式ではスロット番号を 1 バイトで書いていました。そのときに書いたループ
         for (byte slot = 0; slot < items.Count; slot++)
         {
             saveFile[slot] = $"{slot}:{items[slot].Name}x{items[slot].Count}";

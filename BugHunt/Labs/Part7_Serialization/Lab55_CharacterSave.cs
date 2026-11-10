@@ -12,15 +12,18 @@ public static partial class Lab55
         public string Name { get; set; } = "";
 
         // 골드는 자주 바뀌어서 필드로 둔다.
+        // [JA] ゴールドは頻繁に変わるのでフィールドにしている。
         public int Gold;
 
         // 레벨은 LevelUp 으로만 올린다.
+        // [JA] レベルは LevelUp でだけ上げる。
         public int Level { get; private set; } = 1;
 
         public void LevelUp() => Level++;
     }
 
     // 한글을 이스케이프하지 않고 그대로 쓴다(콘솔에서 읽기 쉽게).
+    // [JA] ハングルをエスケープせずそのまま書く(コンソールで読みやすく)。
     static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web) { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
     static string Save(Character c) => JsonSerializer.Serialize(c, Options);

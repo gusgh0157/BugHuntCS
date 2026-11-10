@@ -14,7 +14,7 @@ public static class Lab85
         public bool JoinUnder(Guild parent)
         {
             if (parent == this || parent.Parent == this)
-                return false;   // 고리가 생기는 가입은 거절
+                return false;   // 고리가 생기는 가입은 거절 / ループができる加入は拒否
             Parent = parent;
             return true;
         }
@@ -36,6 +36,8 @@ public static class Lab85
 
         // 기본 케이스: Ember→Dawn, Frost→Ember, Gale→Frost 사슬을 만든 뒤, Dawn 이 Gale 밑으로 들어가려 한다.
         // 숨은 케이스: 사슬 순서를 섞는다.
+        // [JA] 基本ケース: Ember→Dawn、Frost→Ember、Gale→Frost の鎖を作ったあと、Dawn が Gale の下に入ろうとします。
+        // [JA] 隠しケース: 鎖の順番を混ぜます。
         int[] order = [.. Enumerable.Range(0, count)];
         if (Seed != 0)
             for (int i = order.Length - 1; i > 0; i--)

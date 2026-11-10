@@ -27,6 +27,7 @@ public static class Lab20
     public static void Run()
     {
         // H = 박자에 맞춤, M = 놓침
+        // [JA] H = 拍子に合わせて叩いた、M = 外した
         string play = "HHHHMHHHHHHHMHH";
         if (Seed != 0)
             play = new string('H', Pick(8, 8, 14)) + "M" + new string(Enumerable.Range(0, Pick(15, 10, 30)).Select(_ => Pick('H', 'H', 'H', 'H', 'M')).ToArray());

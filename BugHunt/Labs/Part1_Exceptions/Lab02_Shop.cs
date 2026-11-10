@@ -13,6 +13,7 @@ public static class Lab02
     };
 
     // 1.0 버전 클라이언트가 저장한 장바구니. "아이템 x 개수"가 ; 로 구분된다.
+    // [JA] バージョン 1.0 のクライアントが保存したカートです。"アイテム x 個数" が ; で区切られています。
     const string SavedCart = "hp_potion x 3; Mana_Potion x 2; iron_sword x 1";
 
     record CartLine(string ItemId, int Count);

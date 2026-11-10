@@ -13,6 +13,7 @@ public static partial class Lab53
     static readonly string Root = Path.Combine(Path.GetTempPath(), "BugHunt", $"Lab53_CloudSync_{Environment.ProcessId}");
 
     // 저장 대기열: 저장은 한 번에 하나씩, 들어온 순서대로. 게임을 끌 때 마지막 저장까지 기다린다.
+    // [JA] 保存キュー: 保存は一度に一つずつ、入ってきた順に。ゲームを終了するときは最後の保存まで待ちます。
     static Task _saveQueue = Task.CompletedTask;
 
     static string Format(int volume, int sensitivity) =>
@@ -21,24 +22,28 @@ public static partial class Lab53
     static string OneLine(string s) => s.Replace('\n', ' ').Trim();
 
     // 설정 파일 잠금: 저장(쓰기)과 클라우드 동기화(읽기)가 파일을 동시에 열지 않게 한다.
+    // [JA] 設定ファイルのロック: 保存(書き込み)とクラウド同期(読み込み)がファイルを同時に開かないようにします。
     static readonly SemaphoreSlim FileLock = new(1, 1);
 
     // 설정 저장. 앞의 저장이 끝난 뒤에 시작하고, 압축과 체크섬 계산 때문에 시간이 조금 걸린다.
+    // [JA] 設定の保存。前の保存が終わってから始まり、圧縮とチェックサム計算のため少し時間がかかります。
     static async Task SaveSettingsAsync(Task previous, string path, int volume, int sensitivity)
     {
         await previous;
-        await Task.Delay(200);   // 압축·체크섬
+        await Task.Delay(200);   // 압축·체크섬 / 圧縮・チェックサム
         await FileLock.WaitAsync();
         try { await File.WriteAllTextAsync(path, Format(volume, sensitivity)); }
         finally { FileLock.Release(); }
     }
 
     // 옵션 창의 "적용" 버튼
+    // [JA] オプション画面の "適用" ボタン
     static async Task<string> ApplyAsync(string path, int volume, int sensitivity)
     {
         Task save = _saveQueue = SaveSettingsAsync(_saveQueue, path, volume, sensitivity);
 
         // 클라우드 동기화: 저장된 설정 파일을 그대로 올린다
+        // [JA] クラウド同期: 保存された設定ファイルをそのままアップロードする
         string uploaded;
         await FileLock.WaitAsync();
         try { uploaded = await File.ReadAllTextAsync(path); }
@@ -53,12 +58,14 @@ public static partial class Lab53
         string path = Path.Combine(Root, "settings.ini");
 
         // 옵션 창은 게임의 메인 스레드에서 돈다: await 뒤의 코드는 이 스레드로 돌아온다 (MainThread.cs)
+        // [JA] オプション画面はゲームのメインスレッドで動きます: await のあとのコードはこのスレッドに戻ってきます (MainThread.cs)
         var main = new MainThread();
         main.Run(async () =>
         {
             try
             {
                 // 지난번에 저장해 둔 설정
+                // [JA] 前回保存しておいた設定
                 File.WriteAllText(path, Format(50, 5));
 
                 (int Volume, int Sensitivity)[] changes = Pick(Changes[0], Changes[1..]);
@@ -72,6 +79,7 @@ public static partial class Lab53
             finally
             {
                 // 게임 종료: 진행 중인 저장을 기다린 뒤 지운다 (기다리다 실패해도 지운다)
+                // [JA] ゲーム終了: 進行中の保存を待ってから削除します (待っている間に失敗しても削除します)
                 try { await _saveQueue; }
                 finally { if (Directory.Exists(Root)) Directory.Delete(Root, recursive: true); }
             }

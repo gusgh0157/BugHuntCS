@@ -10,7 +10,7 @@ public sealed class ProgressServer(GameLoop loop)
     public async Task<Dictionary<string, int>> ReadAllAsync()
     {
         Reads++;
-        await loop.NextFrame();   // 네트워크 왕복
+        await loop.NextFrame();   // 네트워크 왕복 / ネットワーク往復
         return new Dictionary<string, int>(_saved);
     }
 

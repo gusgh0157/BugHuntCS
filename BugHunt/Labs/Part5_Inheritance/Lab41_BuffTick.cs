@@ -22,6 +22,7 @@ public static partial class Lab41
     }
 
     // 턴 종료: 모든 버프를 한 턴씩 진행
+    // [JA] ターン終了: すべてのバフを1ターンずつ進める
     static void EndTurn(Buff[] buffs)
     {
         foreach (ITickable buff in buffs)

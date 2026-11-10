@@ -9,6 +9,7 @@ public static partial class Lab32
     static int TotalDamage(int baseDamage, int? comboBonus)
     {
         // 콤보 보너스가 없으면 0을 더한 셈 치고 싶다.
+        // [JA] コンボボーナスがなければ 0 を足したことにしたいです。
         int total = baseDamage + comboBonus ?? 0;
         return total;
     }

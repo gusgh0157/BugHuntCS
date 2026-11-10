@@ -15,6 +15,7 @@ public static partial class Lab54
     }
 
     // 클라이언트 공용 JSON 설정
+    // [JA] クライアント共通の JSON 設定
     static readonly JsonSerializerOptions Options = new() { WriteIndented = false };
 
     static GuildNotice Receive(string json) =>
@@ -25,6 +26,7 @@ public static partial class Lab54
         (string Title, string Author, int Priority, bool Pinned) n = Pick(Notices[0], Notices[1..]);
 
         // 서버(웹 API)가 보낸 응답. 웹 API 관례대로 camelCase 다.
+        // [JA] サーバー(Web API)が送った応答。Web API の慣例どおり camelCase です。
         string json = $$"""{"title":"{{n.Title}}","author":"{{n.Author}}","priority":{{n.Priority}},"pinned":{{(n.Pinned ? "true" : "false")}}}""";
         Console.WriteLine(Text.L($"  받은 JSON: {json}", $"  受け取った JSON: {json}"));
 

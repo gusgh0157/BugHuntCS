@@ -5,6 +5,7 @@ namespace BugHunt;
 public static class Lab92
 {
     // 아이템 Id. 비교 횟수를 세어 둔다(진단용). 이 형식에는 버그가 없다.
+    // [JA] アイテム Id。比較回数を数えておきます(診断用)。この型にバグはありません。
     readonly struct ItemId(int value) : IEquatable<ItemId>
     {
         public static long Comparisons;

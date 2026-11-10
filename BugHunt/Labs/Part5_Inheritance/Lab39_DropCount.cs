@@ -11,6 +11,7 @@ public static partial class Lab39
         string Name { get; }
 
         // 기본 규칙: 1개. 규칙이 있는 몬스터는 이 메서드를 구현한다.
+        // [JA] 既定の規則: 1個。規則のあるモンスターはこのメソッドを実装します。
         int DropCount(int luck) => 1;
     }
 
@@ -20,6 +21,7 @@ public static partial class Lab39
     }
 
     // 보스: 기본 드롭 + 운 10당 1개. 정예 보스는 1개 더.
+    // [JA] ボス: 基本ドロップ + 運 10 ごとに 1個。精鋭ボスは1個多い。
     sealed class Boss(string name, int baseDrops) : IDropSource
     {
         public string Name => name;
@@ -27,6 +29,7 @@ public static partial class Lab39
     }
 
     // 정예: 2개 + 운 20당 1개 (운은 long 으로 받는다. 서버의 운 수치가 long 이라서)
+    // [JA] 精鋭: 2個 + 運 20 ごとに 1個(運は long で受け取る。サーバーの運の値が long なので)
     sealed class Elite(string name) : IDropSource
     {
         public string Name => name;
@@ -34,6 +37,7 @@ public static partial class Lab39
     }
 
     // 전투 시스템은 인터페이스로만 몬스터를 다룬다.
+    // [JA] 戦闘システムはインターフェイスだけでモンスターを扱います。
     static int RollDrops(IDropSource monster, int luck) => monster.DropCount(luck);
 
     public static void Run()
@@ -46,6 +50,7 @@ public static partial class Lab39
         var elite = new Elite(Text.L("정예 궁수", "精鋭の弓兵"));
 
         // 기대값: 몬스터 형식으로 직접 부른 값
+        // [JA] 期待値: モンスターの型で直接呼んだ値
         int expectedBoss = boss.DropCount(luck);
         int expectedElite = elite.DropCount(luck);
 

@@ -14,18 +14,21 @@ public static partial class Lab38
     }
 
     // 불 속성: 화상 보너스 1.5배
+    // [JA] 炎属性: 火傷ボーナス 1.5倍
     class FireSkill(string name, int power) : Skill(name, power)
     {
         public new int Damage(int attack) => (attack + Power) * 3 / 2;
     }
 
     // 얼음 속성: 둔화 보너스 +20
+    // [JA] 氷属性: 鈍足ボーナス +20
     class IceSkill(string name, int power) : Skill(name, power)
     {
         public new int Damage(int attack) => attack + Power + 20;
     }
 
     // 스킬 바 전체의 총 피해
+    // [JA] スキルバー全体の合計ダメージ
     static int TotalDamage(IEnumerable<Skill> bar, int attack) => bar.Sum(s => s.Damage(attack));
 
     static Skill Make(string kind, string name, int power) => kind switch
@@ -42,6 +45,7 @@ public static partial class Lab38
         Skill[] bar = [.. slots.Select((s, i) => Make(s.Kind, s.Name, Pick(10 * (i + 1), 5, 60)))];
 
         // 기대값: 스킬 하나하나를 그 스킬의 형식으로 직접 계산
+        // [JA] 期待値: スキル一つ一つをそのスキルの型で直接計算
         int expected = 0;
         foreach (Skill s in bar)
         {

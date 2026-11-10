@@ -5,6 +5,7 @@ namespace BugHunt;
 public static partial class Lab34
 {
     // 턴 커서: 다음 유닛으로 넘어간다. 가볍게 쓰려고 struct 로 만들었다.
+    // [JA] ターンカーソル: 次のユニットに進みます。軽く使うために struct にしました。
     struct TurnCursor(string[] units)
     {
         int _index = -1;
@@ -20,6 +21,7 @@ public static partial class Lab34
     }
 
     // 한 턴 진행: 커서를 다음으로 옮기고 그 유닛을 돌려준다.
+    // [JA] 1ターン進行: カーソルを次に移して、そのユニットを返します。
     static string TakeTurn(TurnCursor cursor)
     {
         cursor.MoveNext();

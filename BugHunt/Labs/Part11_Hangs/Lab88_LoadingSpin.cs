@@ -15,7 +15,7 @@ public static class Lab88
         {
             for (int i = 0; i < assets; i++)
             {
-                Thread.Sleep(5);   // 디스크에서 읽는 척
+                Thread.Sleep(5);   // 디스크에서 읽는 척 / ディスクから読むふり
                 AssetsLoaded++;
             }
             Done = true;
@@ -24,6 +24,8 @@ public static class Lab88
 
     // 로딩이 끝날 때까지 기다린다. 기다리는 동안 몇 번 확인했는지 센다(로딩 아이콘 회전에 쓴다).
     // (AggressiveOptimization: 게임이 한참 돈 뒤처럼 처음부터 최적화된 코드로 실행한다. Release 에서만 효과가 있다)
+    // [JA] ロードが終わるまで待ちます。待つ間に何回確認したかを数えます(ロード アイコンの回転に使います)。
+    // [JA] (AggressiveOptimization: ゲームがしばらく動いたあとのように、最初から最適化されたコードで実行します。Release でのみ効果があります)
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveOptimization)]
     static long WaitForLoading(Loader loader)
     {

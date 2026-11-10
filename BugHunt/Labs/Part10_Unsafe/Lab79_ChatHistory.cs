@@ -15,7 +15,7 @@ public static class Lab79
             part.CopyTo(buffer.AsSpan(length));
             length += part.Length;
         }
-        ArrayPool<char>.Shared.Return(buffer);   // 빌린 것은 돌려준다
+        ArrayPool<char>.Shared.Return(buffer);   // 빌린 것은 돌려준다 / 借りたものは返す
         return buffer.AsMemory(0, length);
     }
 

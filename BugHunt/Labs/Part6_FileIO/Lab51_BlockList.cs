@@ -25,6 +25,7 @@ public static partial class Lab51
             foreach ((string newline, bool trailing) in Layouts)
             {
                 // 운영자가 메모장(CRLF) 또는 다른 편집기(LF)로 저장한 파일
+                // [JA] 運営者がメモ帳(CRLF)または別のエディター(LF)で保存したファイル
                 File.WriteAllText(path, string.Join(newline, blocked) + (trailing ? newline : ""));
                 string layout = Text.L($"{(newline == "\r\n" ? "CRLF" : "LF")}, 끝 줄바꿈 {(trailing ? "있음" : "없음")}", $"{(newline == "\r\n" ? "CRLF" : "LF")}、末尾の改行 {(trailing ? "あり" : "なし")}");
                 Console.WriteLine(Text.L($"  차단 목록 파일: {new FileInfo(path).Length}바이트, {layout}", $"  ブロックリストファイル: {new FileInfo(path).Length}バイト、{layout}"));
@@ -82,6 +83,7 @@ public static partial class Lab51
 public static partial class Lab51
 {
     // 기본 케이스는 메모장 파일 하나, 숨은 케이스는 LF·끝 줄바꿈 없음 파일도 함께
+    // [JA] 基本ケースはメモ帳のファイル一つ、隠しケースは LF・末尾の改行なしのファイルも一緒に
     static (string NewLine, bool Trailing)[] Layouts =>
         Seed == 0 ? [("\r\n", true)] : [("\r\n", true), ("\n", false), ("\r\n", false), ("\n", true)];
 

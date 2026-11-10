@@ -5,6 +5,7 @@ namespace BugHunt;
 public static class ChallengeC2
 {
     // 프레임마다 일어나는 일. ChannelMove 면 그 프레임 처음에 채널을 옮긴다.
+    // [JA] フレームごとに起こること。ChannelMove ならそのフレームの最初にチャンネルを移ります。
     record FrameScript(bool ChannelMove, (string Quest, int Amount)[] Kills);
 
     static List<FrameScript> Script()
@@ -13,7 +14,7 @@ public static class ChallengeC2
         {
             return
             [
-                new(false, [("slime", 1), ("slime", 1), ("wolf", 2), ("boss", 1)]),   // 로그인 직후 광역기 한 방
+                new(false, [("slime", 1), ("slime", 1), ("wolf", 2), ("boss", 1)]),   // 로그인 직후 광역기 한 방 / ログイン直後の範囲攻撃一発
                 new(false, [("slime", 1)]),
                 new(false, [("wolf", 1)]),
             ];
@@ -29,6 +30,7 @@ public static class ChallengeC2
             if (f == forcedMove)
             {
                 // 채널을 옮긴 직후 서로 다른 몬스터를 한꺼번에 잡는 프레임
+                // [JA] チャンネルを移った直後に、別々のモンスターをまとめて倒すフレーム
                 string a = quests[rng.Next(quests.Length)];
                 string b = quests.First(q => q != a);
                 frames.Add(new(true, [(a, 2), (b, 1)]));
@@ -46,6 +48,7 @@ public static class ChallengeC2
     public static void Run()
     {
         // 이 랩의 코드는 모두 게임 루프 스레드에서 돈다 (await 뒤도 게임 루프로 돌아온다)
+        // [JA] このラボのコードはすべてゲーム ループのスレッドで動きます (await のあともゲーム ループに戻ってきます)
         var loop = new GameLoop();
         SynchronizationContext? previous = SynchronizationContext.Current;
         SynchronizationContext.SetSynchronizationContext(loop);
@@ -84,7 +87,7 @@ public static class ChallengeC2
         }
         for (int i = 0; i < 5 && bus.Pending > 0; i++)
             loop.RunFrame(() => { });
-        Task reload = store.LoadAsync();   // 마지막에 채널을 옮겼으면 다시 읽어 와서 확인한다
+        Task reload = store.LoadAsync();   // 마지막에 채널을 옮겼으면 다시 읽어 와서 확인한다 / 最後にチャンネルを移っていたら、読み込み直して確認します
         for (int i = 0; i < 5 && !reload.IsCompleted; i++)
             loop.RunFrame(() => { });
 

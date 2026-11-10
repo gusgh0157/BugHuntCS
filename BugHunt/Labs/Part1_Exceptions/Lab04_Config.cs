@@ -11,6 +11,7 @@ public static class Lab04
         """;
 
     // JSON 파서처럼, 숫자는 전부 가장 큰 정수형(long)으로 담는다.
+    // [JA] JSON パーサーのように、数値はすべて最も大きい整数型(long)で格納します。
     static Dictionary<string, object> ParseConfig(string text)
     {
         var config = new Dictionary<string, object>();

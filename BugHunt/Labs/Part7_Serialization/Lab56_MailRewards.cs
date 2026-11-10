@@ -41,6 +41,7 @@ public static partial class Lab56
     }
 
     // 한글을 이스케이프하지 않고 그대로 쓴다(콘솔에서 읽기 쉽게).
+    // [JA] ハングルをエスケープせずそのまま書く(コンソールで読みやすく)。
     static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web) { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
     static Mail RoundTrip(Mail mail)

@@ -27,7 +27,7 @@ public static class Lab63
         int loaded = 0;
         foreach (string asset in Assets)
         {
-            await Task.Delay(20);   // 디스크에서 읽는 척
+            await Task.Delay(20);   // 디스크에서 읽는 척 / ディスクから読むふり
             loaded++;
             Console.WriteLine(Text.L($"  {asset} 로드 ({loaded * 100 / Assets.Length}%)", $"  {asset} ロード ({loaded * 100 / Assets.Length}%)"));
         }

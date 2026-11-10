@@ -29,7 +29,7 @@ public static class Lab89
         int frames = 2_000;
 
         Vec PlayerAt(int frame) => new(frame % 50 - 25, frame % 30 - 15);
-        CountNearby(enemies, PlayerAt(0), radius);   // 한 번 돌려서 JIT 컴파일 등 처음 한 번만 드는 비용을 뺀다
+        CountNearby(enemies, PlayerAt(0), radius);   // 한 번 돌려서 JIT 컴파일 등 처음 한 번만 드는 비용을 뺀다 / 一度回して、JIT コンパイルなど最初の一回だけかかるコストを除く
 
         long total = 0;
         (long bytes, long ms) = Measure(() =>

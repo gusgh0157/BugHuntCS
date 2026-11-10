@@ -23,7 +23,7 @@ public static class Lab90
         for (int i = 0; i < count; i++)
             lines.Add(new ChatLine(i / 3, senders[i % senders.Length], texts[(i * 7) % texts.Length]));
 
-        Export(lines.GetRange(0, 10));   // 처음 한 번만 드는 비용 빼기
+        Export(lines.GetRange(0, 10));   // 처음 한 번만 드는 비용 빼기 / 最初の一回だけかかるコストを除く
 
         string exported = "";
         (long bytes, long ms) = Measure(() => exported = Export(lines));

@@ -21,6 +21,7 @@ public sealed class QuestEventBus(GameLoop loop)
     public event Func<QuestProgress, Task>? Progress;
 
     // 아직 끝나지 않은 처리기 수
+    // [JA] まだ終わっていないハンドラーの数
     public int Pending
     {
         get

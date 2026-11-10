@@ -11,7 +11,7 @@ public static class Lab64
 
         public async Task SubmitAsync(string achievementId)
         {
-            await Task.Delay(100);   // 네트워크 왕복
+            await Task.Delay(100);   // 네트워크 왕복 / ネットワークの往復
             Interlocked.Increment(ref _received);
         }
     }

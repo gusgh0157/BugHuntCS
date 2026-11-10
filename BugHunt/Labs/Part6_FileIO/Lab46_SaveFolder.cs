@@ -13,6 +13,7 @@ public static partial class Lab46
     sealed class SaveSystem(string gameDir)
     {
         // 게임이 설치된 폴더. 실제 게임에서는 AppContext.BaseDirectory 가 들어온다.
+        // [JA] ゲームがインストールされたフォルダー。実際のゲームでは AppContext.BaseDirectory が入ります。
         public string GameDir { get; } = gameDir;
 
         string SavePath(string slot) => Path.Combine("saves", slot + ".sav");
@@ -41,11 +42,13 @@ public static partial class Lab46
         try
         {
             // 게임 시작: 런처가 게임 폴더에서 실행해 준다.
+            // [JA] ゲーム開始: ランチャーがゲームフォルダーで実行してくれます。
             Environment.CurrentDirectory = gameDir;
             var saves = new SaveSystem(gameDir);
             saves.Save(slot, gold);
 
             // 플레이어가 "모드 폴더 열기"를 눌렀다. 파일 대화상자가 작업 디렉터리를 바꾼다.
+            // [JA] プレイヤーが「MOD フォルダーを開く」を押しました。ファイルダイアログが作業ディレクトリを変えます。
             Environment.CurrentDirectory = otherDir;
             Console.WriteLine(Text.L($"  (폴더 열기 → 작업 디렉터리: {Environment.CurrentDirectory})", $"  (フォルダーを開く → 作業ディレクトリ: {Environment.CurrentDirectory})"));
 

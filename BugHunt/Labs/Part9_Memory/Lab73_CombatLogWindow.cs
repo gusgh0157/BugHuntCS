@@ -16,7 +16,7 @@ public static class Lab73
     class CombatLogWindow
     {
         readonly List<string> _lines = [];
-        readonly byte[] _textureCache = new byte[256 * 1024];   // 창 그림을 캐시해 둔 텍스처라고 치자
+        readonly byte[] _textureCache = new byte[256 * 1024];   // 창 그림을 캐시해 둔 텍스처라고 치자 / ウィンドウの絵をキャッシュしておいたテクスチャだとしよう
 
         public bool IsOpen { get; private set; }
         public int LineCount => _lines.Count;
@@ -37,6 +37,7 @@ public static class Lab73
     }
 
     // 창 50개를 열고 닫는다. 창에 대한 강한 참조는 이 메서드가 끝나면 모두 사라진다.
+    // [JA] ウィンドウを 50 個開いて閉じます。ウィンドウへの強い参照は、このメソッドが終わるとすべて消えます。
     [MethodImpl(MethodImplOptions.NoInlining)]
     static List<WeakReference> OpenAndCloseWindows(int count)
     {

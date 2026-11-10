@@ -28,6 +28,7 @@ public static class Lab05
         public void AddGems(int amount) => Gems += amount;
 
         // 새 시즌이 시작되면 지갑을 비운다.
+        // [JA] 新しいシーズンが始まったら財布を空にします。
         public void ResetSeason()
         {
             _gold = 0;

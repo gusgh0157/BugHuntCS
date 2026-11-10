@@ -34,6 +34,7 @@ public sealed class RewardServer(UnreliableLink link)
     }
 
     // 게임 서버의 한 틱
+    // [JA] ゲーム サーバーの 1 ティック
     public void Tick()
     {
         _tick++;

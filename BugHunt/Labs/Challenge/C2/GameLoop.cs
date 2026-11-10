@@ -16,6 +16,7 @@ public sealed class GameLoop : SynchronizationContext
     public override void Send(SendOrPostCallback d, object? state) => d(state);
 
     // 다음 프레임이 시작될 때 끝나는 Task
+    // [JA] 次のフレームが始まるときに完了する Task
     public Task NextFrame()
     {
         var tcs = new TaskCompletionSource();
@@ -24,6 +25,7 @@ public sealed class GameLoop : SynchronizationContext
     }
 
     // 한 프레임: 다음 프레임을 기다리던 것들을 깨우고, 쌓인 이어서 실행을 돌린 뒤, 게임 로직(update)을 부른다.
+    // [JA] 1 フレーム: 次のフレームを待っていたものを起こし、たまった続きの実行を回してから、ゲーム ロジック(update)を呼びます。
     public void RunFrame(Action update)
     {
         SynchronizationContext? previous = Current;

@@ -23,6 +23,7 @@ public static class Lab27
         bool finished = FinishesWithin(Text.L("처치 기록 집계", "討伐記録の集計"), () =>
         {
             // (전투 스레드 우선순위를 높여 두는 것은 PC가 바빠도 스레드들이 정말 동시에 돌게 하려는 것뿐이다)
+            // [JA] (戦闘スレッドの優先度を上げておくのは、PC が忙しくてもスレッドが本当に同時に動くようにするためだけです)
             using var go = new ManualResetEventSlim();
             var threads = new List<Thread>();
             for (int w = 0; w < workers; w++)
@@ -34,6 +35,7 @@ public static class Lab27
                     try
                     {
                         // 전투 스레드마다 맡은 몬스터 Id 구간이 달라서 키가 겹치지 않는다.
+                        // [JA] 戦闘スレッドごとに担当するモンスター Id の範囲が違うので、キーは重なりません。
                         for (int i = 0; i < killsPerWorker; i++)
                             log.Record(worker * killsPerWorker + i, worker);
                     }

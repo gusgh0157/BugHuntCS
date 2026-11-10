@@ -6,6 +6,9 @@ namespace BugHunt;
 // 각 랩은 "기대값 vs 실제값"을 출력한다.
 // [FAIL]이 나오거나 프로그램이 멈추면, 그때부터 버그 추적 시작.
 // what, message, reason 은 이미 고른 언어의 문구다 (랩에서 Text.L("…", "…") 로 넘긴다).
+// [JA] 各ラボは「期待値 vs 実際の値」を出力します。
+// [JA] [FAIL] が出たりプログラムが止まったりしたら、そこからバグ追跡を始めます。
+// [JA] what、message、reason はすでに選んだ言語の文言です(ラボから Text.L("…", "…") で渡します)。
 public static class LabKit
 {
     public static int PassCount { get; private set; }
@@ -20,6 +23,7 @@ public static class LabKit
     }
 
     // 12부: 측정값이 한도 이하인가 (할당 바이트, 비교 횟수 등)
+    // [JA] パート 12: 測定値が上限以下か(割り当てバイト数、比較回数など)
     public static bool ExpectAtMost(string what, long limit, long actual)
     {
         bool ok = actual <= limit;
@@ -29,6 +33,7 @@ public static class LabKit
     }
 
     // 12부: body 를 실행하는 동안 이 스레드가 할당한 바이트와 걸린 시간(ms)
+    // [JA] パート 12: body を実行する間にこのスレッドが割り当てたバイト数とかかった時間(ms)
     public static (long Bytes, long Ms) Measure(Action body)
     {
         long before = GC.GetAllocatedBytesForCurrentThread();
@@ -39,10 +44,13 @@ public static class LabKit
     }
 
     // 채점기(BugHunt.Grader)가 실행한 프로세스인가
+    // [JA] 採点器(BugHunt.Grader)が実行したプロセスかどうか
     public static bool IsGrading => Environment.GetEnvironmentVariable("BUGHUNT_GRADER") == "1";
 
     // 숨은 테스트 케이스. 0이면 화면에 보이는 기본 입력, 0이 아니면 그 값을 시드로 입력을 무작위로 만든다.
     // 채점기가 BUGHUNT_SEED로 넘기고, 직접 재현할 때는 BugHunt.exe 84 --seed 1234 처럼 쓴다.
+    // [JA] 隠しテスト ケース。0 なら画面に見える基本の入力、0 でなければその値をシードにして入力をランダムに作ります。
+    // [JA] 採点器が BUGHUNT_SEED で渡します。自分で再現するときは BugHunt.exe 84 --seed 1234 のように使います。
     public static int Seed { get; internal set; } =
         int.TryParse(Environment.GetEnvironmentVariable("BUGHUNT_SEED"), out int seed) ? seed : 0;
 
@@ -50,6 +58,7 @@ public static class LabKit
     static Random Rng => _rng ??= new Random(Seed);
 
     // 기본 케이스에서는 visible, 숨은 케이스에서는 min~max(포함) 중 하나
+    // [JA] 基本ケースでは visible、隠しケースでは min~max(両端を含む)のどれか
     public static int Pick(int visible, int min, int max) => Seed == 0 ? visible : Rng.Next(min, max + 1);
 
     public static T Pick<T>(T visible, params T[] pool) => Seed == 0 ? visible : pool[Rng.Next(pool.Length)];
@@ -58,6 +67,10 @@ public static class LabKit
     // 본문 스레드는 우선순위를 높여 둔다. PC가 바빠도 정상 코드가 감시 시간 안에 끝나게 하려는 것뿐이다.
     // timeoutMs 안에 끝나지 않으면 [FAIL] 응답 없음을 출력하고 false를 돌려준다. (랩이 정말 영원히 멈추지는 않게)
     // 디버거가 붙어 있으면 실패로 끝내지 않고 계속 기다린다. 그때 디버그 → 모두 중단으로 멈춘 곳을 보면 된다.
+    // [JA] パート 11: 止まるかもしれないコードを監視タイマーの下で実行します。
+    // [JA] 本体のスレッドは優先度を上げておきます。PC が忙しくても、正常なコードが監視時間内に終わるようにするためだけです。
+    // [JA] timeoutMs 以内に終わらなければ [FAIL] 応答なしを出力して false を返します。(ラボが本当に永遠に止まらないように)
+    // [JA] デバッガーが付いていれば失敗で終わらせず待ち続けます。そのときは デバッグ → すべて中断 で止まった場所を見てください。
     public static bool FinishesWithin(string what, Action body, int timeoutMs = 2000)
     {
         var worker = new Thread(() => body()) { IsBackground = true, Name = Text.L($"랩 본문 ({what})", $"ラボ本体 ({what})"), Priority = ThreadPriority.Highest };
@@ -79,9 +92,11 @@ public static class LabKit
     }
 
     // 이 환경에서는 판정할 수 없는 랩. 채점기는 SKIP으로 센다.
+    // [JA] この環境では判定できないラボ。採点器は SKIP として数えます。
     public static void Skip(string reason) => Console.WriteLine("  [SKIP] " + reason);
 
     // 사람이 실행할 때만 잠깐 멈춰서, 그동안 진단 도구(스냅샷, dotnet-dump 등)를 쓸 수 있게 한다.
+    // [JA] 人が実行したときだけ少し止まり、その間に診断ツール(スナップショット、dotnet-dump など)を使えるようにします。
     public static void PauseForTools(string message)
     {
         if (IsGrading || Console.IsInputRedirected)
@@ -92,6 +107,7 @@ public static class LabKit
     }
 
     // 랩이 CurrentCulture를 바꿔도 판정 출력은 항상 같은 모양으로 나오게 한다.
+    // [JA] ラボが CurrentCulture を変えても、判定の出力はいつも同じ形で出るようにします。
     static string Show<T>(T value) => value switch
     {
         null => "null",

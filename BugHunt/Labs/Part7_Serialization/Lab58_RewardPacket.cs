@@ -17,6 +17,7 @@ public static partial class Lab58
     static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web);
 
     // 형식이 틀리면 null (거절하고 재전송 요청)
+    // [JA] 形式が間違っていれば null (拒否して再送を要求)
     static MailPacket? Decode(string json)
     {
         try

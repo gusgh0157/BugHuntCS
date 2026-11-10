@@ -24,6 +24,7 @@ public static unsafe class Lab75
     }
 
     // 미니맵 배경을 그린다. 이 함수에는 버그가 없다.
+    // [JA] ミニマップの背景を描きます。この関数にバグはありません。
     [MethodImpl(MethodImplOptions.NoInlining)]
     static void DrawMinimapBackground()
     {
