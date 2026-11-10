@@ -260,7 +260,7 @@ public sealed class FriendRankingScreen(RankingService service)
 ```
 **修正:** タイマーをローカル変数ではなくフィールドに保存し、終わるとき `Dispose` する。`StartAutoSave` の中で `using var timer` に変えるのは逆方向だ(メソッドが終わった瞬間にタイマーが止まる)。`Blind/ChallengeB5.cs` で二か所を変える。`PlayFrame` はそのまま。
 
-1. `static int _saves;` の行と `StartAutoSave` を(二つ続けて)次のものに置き換える。
+1. `static int _saves;` の行と `StartAutoSave` を(二つは隣り合っている)次のものに置き換える。
 ```csharp
     static int _saves;
     static Timer? _autoSave;   // フィールドがつかんでいる間は GC の対象にならない

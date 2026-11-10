@@ -1318,7 +1318,7 @@ Interlocked.Increment 중단점:  Expect 보다 나중에 걸림 (또는 프로�
 ```csharp
         SubmitUnlockedAsync(server, ["first_blood", "no_damage", "speed_run"]).GetAwaiter().GetResult();
 ```
-동시에 보내도 된다면 1.의 루프 대신 `await Task.WhenAll(unlocked.Select(server.SubmitAsync));`.
+동시에 보내도 된다면 1.의 루프 대신 `await Task.WhenAll(unlocked.Select(server.SubmitAsync));` (로그 줄은 그 뒤에 따로 찍는다).
 **교훈:** Task를 돌려받으면 **누군가는 기다려야 한다.** `_ =`는 그 책임을 일부러 버린다는 표시다. CS4014를 끄려고 붙이면 안 된다.
 
 ## Lab 65 — `await Task.WhenAll`은 첫 예외만 던진다
@@ -1738,10 +1738,14 @@ Checksum 첫 줄 F10:    프로그램이 사라짐. [FAIL]도 예외 창도 없�
 진짜 원인:  stackalloc byte[n]은 스택에 n 바이트를 잡는다. 스택은 보통 1 MB로 고정이라
            수백만 바이트를 잡으면 StackOverflowException. 이 예외는 catch로 못 잡고 프로세스를 즉시 끝낸다.
 ```
-**수정:** `stackalloc` 크기는 작고 고정된 상한(`StackCap`) 안에서만 쓰고, 큰 입력은 힙(`ArrayPool<byte>`)에서 빌립니다. `Lab81_PacketBuffer.cs`의 `Checksum`을 아래(상수 `StackCap` + `Checksum`)로 통째로 바꾸고, 파일 맨 위(`namespace BugHunt;` 위)에 `using System.Buffers;`를 추가합니다. `Run`은 그대로 둡니다.
+**수정:** `stackalloc` 크기는 작고 고정된 상한(`StackCap`) 안에서만 쓰고, 큰 입력은 힙(`ArrayPool<byte>`)에서 빌립니다. `Lab81_PacketBuffer.cs`에서 두 곳을 바꿉니다. `Run`은 그대로 둡니다.
+
+1. 파일 맨 위(`namespace BugHunt;` 위)에 아래 한 줄을 추가합니다.
 ```csharp
 using System.Buffers;
-
+```
+2. `Checksum`을 아래(상수 `StackCap` + `Checksum`)로 통째로 바꿉니다.
+```csharp
     const int StackCap = 1024;   // 스택에 잡아도 되는 최대 크기
 
     static long Checksum(byte[] packet)

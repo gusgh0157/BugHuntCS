@@ -10,7 +10,7 @@
 値の出どころ:  ShowProfile ← FindPlayer が見つけられず null を返す
 本当の原因:  OpenFriendList で "Doran" を "Dorna" と打ち間違い
 ```
-**修正:** 打ち間違いを直し、`!` を消して null を守る。`Lab01_Profile.cs` の `ShowProfile` と `OpenFriendList` を(二つ続けて)次のものに置き換える。`OpenFriendList` は `"Dorna"` を `"Doran"` に直しただけだ。`FindPlayer`、`PrintPlayer`、`Run` はそのまま。
+**修正:** 打ち間違いを直し、`!` を消して null を守る。`Lab01_Profile.cs` の `ShowProfile` と `OpenFriendList` を(二つは隣り合っている)次のものに置き換える。`OpenFriendList` は `"Dorna"` を `"Doran"` に直しただけだ。`FindPlayer`、`PrintPlayer`、`Run` はそのまま。
 ```csharp
     static void ShowProfile(string name)
     {
@@ -844,7 +844,7 @@ return 500; のブレークポイント:   止まらない
 本当の原因:  SavePath が "saves\slot1.sav" という相対パスを作る。相対パスはそのときどきの作業ディレクトリ基準なのに、
            フォルダーを開く(ファイルダイアログ)が作業ディレクトリを変えた。SaveSystem は GameDir を受け取っておきながら使わなかった。
 ```
-**修正:** パスを `GameDir` 基準で作り、フォルダーも同じ基準で作る。`Lab46_SaveFolder.cs` の `SaveSystem` の `SavePath` と `Save` を(二つ続けて)次のものに置き換える。`Load` と `Run` はそのまま。
+**修正:** パスを `GameDir` 基準で作り、フォルダーも同じ基準で作る。`Lab46_SaveFolder.cs` の `SaveSystem` の `SavePath` と `Save` を(二つは隣り合っている)次のものに置き換える。`Load` と `Run` はそのまま。
 ```csharp
         string SavePath(string slot) => Path.Combine(GameDir, "saves", slot + ".sav");
 
@@ -1120,7 +1120,7 @@ using System.Text.Json.Serialization;
 {"item":null,"count":5}  (隠し)   → 受信 "(null) x5"        (string は null を受けられる)
 本当の原因:  System.Text.Json は JSON にないプロパティを触らない。nullable 注釈(string は null でない)も既定では検査しない。
 ```
-**修正:** 「あるか」は `required` で、「null か」は `RespectNullableAnnotations` で検査する。`Lab58_RewardPacket.cs` の `MailPacket` クラスと、そのすぐ下の `Options` フィールドを(二つ続けて)次のものに置き換える。`Decode` と `Run` はそのまま。
+**修正:** 「あるか」は `required` で、「null か」は `RespectNullableAnnotations` で検査する。`Lab58_RewardPacket.cs` の `MailPacket` クラスと、そのすぐ下の `Options` フィールドを(二つは隣り合っている)次のものに置き換える。`Decode` と `Run` はそのまま。
 ```csharp
     sealed class MailPacket
     {
@@ -1320,7 +1320,7 @@ Interlocked.Increment のブレークポイント:  Expect より後に引っか
 ```csharp
         SubmitUnlockedAsync(server, ["first_blood", "no_damage", "speed_run"]).GetAwaiter().GetResult();
 ```
-同時に送ってよいなら、1. のループの代わりに `await Task.WhenAll(unlocked.Select(server.SubmitAsync));`。
+同時に送ってよいなら、1. のループの代わりに `await Task.WhenAll(unlocked.Select(server.SubmitAsync));`(ログの行はそのあと別に出す)。
 **教訓:** Task を返されたら**誰かは待たなければならない。** `_ =` はその責任をわざと捨てるという印だ。CS4014 を切るために付けてはいけない。
 
 ## Lab 65 — `await Task.WhenAll` は最初の例外だけ投げる
@@ -1740,10 +1740,14 @@ Checksum の最初の行を F10:  プログラムが消える。[FAIL] も例外
 本当の原因:  stackalloc byte[n] はスタックに n バイトを取る。スタックはふつう 1 MB 固定なので、
            数百万バイトを取ると StackOverflowException。この例外は catch で捕まえられずプロセスを即座に終わらせる。
 ```
-**修正:** `stackalloc` のサイズは小さく固定された上限(`StackCap`)の中でだけ使い、大きい入力はヒープ(`ArrayPool<byte>`)から借ります。`Lab81_PacketBuffer.cs` の `Checksum` を次のもの(定数 `StackCap` + `Checksum`)に丸ごと置き換え、ファイルの先頭(`namespace BugHunt;` の上)に `using System.Buffers;` を追加します。`Run` はそのままです。
+**修正:** `stackalloc` のサイズは小さく固定された上限(`StackCap`)の中でだけ使い、大きい入力はヒープ(`ArrayPool<byte>`)から借ります。`Lab81_PacketBuffer.cs` で二か所を変えます。`Run` はそのままです。
+
+1. ファイルの先頭(`namespace BugHunt;` の上)に次の一行を追加します。
 ```csharp
 using System.Buffers;
-
+```
+2. `Checksum` を次のもの(定数 `StackCap` + `Checksum`)に丸ごと置き換えます。
+```csharp
     const int StackCap = 1024;   // スタックに取ってよい最大サイズ
 
     static long Checksum(byte[] packet)
