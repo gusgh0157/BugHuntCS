@@ -120,16 +120,44 @@ public static class Text
     // [JA] 見つかったもののうち、コメントから出たものの前に付く印
     public const string CommentTag = "[comment] ";
 
-    static bool HasJapanese(string s) =>
-        s.Contains("[JA]", StringComparison.Ordinal) || s.Any(c => c is >= '぀' and <= 'ヿ' or >= 'ｦ' and <= 'ﾟ');
+    static bool HasKana(string s) => s.Any(c => c is >= '぀' and <= 'ヿ' or >= 'ｦ' and <= 'ﾟ');
 
-    static bool IsKoreanOnly(string s) => HasHangul(s) && !HasJapanese(s);
+    static bool HasKanji(string s) => s.Any(c => c is >= '一' and <= '鿿');
+
+    // 주석 하나(또는 한 줄)의 언어. Both 는 한 줄 안에 두 언어가 다 있어 스스로 짝을 이룬 것
+    // [JA] コメント一つ(または一行)の言語。Both は一行の中に二つの言語がそろっていて、自分でペアになっているもの
+    enum CommentLang { None, Korean, Japanese, Both }
+
+    // [JA] 표시가 있으면 그 뒤가 일본어 쪽이다. 일본어 쪽에 가나나 한자가 없으면 짝이 아니다 ("// [JA]" 만 있거나 "[JA] 한국어").
+    // [JA] 표시가 없으면 한글과 가나가 같이 있을 때 두 언어로 본다. allowKanji: 한글과 한자만 있어도("참고 / 参考") 두 언어로 본다.
+    // [JA] [JA] の印があれば、その後ろが日本語側です。日本語側にかなも漢字もなければペアではありません("// [JA]" だけ、または "[JA] 한국어")。
+    // [JA] 印がなければ、ハングルとかなが一緒にあるときに二つの言語と見なします。allowKanji: ハングルと漢字だけでも(「참고 / 参考」)二つの言語と見なします。
+    static CommentLang Classify(string text, bool allowKanji)
+    {
+        int at = text.IndexOf("[JA]", StringComparison.Ordinal);
+        if (at >= 0)
+        {
+            string ja = text[(at + "[JA]".Length)..];
+            if (!HasKana(ja) && !HasKanji(ja))
+                return HasHangul(text) ? CommentLang.Korean : CommentLang.None;
+            return HasHangul(text[..at]) ? CommentLang.Both : CommentLang.Japanese;
+        }
+        bool hangul = HasHangul(text);
+        bool japanese = HasKana(text) || ((allowKanji || !hangul) && HasKanji(text));
+        return (hangul, japanese) switch
+        {
+            (true, true) => CommentLang.Both,
+            (true, false) => CommentLang.Korean,
+            (false, true) => CommentLang.Japanese,
+            _ => CommentLang.None,
+        };
+    }
 
     // 주석 짝 검사: 한글만 있는 주석에는 일본어 짝이 있어야 한다.
-    // 줄 전체가 // 주석인 줄이 이어진 묶음은, 일본어 줄([JA] 또는 가나가 있는 줄)이 한글만 있는 줄보다 적으면 그 묶음의 한글 줄을 돌려준다.
+    // 줄 전체가 // 주석인 줄이 이어진 묶음은, 일본어 줄이 한글만 있는 줄보다 적으면 그 묶음의 한글 줄을 돌려준다. 두 언어가 다 있는 줄은 어느 쪽으로도 세지 않는다.
     // 코드 뒤에 붙은 // 주석, /* */ 주석, #region 같은 지시문 줄은 그 주석 하나 안에 일본어가 같이 있어야 한다.
     // [JA] コメントのペア チェック: ハングルだけのコメントには日本語のペアが必要です。
-    // [JA] 行全体が // コメントの行が続くまとまりでは、日本語の行([JA] かかなのある行)がハングルだけの行より少なければ、そのまとまりのハングルの行を返します。
+    // [JA] 行全体が // コメントの行が続くまとまりでは、日本語の行がハングルだけの行より少なければ、そのまとまりのハングルの行を返します。二つの言語がそろった行はどちらにも数えません。
     // [JA] コードの後ろに付いた // コメント、/* */ コメント、#region のようなディレクティブ行は、そのコメント一つの中に日本語も一緒に必要です。
     static List<(int Line, string Text)> UnpairedComments(string src, List<(int At, int Length)> comments)
     {
@@ -139,7 +167,7 @@ public static class Text
         void Flush()
         {
             if (korean > japanese)
-                result.AddRange(block.Where(b => IsKoreanOnly(b.Text)));
+                result.AddRange(block.Where(b => Classify(b.Text, allowKanji: false) == CommentLang.Korean));
             block.Clear();
             korean = japanese = 0;
         }
@@ -151,9 +179,7 @@ public static class Text
             bool wholeLine = text.StartsWith("//", StringComparison.Ordinal) && src.AsSpan(lineStart, at - lineStart).IsWhiteSpace();
             if (!wholeLine)
             {
-                // 한 주석 안에 한글과 한자가 같이 있으면 "참고 / 参考" 처럼 두 언어를 적은 것으로 본다
-                // [JA] 一つのコメントにハングルと漢字が一緒にあれば、「참고 / 参考」のように二つの言語で書いたものと見なします
-                if (IsKoreanOnly(text) && !text.Any(c => c is >= '一' and <= '鿿'))
+                if (Classify(text, allowKanji: true) == CommentLang.Korean)
                     result.Add((line, text));
                 continue;
             }
@@ -161,10 +187,11 @@ public static class Text
                 Flush();
             lastLine = line;
             block.Add((line, text));
-            if (IsKoreanOnly(text))
-                korean++;
-            else if (HasJapanese(text))
-                japanese++;
+            switch (Classify(text, allowKanji: false))
+            {
+                case CommentLang.Korean: korean++; break;
+                case CommentLang.Japanese: japanese++; break;
+            }
         }
         Flush();
         return [.. result.OrderBy(r => r.Line)];
