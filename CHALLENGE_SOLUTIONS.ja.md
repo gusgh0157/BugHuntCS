@@ -30,7 +30,11 @@
 - `Wire.Decode` に `json.Contains("Yuna")` の条件付きブレークポイントをかけます(アイテム名は JSON で `\uXXXX` にエスケープされるので、ASCII のメンバー名で絞ります)。ローカルウィンドウで `json` の `"id"` と結果 `packet.Id` を比べると、回線はちゃんとしていて逆シリアル化で番号が変わります。
 - サーバーのパケットにオブジェクト ID(`$1`)を作っておくと、再送は常に同じオブジェクト(`$1`)を送ります。したがって番号はサーバーでは変わりません。
 
-**修正:** 逆シリアル化できるように開く: `public Guid Id { get; init; } = Guid.NewGuid();` (または `[JsonInclude]`、コンストラクターの引数)
+**修正:** 逆シリアル化できるように開く。`C1/RewardPacket.cs` の `RewardPacket` の `public Guid Id { get; private set; } = Guid.NewGuid();` の行を次の一行に置き換える。ほかのファイルはそのまま。
+```csharp
+    public Guid Id { get; init; } = Guid.NewGuid();
+```
+`private set` のまま `[JsonInclude]` を付けるか、コンストラクターの引数で受け取ってもよい。
 
 **教訓:** シリアル化の往復(`Deserialize(Serialize(x))`)が元の値を返すか試すテストを一つ置いてください。System.Text.Json は private setter、読み取り専用プロパティ、フィールドを既定で**黙って**飛ばします。直すときは `[JsonInclude]` を付けるか `init` アクセサーに変えます。(`JsonUnmappedMemberHandling.Disallow` は JSON にあって型にないメンバーを防ぐオプションなので、型にあるのに飛ばされる `private set` は捕まえられません。)症状が現れた所(バッグ)と原因(逆シリアル化)の間に ack、再送、重複チェックが挟まっていると、症状の近くを塞ぐ修正は別の正常な動作(正当な重複、本当の再送)を壊します。
 
@@ -104,7 +108,7 @@
 - データブレークポイント: ある `RankEntry` の `Rank` プロパティの後ろのフィールドをウォッチで選び、「値が変わったら中断」をかけます(.NET Core 3 以上、VS 2019 16.x 以上)。
 
 **修正:** キャッシュの結果を誰も直せなくする。三つを一緒に適用しないとコンパイルできない(`Rank` を `init` に変えた瞬間に `RankFilters` がコンパイルできなくなるので消す必要があり、そうするとフレンド画面も書き直すことになる)。
-1. `Ranking.cs`: `RankEntry.Rank` を `init` にし、`Top` は `IReadOnlyList<RankEntry>` を返して、順位はソートした順に**新しい項目を作りながら**決める。
+1. `C3/Ranking.cs`: `RankEntry.Rank` を `init` にし、`Top` は `IReadOnlyList<RankEntry>` を返して、順位はソートした順に**新しい項目を作りながら**決める。`RankEntry` クラスを丸ごと次のものに置き換える。
 ```csharp
 public sealed class RankEntry(string name, string guild, int score)
 {
@@ -115,7 +119,9 @@ public sealed class RankEntry(string name, string guild, int score)
 
     public override string ToString() => $"{Rank}{Text.L("위", "位")} {Name} ({Score})";
 }
-
+```
+   続けて、同じファイルの `RankingService` クラスを丸ごと次のものに置き換える。間にある `RankingDatabase` はそのまま。
+```csharp
 public sealed class RankingService(RankingDatabase db)
 {
     readonly Dictionary<string, IReadOnlyList<RankEntry>> _cache = [];
@@ -135,8 +141,8 @@ public sealed class RankingService(RankingDatabase db)
     public void Invalidate(string region) => _cache.Remove(region);
 }
 ```
-2. `Ranking.cs`: `RankFilters` クラスをそのすぐ上の説明コメントごと丸ごと消す。「受けたものを直してそのまま返す」ヘルパーは名前が嘘をつく(LINQ の `Where` と同じ名前なのに動作が逆だ)。
-3. `Screens.cs`: フレンド画面はキャッシュに触れずに新しいリストを作る。`GuildRankingScreen` と `WeeklyRewardMailer` は `IReadOnlyList` でもそのままコンパイルできる。
+2. `C3/Ranking.cs`: `RankFilters` クラスをそのすぐ上の説明コメント(二行)ごと丸ごと消す。「受けたものを直してそのまま返す」ヘルパーは名前が嘘をつく(LINQ の `Where` と同じ名前なのに動作が逆だ)。
+3. `C3/Screens.cs`: フレンド画面はキャッシュに触れずに新しいリストを作る。`FriendRankingScreen` クラスを丸ごと次のものに置き換える。`GuildRankingScreen` と `WeeklyRewardMailer` は `IReadOnlyList` でもそのままコンパイルできる。
 ```csharp
 public sealed class FriendRankingScreen(RankingService service)
 {
@@ -204,7 +210,11 @@ public sealed class FriendRankingScreen(RankingService service)
 症状:   tr-TR、az-Latn-AZ で "/quit".ToUpper() == "/QUİT" (点のある大文字 İ、U+0130)。コマンド表の "/QUIT" と違う
         i のないコマンド(/map、/help)はちゃんと動く
 ```
-**修正:** プログラムが定めた識別子はカルチャと無関係に比較する: `ToUpperInvariant()`。もっとよいのはコマンド表を `new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)` にして大文字小文字を変えないこと。
+**修正:** プログラムが定めた識別子はカルチャと無関係に比較する。`Blind/ChallengeB2.cs` の `Handle` の `string key = input.Trim().Split(' ')[0].ToUpper();` の行を次の一行に置き換える。
+```csharp
+        string key = input.Trim().Split(' ')[0].ToUpperInvariant();
+```
+もっとよいのはコマンド表を `new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)` にして大文字小文字を変えないこと。
 
 **カテゴリ:** 2部フロー追跡 (カルチャ依存の文字列処理。ラボ 16 の数値パースと同じ種類)
 
@@ -214,7 +224,11 @@ public sealed class FriendRankingScreen(RankingService service)
 原因:   GetHashCode() => X ^ Y。(1,2) と (2,1)、(3,3) と (0,0) のような数多くのマスが同じハッシュを持つので HashSet が一つのバケットをずらずら比較する。
         X、Y が 0〜127 なら、異なるハッシュは 128 個だけだ
 ```
-**修正:** `HashCode.Combine(X, Y)` (または `record struct` が作ってくれるハッシュ)
+**修正:** X と Y をよく混ぜるハッシュを使う。`Blind/ChallengeB3.cs` の `Cell` の `GetHashCode` の行を次の一行に置き換える。
+```csharp
+        public override int GetHashCode() => HashCode.Combine(X, Y);
+```
+`Cell` を `readonly record struct` にして、コンパイラが作るハッシュを使ってもよい。
 
 **カテゴリ:** 12部パフォーマンス (`GetHashCode` の品質、ハッシュコレクションの最悪の場合)
 
@@ -244,7 +258,9 @@ public sealed class FriendRankingScreen(RankingService service)
 原因:   StartAutoSave のローカル変数 timer 以外に Timer をつかむものがない。メソッドが終わると回収の対象になり、
         GC が回るとファイナライザーがタイマーを止める。(System.Threading.Timer はコールバックが生きていても Timer オブジェクトがないと止まる)
 ```
-**修正:** タイマーをローカル変数ではなくフィールドに保存し、終わるとき `Dispose` する。`StartAutoSave` の中で `using var timer` に変えるのは逆方向だ(メソッドが終わった瞬間にタイマーが止まる)。
+**修正:** タイマーをローカル変数ではなくフィールドに保存し、終わるとき `Dispose` する。`StartAutoSave` の中で `using var timer` に変えるのは逆方向だ(メソッドが終わった瞬間にタイマーが止まる)。`Blind/ChallengeB5.cs` で二か所を変える。`PlayFrame` はそのまま。
+
+1. `static int _saves;` の行と `StartAutoSave` を(二つは隣り合っている)次のものに置き換える。
 ```csharp
     static int _saves;
     static Timer? _autoSave;   // フィールドがつかんでいる間は GC の対象にならない
@@ -254,10 +270,33 @@ public sealed class FriendRankingScreen(RankingService service)
         _autoSave = new Timer(_ => Interlocked.Increment(ref _saves), null, intervalMs, intervalMs);
         Console.WriteLine(Text.L($"  자동 저장 시작 ({intervalMs}ms마다)", $"  オートセーブ開始 ({intervalMs}ms ごと)"));
     }
+```
+2. `Run` を丸ごと次のものに置き換える(最後の二行でタイマーを止めて手放す以外は元と同じ)。
+```csharp
+    public static void Run()
+    {
+        _saves = 0;
+        int interval = Pick(20, 15, 40);
+        int wanted = Pick(10, 8, 12);
 
-    // Run の最後の行 (if/else の後)
-        _autoSave?.Dispose();
+        StartAutoSave(interval);
+
+        int frames = 0;
+        if (FinishesWithin(Text.L($"자동 저장 {wanted}번", $"オートセーブ {wanted} 回"), () =>
+            {
+                while (Volatile.Read(ref _saves) < wanted)
+                    PlayFrame(++frames);
+            }))
+        {
+            int saves = Volatile.Read(ref _saves);
+            Console.WriteLine(Text.L($"  {frames}프레임 동안 저장 {saves}번", $"  {frames} フレームの間に保存 {saves} 回"));
+            Expect(Text.L($"저장 횟수가 {wanted}번 이상", $"保存回数が {wanted} 回以上"), true, saves >= wanted);
+        }
+        else
+            Console.WriteLine(Text.L($"  (멈춘 순간 {frames}프레임, 저장 {Volatile.Read(ref _saves)}번)", $"  (止まった時点で {frames} フレーム、保存 {Volatile.Read(ref _saves)} 回)"));
+        _autoSave?.Dispose();   // 終わったら止めて手放す
         _autoSave = null;
+    }
 ```
 (`PeriodicTimer` と `async` ループもよい。)
 
@@ -269,7 +308,11 @@ public sealed class FriendRankingScreen(RankingService service)
 原因:   Balance の静的初期化が StartingGold を計算しようと Economy を初期化する。Economy は Balance.Mode を読むが、
         Balance はまだ初期化中なので Mode は既定値 Normal(0) だ。循環があるとランタイムは例外なしに「まだ途中」の値を見せる
 ```
-**修正:** 循環を断つ。例: `StartingGold` をプロパティ(`=> Economy.BaseGold * 3`)に変えるか、難易度を別の設定オブジェクトに出してコンストラクターで渡す。
+**修正:** 循環を断つ。`Blind/ChallengeB6.cs` の `Balance` の `public static readonly int StartingGold = Economy.BaseGold * 3;` の行を次の一行に置き換える(フィールドの初期化ではなく、読むたびに計算するプロパティにする)。`Economy` と `Run` はそのまま。
+```csharp
+        public static int StartingGold => Economy.BaseGold * 3;
+```
+難易度を別の設定オブジェクトに出してコンストラクターで渡す方法もある。
 
 **偽の修正:** ハードモードの数字(60、25)を埋め込むと、ナイトメアの隠しケースで間違います。
 
@@ -281,19 +324,29 @@ public sealed class FriendRankingScreen(RankingService service)
 原因:   Parallel.ForEach は Action<T> を受け取る。async ラムダは async void になり、最初の await ですぐ「終わった」と戻る。
         ForEach は何も待たずに終わり、メールはそのあと届く。例外が出るとプロセスが死ぬ(ラボ 62)
 ```
-**修正:** `Action<T>` ではなく待てる API で送る。`SendCompensation` を `async Task` を返す `SendCompensationAsync` に変え(`Run` の呼び出しも一緒に直す)、`Parallel.ForEachAsync` を `await` する。`Run` は採点ツールが呼ぶ同期メソッドなので最後まで待つ必要がある(コンソールアプリには `SynchronizationContext` がないので、ここで `GetAwaiter().GetResult()` でブロックしてもラボ 63 のようなデッドロックは起きない)。
+**修正:** `Action<T>` ではなく待てる API で送る。`Run` は採点ツールが呼ぶ同期メソッドなので最後まで待つ必要がある(コンソールアプリには `SynchronizationContext` がないので、ここで `GetAwaiter().GetResult()` でブロックしてもラボ 63 のようなデッドロックは起きない)。`Blind/ChallengeB7.cs` で二か所を変える。`MailServer` はそのまま。
+
+1. `SendCompensation` を、`async Task` を返す次の `SendCompensationAsync` に置き換える(`Parallel.ForEachAsync` を `await` する)。
 ```csharp
     static async Task SendCompensationAsync(MailServer server, IEnumerable<string> players)
     {
         await Parallel.ForEachAsync(players, async (player, ct) => await server.SendAsync(player));
         Console.WriteLine(Text.L("  보상 우편 발송 완료", "  補償の郵便 発送完了"));
     }
+```
+2. `Run` を丸ごと次のものに置き換える(呼び出しの行だけが変わる)。
+```csharp
+    public static void Run()
+    {
+        int count = Pick(12, 8, 40);
+        string[] players = [.. Enumerable.Range(1, count).Select(i => $"player{i:00}")];
+        var server = new MailServer(Pick(100, 600, 1000));
 
-    // Run
         SendCompensationAsync(server, players).GetAwaiter().GetResult();
         Expect(Text.L("'발송 완료' 시점에 도착한 우편", "「発送完了」の時点で届いた郵便"), count, server.Delivered);
+    }
 ```
-または `await Task.WhenAll(players.Select(server.SendAsync));` で全部起動して一度に待つ。
+または 1. で `await Task.WhenAll(players.Select(server.SendAsync));` で全部起動して一度に待つ。
 
 **偽の修正:** `Thread.Sleep(500)` を入れると、往復がもっと長くかかる隠しケースでまた足りません。
 
