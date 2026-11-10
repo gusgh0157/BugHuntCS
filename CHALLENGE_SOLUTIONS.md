@@ -28,7 +28,11 @@
 - `Wire.Decode`에 `json.Contains("Yuna")` 조건부 중단점을 겁니다(아이템 이름은 JSON 에서 `\uXXXX` 로 이스케이프되므로 ASCII 인 멤버 이름으로 거릅니다). 지역 창에서 `json`의 `"id"`와 결과 `packet.Id`를 비교하면, 회선은 멀쩡하고 역직렬화에서 번호가 바뀝니다.
 - 서버 패킷에 개체 ID(`$1`)를 만들어 두면, 재전송은 항상 같은 개체(`$1`)를 보냅니다. 따라서 번호는 서버에서 바뀌지 않습니다.
 
-**수정:** 역직렬화할 수 있게 연다: `public Guid Id { get; init; } = Guid.NewGuid();` (또는 `[JsonInclude]`, 생성자 매개변수)
+**수정:** 역직렬화할 수 있게 연다. `C1/RewardPacket.cs`의 `RewardPacket`에서 `public Guid Id { get; private set; } = Guid.NewGuid();` 줄을 아래 한 줄로 바꾼다. 다른 파일은 그대로 둔다.
+```csharp
+    public Guid Id { get; init; } = Guid.NewGuid();
+```
+`private set`을 둔 채 `[JsonInclude]`를 붙이거나, 생성자 매개변수로 받아도 된다.
 
 **교훈:** 직렬화 왕복(`Deserialize(Serialize(x))`)이 원래 값을 돌려주는지 시험을 하나 두세요. System.Text.Json은 private setter, 읽기 전용 속성, 필드를 기본으로 **조용히** 건너뜁니다. 고칠 때는 `[JsonInclude]`를 붙이거나 `init` 접근자로 바꿉니다. (`JsonUnmappedMemberHandling.Disallow`는 JSON에만 있고 형식에 없는 멤버를 막는 옵션이라, 형식에 있는데 건너뛰는 `private set`은 잡지 못합니다.) 증상이 나타난 곳(가방)과 원인(역직렬화) 사이에 ack, 재전송, 중복 검사가 끼어 있으면, 증상 근처를 막는 수정은 다른 정상 동작(정당한 중복, 진짜 재전송)을 망가뜨립니다.
 
@@ -102,7 +106,7 @@
 - 데이터 중단점: 어느 `RankEntry`의 `Rank` 속성 뒤의 필드를 조사식에서 고르고 "값이 바뀔 때 중단"을 겁니다(.NET Core 3 이상, VS 2019 16.x 이상).
 
 **수정:** 캐시 결과를 아무도 고치지 못하게 한다. 세 가지를 함께 적용해야 컴파일된다(`Rank`를 `init`으로 바꾸는 순간 `RankFilters`가 컴파일되지 않으므로 지워야 하고, 그러면 친구 창도 새로 써야 한다).
-1. `Ranking.cs`: `RankEntry.Rank`를 `init`으로 만들고, `Top`은 `IReadOnlyList<RankEntry>`를 돌려주며 순위는 정렬된 순서대로 **새 항목을 만들면서** 정한다.
+1. `C3/Ranking.cs`: `RankEntry.Rank`를 `init`으로 만들고, `Top`은 `IReadOnlyList<RankEntry>`를 돌려주며 순위는 정렬된 순서대로 **새 항목을 만들면서** 정한다. `RankEntry` 클래스를 통째로 아래로 바꾼다.
 ```csharp
 public sealed class RankEntry(string name, string guild, int score)
 {
@@ -113,7 +117,9 @@ public sealed class RankEntry(string name, string guild, int score)
 
     public override string ToString() => $"{Rank}{Text.L("위", "位")} {Name} ({Score})";
 }
-
+```
+   이어서 같은 파일의 `RankingService` 클래스를 통째로 아래로 바꾼다. 사이에 있는 `RankingDatabase`는 그대로 둔다.
+```csharp
 public sealed class RankingService(RankingDatabase db)
 {
     readonly Dictionary<string, IReadOnlyList<RankEntry>> _cache = [];
@@ -133,8 +139,8 @@ public sealed class RankingService(RankingDatabase db)
     public void Invalidate(string region) => _cache.Remove(region);
 }
 ```
-2. `Ranking.cs`: `RankFilters` 클래스를 바로 위의 설명 주석과 함께 통째로 지운다. "받은 것을 고쳐서 그대로 돌려주는" 도우미는 이름이 거짓말을 한다(LINQ `Where`와 같은 이름인데 동작이 반대다).
-3. `Screens.cs`: 친구 창은 캐시를 건드리지 않고 새 목록을 만든다. `GuildRankingScreen`과 `WeeklyRewardMailer`는 `IReadOnlyList`로도 그대로 컴파일된다.
+2. `C3/Ranking.cs`: `RankFilters` 클래스를 바로 위의 설명 주석(두 줄)과 함께 통째로 지운다. "받은 것을 고쳐서 그대로 돌려주는" 도우미는 이름이 거짓말을 한다(LINQ `Where`와 같은 이름인데 동작이 반대다).
+3. `C3/Screens.cs`: 친구 창은 캐시를 건드리지 않고 새 목록을 만든다. `FriendRankingScreen` 클래스를 통째로 아래로 바꾼다. `GuildRankingScreen`과 `WeeklyRewardMailer`는 `IReadOnlyList`로도 그대로 컴파일된다.
 ```csharp
 public sealed class FriendRankingScreen(RankingService service)
 {
@@ -202,7 +208,11 @@ public sealed class FriendRankingScreen(RankingService service)
 증상:   tr-TR, az-Latn-AZ 에서 "/quit".ToUpper() == "/QUİT" (점 있는 대문자 İ, U+0130). 명령표의 "/QUIT" 과 다르다
         i 가 없는 명령(/map, /help)은 멀쩡하다
 ```
-**수정:** 프로그램이 정한 식별자는 문화권과 무관하게 비교한다: `ToUpperInvariant()`. 더 좋게는 명령표를 `new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)`로 만들고 대소문자를 바꾸지 않는다.
+**수정:** 프로그램이 정한 식별자는 문화권과 무관하게 비교한다. `Blind/ChallengeB2.cs`의 `Handle`에서 `string key = input.Trim().Split(' ')[0].ToUpper();` 줄을 아래 한 줄로 바꾼다.
+```csharp
+        string key = input.Trim().Split(' ')[0].ToUpperInvariant();
+```
+더 좋게는 명령표를 `new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)`로 만들고 대소문자를 바꾸지 않는다.
 
 **범주:** 2부 흐름 추적 (문화권 의존 문자열 처리. 랩 16의 숫자 파싱과 같은 종류)
 
@@ -212,7 +222,11 @@ public sealed class FriendRankingScreen(RankingService service)
 원인:   GetHashCode() => X ^ Y. (1,2)와 (2,1), (3,3)과 (0,0) 같은 수많은 칸이 같은 해시를 가져서 HashSet 이 한 버킷을 줄줄이 비교한다.
         X, Y 가 0~127 이면 서로 다른 해시는 128개뿐이다
 ```
-**수정:** `HashCode.Combine(X, Y)` (또는 `record struct`가 만들어 주는 해시)
+**수정:** X와 Y를 잘 섞는 해시를 쓴다. `Blind/ChallengeB3.cs`의 `Cell`에서 `GetHashCode` 줄을 아래 한 줄로 바꾼다.
+```csharp
+        public override int GetHashCode() => HashCode.Combine(X, Y);
+```
+`Cell`을 `readonly record struct`로 만들어 컴파일러가 만드는 해시를 써도 된다.
 
 **범주:** 12부 성능 (`GetHashCode` 품질, 해시 컬렉션의 최악의 경우)
 
@@ -242,7 +256,9 @@ public sealed class FriendRankingScreen(RankingService service)
 원인:   StartAutoSave 의 지역 변수 timer 말고는 Timer 를 붙잡는 것이 없다. 메서드가 끝나면 수거 대상이 되고,
         GC 가 돌면 종료자가 타이머를 멈춘다. (System.Threading.Timer 는 콜백이 살아 있어도 Timer 객체가 없으면 멈춘다)
 ```
-**수정:** 타이머를 지역 변수가 아니라 필드에 저장하고, 끝낼 때 `Dispose`한다. `StartAutoSave` 안에서 `using var timer`로 바꾸는 것은 반대 방향이다(메서드가 끝나는 순간 타이머가 멈춘다).
+**수정:** 타이머를 지역 변수가 아니라 필드에 저장하고, 끝낼 때 `Dispose`한다. `StartAutoSave` 안에서 `using var timer`로 바꾸는 것은 반대 방향이다(메서드가 끝나는 순간 타이머가 멈춘다). `Blind/ChallengeB5.cs`에서 두 곳을 바꾼다. `PlayFrame`은 그대로 둔다.
+
+1. `static int _saves;` 줄과 `StartAutoSave`를(둘이 이어져 있다) 아래로 바꾼다.
 ```csharp
     static int _saves;
     static Timer? _autoSave;   // 필드가 붙잡고 있는 동안은 GC 대상이 아니다
@@ -252,10 +268,33 @@ public sealed class FriendRankingScreen(RankingService service)
         _autoSave = new Timer(_ => Interlocked.Increment(ref _saves), null, intervalMs, intervalMs);
         Console.WriteLine(Text.L($"  자동 저장 시작 ({intervalMs}ms마다)", $"  オートセーブ開始 ({intervalMs}ms ごと)"));
     }
+```
+2. `Run`을 통째로 아래로 바꾼다(마지막 두 줄에서 타이머를 멈추고 놓아주는 것 말고는 원래와 같다).
+```csharp
+    public static void Run()
+    {
+        _saves = 0;
+        int interval = Pick(20, 15, 40);
+        int wanted = Pick(10, 8, 12);
 
-    // Run의 마지막 줄 (if/else 뒤)
-        _autoSave?.Dispose();
+        StartAutoSave(interval);
+
+        int frames = 0;
+        if (FinishesWithin(Text.L($"자동 저장 {wanted}번", $"オートセーブ {wanted} 回"), () =>
+            {
+                while (Volatile.Read(ref _saves) < wanted)
+                    PlayFrame(++frames);
+            }))
+        {
+            int saves = Volatile.Read(ref _saves);
+            Console.WriteLine(Text.L($"  {frames}프레임 동안 저장 {saves}번", $"  {frames} フレームの間に保存 {saves} 回"));
+            Expect(Text.L($"저장 횟수가 {wanted}번 이상", $"保存回数が {wanted} 回以上"), true, saves >= wanted);
+        }
+        else
+            Console.WriteLine(Text.L($"  (멈춘 순간 {frames}프레임, 저장 {Volatile.Read(ref _saves)}번)", $"  (止まった時点で {frames} フレーム、保存 {Volatile.Read(ref _saves)} 回)"));
+        _autoSave?.Dispose();   // 끝나면 멈추고 놓아준다
         _autoSave = null;
+    }
 ```
 (`PeriodicTimer`와 `async` 루프도 좋다.)
 
@@ -267,7 +306,11 @@ public sealed class FriendRankingScreen(RankingService service)
 원인:   Balance 의 정적 초기화가 StartingGold 를 계산하려고 Economy 를 초기화한다. Economy 는 Balance.Mode 를 읽는데,
         Balance 는 아직 초기화 중이라 Mode 는 기본값 Normal(0)이다. 순환이 있으면 런타임은 예외 없이 "덜 된" 값을 보여 준다
 ```
-**수정:** 순환을 끊는다. 예: `StartingGold`를 속성(`=> Economy.BaseGold * 3`)으로 바꾸거나, 난이도를 별도 설정 객체로 빼서 생성자로 넘긴다.
+**수정:** 순환을 끊는다. `Blind/ChallengeB6.cs`의 `Balance`에서 `public static readonly int StartingGold = Economy.BaseGold * 3;` 줄을 아래 한 줄로 바꾼다(필드 초기화가 아니라 읽을 때마다 계산하는 속성으로 만든다). `Economy`와 `Run`은 그대로 둔다.
+```csharp
+        public static int StartingGold => Economy.BaseGold * 3;
+```
+난이도를 별도 설정 객체로 빼서 생성자로 넘기는 방법도 있다.
 
 **가짜 수정:** 하드 모드 숫자(60, 25)를 박아 넣으면, 나이트메어 숨은 케이스에서 틀립니다.
 
@@ -279,19 +322,29 @@ public sealed class FriendRankingScreen(RankingService service)
 원인:   Parallel.ForEach 는 Action<T> 를 받는다. async 람다는 async void 가 되어, 첫 await 에서 바로 "끝났다"고 돌아온다.
         ForEach 는 아무것도 기다리지 않고 끝나고, 우편은 그 뒤에 도착한다. 예외가 나면 프로세스가 죽는다(랩 62)
 ```
-**수정:** `Action<T>`가 아니라 기다릴 수 있는 API로 보낸다. `SendCompensation`을 `async Task`를 돌려주는 `SendCompensationAsync`로 바꾸고(`Run`의 호출도 함께 고친다) `Parallel.ForEachAsync`를 `await`한다. `Run`은 채점기가 부르는 동기 메서드라서 끝까지 기다려야 한다(콘솔 앱에는 `SynchronizationContext`가 없으므로 여기서 `GetAwaiter().GetResult()`로 막아도 랩 63 같은 데드락은 생기지 않는다).
+**수정:** `Action<T>`가 아니라 기다릴 수 있는 API로 보낸다. `Run`은 채점기가 부르는 동기 메서드라서 끝까지 기다려야 한다(콘솔 앱에는 `SynchronizationContext`가 없으므로 여기서 `GetAwaiter().GetResult()`로 막아도 랩 63 같은 데드락은 생기지 않는다). `Blind/ChallengeB7.cs`에서 두 곳을 바꾼다. `MailServer`는 그대로 둔다.
+
+1. `SendCompensation`을 `async Task`를 돌려주는 아래의 `SendCompensationAsync`로 바꾼다(`Parallel.ForEachAsync`를 `await`한다).
 ```csharp
     static async Task SendCompensationAsync(MailServer server, IEnumerable<string> players)
     {
         await Parallel.ForEachAsync(players, async (player, ct) => await server.SendAsync(player));
         Console.WriteLine(Text.L("  보상 우편 발송 완료", "  補償の郵便 発送完了"));
     }
+```
+2. `Run`을 통째로 아래로 바꾼다(호출하는 줄만 바뀐다).
+```csharp
+    public static void Run()
+    {
+        int count = Pick(12, 8, 40);
+        string[] players = [.. Enumerable.Range(1, count).Select(i => $"player{i:00}")];
+        var server = new MailServer(Pick(100, 600, 1000));
 
-    // Run
         SendCompensationAsync(server, players).GetAwaiter().GetResult();
         Expect(Text.L("'발송 완료' 시점에 도착한 우편", "「発送完了」の時点で届いた郵便"), count, server.Delivered);
+    }
 ```
-또는 `await Task.WhenAll(players.Select(server.SendAsync));`로 전부 띄우고 한꺼번에 기다린다.
+또는 1.에서 `await Task.WhenAll(players.Select(server.SendAsync));`로 전부 띄우고 한꺼번에 기다린다.
 
 **가짜 수정:** `Thread.Sleep(500)`을 넣으면, 왕복이 더 오래 걸리는 숨은 케이스에서 다시 모자랍니다.
 
