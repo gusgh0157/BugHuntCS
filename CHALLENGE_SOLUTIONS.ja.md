@@ -57,9 +57,24 @@
 - デバッグ → ウィンドウ → **タスク(Tasks)** / **並列スタック**のタスク表示: 最初のフレームのあと `OnProgressAsync` のタスクがいくつも同じ `LoadAsync` を待っています。
 - `Publish` に `{questId} {amount}` のトレースポイントを、`store.Add` に `{e}` のトレースポイントをかけます。出力ウィンドウで順序を比べると、送った通知と処理した通知が違います。
 
-**修正 (いずれか):**
-- ハンドラーで `await` の**前に**必要な値をローカル変数にコピーする
-- バスが通知ごとに新しいオブジェクトを作る (不変の `record` にすればもっとよい)
+**修正:** ハンドラーで `await` の**前に**必要な値をローカル変数にコピーします。`C2/Achievements.cs` の `AchievementTracker.OnProgressAsync` を次のものに置き換えます。`await` のあとでは `e` を読み直しません。ほかのクラスはそのままです。
+```csharp
+    async Task OnProgressAsync(QuestProgress e)
+    {
+        // e はバスが使い回し続けるオブジェクト。await の前に必要な値をコピーしておく
+        string questId = e.QuestId;
+        int amount = e.Amount;
+
+        if (!store.Loaded)
+            await store.LoadAsync();
+
+        int now = store.Add(questId, amount);
+        _handled += 1;
+        if (goals.TryGetValue(questId, out int goal) && now >= goal && store.Unlock(questId))
+            Console.WriteLine(Text.L($"  [업적] {questId} 달성! ({now}/{goal})", $"  [実績] {questId} 達成! ({now}/{goal})"));
+    }
+```
+別の方法: バスが通知ごとに新しいオブジェクトを作ります(`QuestEventBus.Publish` が `_current` を書き換える代わりに `new QuestProgress { ... }` を渡します。不変の `record` にすればもっとよいです)。
 
 使い回したいなら、そのオブジェクトがハンドラーの外に漏れないという契約(同期ハンドラーだけ)が必要です。
 
@@ -142,7 +157,43 @@ public sealed class FriendRankingScreen(RankingService service)
 症状:   「地域の読み込み」応答なし。すべて中断するとメインスレッドが Monitor.Wait に、ローダースレッドはすでに終わっている
 原因:   ローダーが 300ms 以内に終わって Pulse を先に鳴らす。Monitor はシグナルを覚えないので、あとで Wait した側は永遠に待つ
 ```
-**修正:** 条件変数と一緒にループで待つ: ローダーが `_done = true` を書いて `Pulse`、待つ側は `while (!_done) Monitor.Wait(_gate);`。もっと簡単には `Task<int>` を返して待つか `ManualResetEventSlim` を使う。
+**修正:** 条件変数と一緒にループで待ちます: ローダーが `_done = true` を書いて `Pulse`、待つ側は `while (!_done) Monitor.Wait(_gate);`。`Blind/ChallengeB1.cs` の `RegionLoader` クラスを丸ごと次のものに置き換えます。`PrepareScreen` と `Run` はそのままです。
+```csharp
+    sealed class RegionLoader
+    {
+        readonly object _gate = new();
+        int _tiles;
+        bool _done;   // Pulse は覚えてもらえないので「終わった」を状態として残す
+
+        public void Start(string region, int tileCount)
+        {
+            var worker = new Thread(() =>
+            {
+                int tiles = 0;
+                for (int i = 0; i < tileCount; i++)
+                    tiles++;
+                lock (_gate)
+                {
+                    _tiles = tiles;
+                    _done = true;
+                    Monitor.Pulse(_gate);
+                }
+            }) { IsBackground = true, Name = Text.L($"로더 ({region})", $"ローダー ({region})"), Priority = ThreadPriority.Highest };
+            worker.Start();
+        }
+
+        public int WaitForTiles()
+        {
+            lock (_gate)
+            {
+                while (!_done)   // もう終わっていれば待たない
+                    Monitor.Wait(_gate);
+                return _tiles;
+            }
+        }
+    }
+```
+もっと簡単には `Task<int>` を返して待つか、`ManualResetEventSlim` を使います。
 
 **偽の修正:** `Monitor.Wait(_gate, 1000)` のように制限時間を与えると、地域一つは1秒で終わって通ります。しかし地域を3〜4個読み込む隠しケースでは監視時間を超えます。
 
@@ -172,7 +223,16 @@ public sealed class FriendRankingScreen(RankingService service)
 例外:   ArrayTypeMismatchException at Refill
 原因:   Recruit は Unit[] を返すが実際には Archer[] だ(配列の共変性)。その配列に Knight を入れた瞬間にランタイムの型チェックが失敗する
 ```
-**修正:** 実際の配列を `Unit[]` にする: `.ToArray<Unit>()`、または `List<Unit>` を使う。`IReadOnlyList<Unit>` のような共変インターフェースで返すと、入れること自体をコンパイラが防ぐ。
+**修正:** 実際の配列を `Unit[]` にします。`Blind/ChallengeB4.cs` の `Recruit` を次のものに置き換えます(三つの分岐の `.ToArray()` がすべて `.ToArray<Unit>()` になります)。`Refill` と `Run` はそのままです。
+```csharp
+    static Unit[] Recruit(string kind, int size) => kind switch
+    {
+        "archer" => Enumerable.Range(1, size).Select(n => new Archer(n)).ToArray<Unit>(),
+        "knight" => Enumerable.Range(1, size).Select(n => new Knight(n)).ToArray<Unit>(),
+        _ => Enumerable.Range(1, size).Select(n => new Healer(n)).ToArray<Unit>(),
+    };
+```
+`List<Unit>` を使ってもかまいません。`IReadOnlyList<Unit>` のような共変インターフェースで返すと、入れること自体をコンパイラが防ぎます。
 
 **偽の修正:** 例外を捕まえて飛ばすと、部隊が埋まらず戦闘力が足りません。
 
@@ -246,8 +306,27 @@ public sealed class FriendRankingScreen(RankingService service)
         「すでに死んだ変数」と見なし、呼んだ側も一時オブジェクト(new Texture())をつかんでいない。だからループの途中で GC が Texture を回収し、
         ファイナライザーがブロックをプールに返し、ストリーミングがそのブロックを受けて 0xEE で塗る
 ```
-**修正 (いずれか):**
-- ネイティブ資源を使っている間、所有者を生かしておく: メソッドの終わりに `GC.KeepAlive(this);`
-- もっと根本的にはファイナライザーに頼らない。`IDisposable` にして `using var tex = new Texture();` のように明示的に返す。ネイティブハンドルは `SafeHandle` で包む (ラボ 74)
+**修正:** ネイティブ資源を使っている間、所有者を生かしておきます。`Blind/ChallengeB8.cs` の `Texture.FillAndChecksum` を次のものに置き換えます。チェックサムを数え終えたあとに `GC.KeepAlive(this);` を呼ぶと、JIT はその行まで `this` が生きているものと見なします。属性(`[MethodImpl]`)と残りのコードはそのままです。
+```csharp
+        // ホットパスなので最初から最適化してコンパイルする
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        public uint FillAndChecksum(byte color, Action everyFewRows)
+        {
+            Span<byte> pixels = NativePool.Pixels(_block);
+            for (int row = 0; row < Rows; row++)
+            {
+                pixels.Slice(row * RowBytes, RowBytes).Fill(color);
+                if (row % 8 == 7)
+                    everyFewRows();
+            }
+            uint sum = 0;
+            foreach (byte b in pixels)
+                sum = sum * 31 + b;
+            GC.KeepAlive(this);   // ここまで this(ブロックの持ち主)を生かしておく。ファイナライザーが先にブロックを返せない
+            return sum;
+        }
+```
+別の方法:
+- もっと根本的にはファイナライザーに頼りません。`IDisposable` にして `using var tex = new Texture();` のように明示的に返します。ネイティブハンドルは `SafeHandle` で包みます (ラボ 74)
 
 **カテゴリ:** 10部 unsafe とネイティブメモリ (`GC.KeepAlive`、ファイナライザーとネイティブ資源)。Release でだけ出る点はラボ 88 と同じだ

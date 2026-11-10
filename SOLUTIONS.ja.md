@@ -202,7 +202,12 @@ NumberDecimalSeparator (de-DE)  ","
 double.Parse("1,5", InvariantCulture)   15   ← Invariant では "," は桁区切り記号
 本当の原因:  $"{double}" の補間は CurrentCulture で数字を書く。読む側だけ InvariantCulture
 ```
-**修正:** 書く側も固定する。`string.Create(CultureInfo.InvariantCulture, $"moveSpeed={o.MoveSpeed}\n...")`、または `FormattableString.Invariant(...)`、`o.MoveSpeed.ToString(CultureInfo.InvariantCulture)`。
+**修正:** 書く側も固定します。`Lab16_SettingsFile.cs` の `Save` を次のものに置き換えます。`using System.Globalization;` はファイルにすでにあり、`Load` と `SaveAndReload` はそのままです。
+```csharp
+    static string Save(Options o) =>
+        string.Create(CultureInfo.InvariantCulture, $"moveSpeed={o.MoveSpeed}\nmouseSensitivity={o.MouseSensitivity}");
+```
+`FormattableString.Invariant($"...")` で包んだり、値ごとに `o.MoveSpeed.ToString(CultureInfo.InvariantCulture)` を使ったりしても同じです。
 **教訓:** ファイル・ネットワーク・セーブのように**機械が読むテキスト**は書きも読みも InvariantCulture で。画面に見せるときだけ CurrentCulture。韓国語・英語の PC では再現されないので「自分の PC では動く」バグになる。CA1305 が捕まえてくれる。
 
 ## Lab 17 — DateTime の引き算は Kind を無視する
@@ -339,10 +344,21 @@ public override int GetHashCode() => Id.GetHashCode();
 本当の原因:  Dictionary は一度に一つのスレッドだけが直すという前提で作られている。内部配列を増やす(Resize)途中に別のスレッドが入れると
            項目が消えたり内部のつながりが絡まったりする。キーが重ならなくても同じ。
 ```
-**修正 (いずれか):**
-- `ConcurrentDictionary<int, int>`
-- 直す所を `lock` で包む
-- 戦闘スレッドごとに別々に集めて、終わったあと一つのスレッドで合わせる (一番速い)
+**修正:** `Lab27_KillLog.cs` の `KillLog` クラスを次のものに置き換えます。ファイルの先頭(`namespace BugHunt;` の上)に `using System.Collections.Concurrent;` を追加します。`Run` はそのままです。
+```csharp
+using System.Collections.Concurrent;
+
+    class KillLog
+    {
+        // 複数のスレッドが同時に変更してもよい辞書
+        readonly ConcurrentDictionary<int, int> _kills = new();
+
+        public void Record(int monsterId, int worker) => _kills[monsterId] = worker;
+
+        public int Count => _kills.Count;
+    }
+```
+別の方法: `Dictionary` のまま、変更する所を `lock (_kills) _kills[monsterId] = worker;` で包むか(その場合は `Count` も同じ `lock` の中で読みます)、戦闘スレッドごとに別々に集めて、終わったあと一つのスレッドで合わせます(一番速い方法です)。
 
 **教訓:** .NET Framework の `Dictionary` はこう絡まると**無限ループ**(CPU 100% で止まる)に陥ることもあった。今の .NET は絡まりを一部検知して例外を出すが、項目が黙って消えるのは防げない。結果が実行ごとに違うならラボ 66 のように競合状態から疑う。
 
@@ -353,9 +369,17 @@ public override int GetHashCode() => Id.GetHashCode();
 16個以下に減らすと:  合って出る (小さい区間は挿入ソートなのでたまたま安定)
 本当の原因:  List.Sort は不安定ソート(introsort)。比較子が 0 を返した要素の元の順序を守らない。
 ```
-**修正 (いずれか):**
-- 安定ソートの LINQ を使う: `board.OrderByDescending(e => e.Score)`
-- 同じときの規則を比較子に入れる: 達成時刻や入ってきた順を二番目のキーで比較
+**修正:** 安定ソートの LINQ を使います。`Lab28_Leaderboard.cs` の `SortLeaderboard` を次のものに置き換えます。`Run` は受け取ったリストがその場でソートされることを期待しているので、ソートした結果を同じリストに詰め直します。`Run` はそのままです。
+```csharp
+    static void SortLeaderboard(List<Entry> board)
+    {
+        // OrderByDescending は安定ソート: スコアが同じなら入ってきた順(先に達成した順)を守る
+        List<Entry> sorted = [.. board.OrderByDescending(e => e.Score)];
+        board.Clear();
+        board.AddRange(sorted);
+    }
+```
+別の方法: 同じときの規則を比較子に入れます。達成時刻や入ってきた順を `Entry` に持たせ、二番目のキーで比較します。
 
 **教訓:** 「同じなら先に来た人」のように同じ値の順序に意味があるなら、その規則を**明示**する。比較子は一貫していなければならない。`(a, b) => a.Score > b.Score ? -1 : 1`(同じとき 0 を返さない)や `a.Score - b.Score`(あふれ、ラボ 14)のようにずれた比較子は、結果が実行・サイズごとにぶれたり `InvalidOperationException: IComparer.Compare() method returns inconsistent results` を出したりする。
 
@@ -465,7 +489,20 @@ gate.Set() の行での i:                  for を回し終えたあとなの�
 本当の原因:  double は 0.1、0.2 を正確に表せず、合計に誤差がたまる。
            Math.Round の既定は MidpointRounding.ToEven(銀行家の丸め)なので 2.5 → 2、0.5 → 0。
 ```
-**修正:** 合計を `decimal` で足します(`decimal sum = 0; sum += p;`)。税は `Math.Round(tax, MidpointRounding.AwayFromZero)` のように規則を明示します。
+**修正:** 合計を `decimal` で足し、税は丸めの規則を明示します。`Lab37_CashShop.cs` の `Total` と `RoundTax` を次のものに置き換えます。`Run` が合計を `double` で比べるので `Total` の戻り値の型はそのままにし、足し終えたあとで一度だけ変換します。`Run` はそのままです。
+```csharp
+    // カートの合計。価格は小数。
+    static double Total(decimal[] prices)
+    {
+        decimal sum = 0;
+        foreach (decimal p in prices)
+            sum += p;
+        return (double)sum;   // 足し終えたあとで一度だけ変換する
+    }
+
+    // 税を整数に丸める。.5 は 0 から遠い方へ。
+    static decimal RoundTax(decimal tax) => Math.Round(tax, MidpointRounding.AwayFromZero);
+```
 **教訓:** お金、数量、スコアのように10進で正確であるべき値は `decimal` または整数(円・セント単位)で扱います。丸めの規則はドメインの決定なので、常に引数で書きます。`double` の合計を `Math.Round(sum, 2)` で隠す修正は、このラボの隠しケースは通るかもしれませんが、値が大きくなったり演算が長くなったりするとまたずれます。(参考: `(decimal)someDouble` は有効数字15桁に丸めて変換するので誤差を隠してしまいます。このラボが合計を `double` で比べる理由です。)
 
 ---
@@ -694,7 +731,11 @@ else
 ウォッチ:            text.Contains('\r') == true
 本当の原因:  メモ帳は CRLF で保存する。Split('\n') は各項目の末尾に '\r' を残し、末尾の改行のあとに空文字列をもう一つ作る。
 ```
-**修正:** `File.ReadAllLines(path)`(または `File.ReadLines`、`StreamReader.ReadLine`)。自分で切るなら `text.Split(["\r\n", "\n"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)`。
+**修正:** 行単位で読む API を使います。`Lab51_BlockList.cs` の `LoadBlockList` を次の一行に置き換えます(`File.ReadAllText` と `Split('\n')` は消します)。`Run` はそのままです。
+```csharp
+    static HashSet<string> LoadBlockList(string path) => [.. File.ReadAllLines(path)];
+```
+`File.ReadLines` や `StreamReader.ReadLine` でも同じです。自分で切るなら `text.Split(["\r\n", "\n"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)` です。
 **教訓:** `ReadLine` 系は `\r\n`、`\n`、`\r` をすべて行末として扱い、末尾の改行のあとに空の行を作りません。`TrimEnd('\r')` だけ付けると空項目が残り、`Split("\r\n")` だけ使うと隠しケース(LF ファイル)で一行につながって引っかかります。
 
 ## Lab 52 — 元を直接上書きしていて失敗し、書きかけのファイルになる
@@ -704,22 +745,33 @@ Save の最初の行(new StreamWriter(path))の直後:  0 バイト
 例外のあと:  個数の行 + 前の方のアイテム数行だけ (Load が破損と判定)
 本当の原因:  new StreamWriter(path) は FileMode.Create なので開いた瞬間に既存のファイルを切り詰める。例外が出ても using がそれまでに書いた前半を出す。
 ```
-**修正:** 別のファイルに最後まで書き、書き終えたあと一度に入れ替える。
+**修正:** 別のファイルに最後まで書き、書き終えて閉じたあと一度に入れ替えます。`Lab52_SafeSave.cs` の `Save` を丸ごと次のものに置き換えます。失敗したら一時ファイルを消し、例外をそのまま投げ直します(`Run` がその例外を捕まえて前回のセーブを使います)。`using System.Globalization;` はファイルにすでにあり、`Load` と `Run` はそのままです。
 ```csharp
-string tmp = path + ".tmp";
-try
-{
-    using var writer = new StreamWriter(tmp);
-    ... (同じ内容)
-}
-catch
-{
-    File.Delete(tmp);
-    throw;
-}
-if (File.Exists(path)) File.Replace(tmp, path, null);   // バックアップを残すなら三番目の引数にパス
-else File.Move(tmp, path);
+    static void Save(string path, IReadOnlyList<Item> items)
+    {
+        string tmp = path + ".tmp";
+        try
+        {
+            using (var writer = new StreamWriter(tmp))
+            {
+                writer.WriteLine(items.Count.ToString(CultureInfo.InvariantCulture));
+                foreach (Item item in items)
+                {
+                    if (item.Count < 0)
+                        throw new InvalidDataException(Text.L($"손상된 아이템: {item.Name} x{item.Count}", $"破損したアイテム: {item.Name} x{item.Count}"));
+                    writer.WriteLine($"{item.Name}|{item.Count.ToString(CultureInfo.InvariantCulture)}");
+                }
+            }   // 入れ替える前に閉じて、バッファをすべて書き出す
+        }
+        catch
+        {
+            File.Delete(tmp);   // 失敗した保存の一時ファイルは残さない
+            throw;
+        }
+        File.Move(tmp, path, overwrite: true);   // 同じボリューム内では名前が変わるだけ
+    }
 ```
+前回のセーブをバックアップとしても残したいなら、元のファイルがあるときに最後の行の代わりに `File.Replace(tmp, path, path + ".bak");` を使います。
 **教訓:** 停電、強制終了、ディスクいっぱいも同じ結果です。同じボリューム内の `File.Replace`/`File.Move(…, overwrite: true)` は名前を変えるだけなので中間の状態が残りません。先にメモリで全部検査してから開く修正はこの例外は避けられますが、書いている途中の中断には依然として弱いです。失敗した保存の一時ファイルは消します(三つ目の判定)。
 
 ## Lab 53 — 非同期書き込みを待たずにそのファイルを読む
@@ -754,7 +806,24 @@ Level の private set のブレークポイント:   Load の間に呼ばれな�
 本当の原因:  Gold はフィールド。System.Text.Json は既定で public プロパティだけ扱う → 保存から抜ける。
            Level は public get なので保存はされるが set が private なので読むとき飛ばす → 初期値 1。
 ```
-**修正:** `[JsonInclude] public int Gold;`、`[JsonInclude] public int Level { get; private set; } = 1;` (または `IncludeFields = true` + Level に `[JsonInclude]`、または `[JsonConstructor]` のコンストラクター)。
+**修正:** 二つのメンバーに `[JsonInclude]` を付けます。`Lab55_CharacterSave.cs` の `Character` クラスを次のものに置き換え、ファイル先頭の `using` 行に `using System.Text.Json.Serialization;` を追加します(`[JsonInclude]` がある名前空間です)。`Run` はそのままです。
+```csharp
+using System.Text.Json.Serialization;
+
+    sealed class Character
+    {
+        public string Name { get; set; } = "";
+
+        // ゴールドは頻繁に変わるのでフィールドにしている。フィールドは [JsonInclude] がないと保存・復元されない。
+        [JsonInclude] public int Gold;
+
+        // レベルは LevelUp でだけ上げる。private set は [JsonInclude] がないと読むときに使われない。
+        [JsonInclude] public int Level { get; private set; } = 1;
+
+        public void LevelUp() => Level++;
+    }
+```
+別の方法: `Options` に `IncludeFields = true` を指定して `Level` にだけ `[JsonInclude]` を付けるか、`[JsonConstructor]` のコンストラクターで受け取ります。
 **教訓:** 「保存はされるのに読めないメンバー」には警告がありません。セーブ形式には保存 → ロード → 比較する往復テストを置きます。
 
 ## Lab 56 — ポリモーフィズムの情報がなく派生型が基底型で戻ってくる
@@ -764,13 +833,19 @@ Level の private set のブレークポイント:   Load の間に呼ばれな�
 本当の原因:  List<Reward> の項目を宣言型 Reward でシリアル化して派生型のプロパティが抜け、
            JSON に型の識別子がないので読むときもすべて Reward で作る。
 ```
-**修正:**
+**修正:** 基底型に派生型を登録します。`Lab56_MailRewards.cs` の `Reward` クラスを次のものに置き換え(本体はそのままで、属性が四行増えます)、ファイル先頭の `using` 行に `using System.Text.Json.Serialization;` を追加します。派生型は三つすべて登録する必要があります。派生クラスと `Run` はそのままです。
 ```csharp
-[JsonPolymorphic(TypeDiscriminatorPropertyName = "$type")]
-[JsonDerivedType(typeof(GoldReward), "gold")]
-[JsonDerivedType(typeof(ItemReward), "item")]
-[JsonDerivedType(typeof(ExpReward), "exp")]
-class Reward { ... }
+using System.Text.Json.Serialization;
+
+    [JsonPolymorphic(TypeDiscriminatorPropertyName = "$type")]
+    [JsonDerivedType(typeof(GoldReward), "gold")]
+    [JsonDerivedType(typeof(ItemReward), "item")]
+    [JsonDerivedType(typeof(ExpReward), "exp")]
+    class Reward
+    {
+        public string Source { get; set; } = "";
+        public virtual string Describe() => Text.L("알 수 없는 보상", "不明な報酬");
+    }
 ```
 **教訓:** System.Text.Json はセキュリティ上「JSON に書かれた型名で任意の型を作る」機能がなく、許す派生型を自分で登録します。一つでも抜かすと、その型をシリアル化するとき `NotSupportedException` が出ます(隠しケースの経験値報酬)。基底型を `abstract` にしておくと、登録を忘れたとき逆シリアル化が黙って通らず例外を出してくれます。
 
@@ -781,9 +856,18 @@ Restore の前:   party.Leader と party.Members[0] のオブジェクト ID が
 Restore のあと:   restored.Leader と restored.Members[0] のオブジェクト ID が違う
 本当の原因:  JSON には「同じオブジェクト」の概念がない。書かれた所ごとに新しいオブジェクトを作る。MainTank も同じ。
 ```
-**修正 (いずれか):**
-- 保存・復元の両方のオプションに `ReferenceHandler = ReferenceHandler.Preserve` (`$id`/`$ref` が付く)。
-- 型を変える: `Leader` の代わりに `LeaderIndex`(または固有の Id)を保存し、読んだあとつなぎ直す。
+**修正:** 保存・復元の両方のオプションに `ReferenceHandler = ReferenceHandler.Preserve` を指定します(`$id`/`$ref` が付きます)。`Lab57_PartySnapshot.cs` では `Serialize` と `Deserialize` が同じ `Options` フィールドを使うので、そのフィールド一つを次のものに置き換えれば両方に効きます。ファイル先頭の `using` 行に `using System.Text.Json.Serialization;` を追加します(`ReferenceHandler` がある名前空間です)。`Restore` と `Run` はそのままです。
+```csharp
+using System.Text.Json.Serialization;
+
+    // ハングルをエスケープせずそのまま書く(コンソールで読みやすく)。同じオブジェクトは $id/$ref で一度だけ書く。
+    static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web)
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        ReferenceHandler = ReferenceHandler.Preserve,
+    };
+```
+別の方法: 型を変えます。`Leader` の代わりに `LeaderIndex`(または固有の Id)を保存し、読んだあとでつなぎ直します。
 
 **教訓:** オブジェクトグラフをそのままシリアル化すると共有が消え、循環があると `JsonException`(深さ超過)が出ます。セーブ形式としては Id で参照する方が丈夫です(`$ref` は別のプログラムが理解できないことがある)。リーダーだけ名前でつなぎ直す修正はメインタンクで引っかかります。
 
@@ -810,18 +894,42 @@ static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web) 
 止まった所:  new XmlSerializer(typeof(GameOptions))   (データと関係なくコンストラクターで)
 それを直すと次:  Cannot serialize member ...KeyBindings of type Dictionary`2 ... because it implements IDictionary.
 ```
-**修正:** `GraphicsOptions` を引数なしのコンストラクターと public set のある class に。`KeyBindings` は `[XmlIgnore]` にして、XML には配列の代理プロパティで:
+**修正:** `GraphicsOptions` を引数なしのコンストラクターと public set のある class にします。`KeyBindings` は `[XmlIgnore]` にして、XML には配列の代理プロパティで書きます。`Lab59_OptionsXml.cs` の `GraphicsOptions` レコードと `GameOptions` クラスを消し、その場所に次の二つのクラスを入れます。`Run` が `new GraphicsOptions(w, h, fullscreen)` で作るので、引数三つのコンストラクターも残します。`using System.Xml.Serialization;` はファイルにすでにあり、`Save`、`Load`、`Run` はそのままです。
 ```csharp
-[XmlIgnore] public Dictionary<string, string> KeyBindings { get; set; } = [];
-[XmlArray("KeyBindings")]
-public KeyBinding[] KeyBindingList
-{
-    get => [.. KeyBindings.Select(p => new KeyBinding { Action = p.Key, Key = p.Value })];
-    set => KeyBindings = value.ToDictionary(b => b.Action, b => b.Key);
-}
-public sealed class KeyBinding { [XmlAttribute] public string Action { get; set; } = ""; [XmlAttribute] public string Key { get; set; } = ""; }
+    // XmlSerializer が扱う型は public で、引数なしのコンストラクターと public set が必要。
+    public sealed class GraphicsOptions
+    {
+        public int Width { get; set; }
+        public int Height { get; set; }
+        public bool Fullscreen { get; set; }
+
+        public GraphicsOptions() { }   // XmlSerializer が読むときに使う
+        public GraphicsOptions(int width, int height, bool fullscreen) => (Width, Height, Fullscreen) = (width, height, fullscreen);
+    }
+
+    public sealed class GameOptions
+    {
+        public int Volume { get; set; } = 80;
+        public GraphicsOptions Graphics { get; set; } = new(1280, 720, false);
+
+        // XmlSerializer は IDictionary を扱えないので XML からは外し、下の配列で代わりに書く
+        [XmlIgnore] public Dictionary<string, string> KeyBindings { get; set; } = [];
+
+        [XmlArray("KeyBindings")]
+        public KeyBinding[] KeyBindingList
+        {
+            get => [.. KeyBindings.Select(p => new KeyBinding { Action = p.Key, Key = p.Value })];
+            set => KeyBindings = value.ToDictionary(b => b.Action, b => b.Key);
+        }
+
+        public sealed class KeyBinding
+        {
+            [XmlAttribute] public string Action { get; set; } = "";
+            [XmlAttribute] public string Key { get; set; } = "";
+        }
+    }
 ```
-またはこのファイルを System.Text.Json で保存する(record と Dictionary をそのまま扱う)。
+またはこのファイルを System.Text.Json で保存します(record と Dictionary をそのまま扱えます)。
 **教訓:** `XmlSerializer` は public な型、引数なしのコンストラクター、読み書きできる public メンバーだけを扱い、`IDictionary` は扱えません。型全体をコンストラクターで検査するので、「There was an error reflecting type」が出たら**内部例外を最後まで**読みます(ラボ 6 の `AggregateException` と同じ読み方)。
 
 ## Lab 60 — 既定の名前空間が付いた XML を接頭辞なしの XPath で探す
@@ -1024,21 +1132,32 @@ catch (OperationCanceledException)
 オブジェクト ID で同じ例外だと確認し throw last! の行を F10:  StackTrace が RetryAsync から新しく始まる
 本当の原因:  throw last; はスタックトレースを「今この行」から書き直す。catch ブロックの外なので throw; も使えない
 ```
-**修正:** 元のスタックトレースをそのまま投げ直す。
+**修正:** 元のスタックトレースのまま投げ直します。`Lab71_QuestSync.cs` の `RetryAsync` を丸ごと次のものに置き換えます(`Exception? last = null;` と `throw last!;` はなくなります)。ファイル先頭の `using System.Text.RegularExpressions;` の隣に `using` を二行追加します。`Run` と `Report` はそのままです。
 ```csharp
-using System.Runtime.ExceptionServices;
-...
-ExceptionDispatchInfo? last = null;
-...
-catch (Exception ex)
-{
-    last = ExceptionDispatchInfo.Capture(ex);
-    ...
-}
-last!.Throw();
-throw new UnreachableException();   // コンパイラ用。Throw() は戻ってこない
+using System.Diagnostics;                 // UnreachableException
+using System.Runtime.ExceptionServices;   // ExceptionDispatchInfo
+
+    static async Task<T> RetryAsync<T>(Func<Task<T>> body)
+    {
+        ExceptionDispatchInfo? last = null;
+        for (int attempt = 1; attempt <= Attempts; attempt++)
+        {
+            try
+            {
+                return await body();
+            }
+            catch (Exception ex)
+            {
+                last = ExceptionDispatchInfo.Capture(ex);   // この瞬間のスタックトレースも一緒に持っておく
+                Console.WriteLine(Text.L($"  [재시도 {attempt}/{Attempts}] {ex.GetType().Name}: {ex.Message}", $"  [再試行 {attempt}/{Attempts}] {ex.GetType().Name}: {ex.Message}"));
+                await Task.Delay(5);
+            }
+        }
+        last!.Throw();
+        throw new UnreachableException();   // コンパイラ用。Throw() は戻ってこない
+    }
 ```
-`ExceptionDispatchInfo.Throw(lastException)`(静的メソッド)も同じ。または最後の試行では捕まえない: `catch (Exception ex) when (attempt < Attempts)`。そうすれば最後の例外は手をつけずにそのまま上がる。
+`ExceptionDispatchInfo.Throw(lastException)`(静的メソッド)も同じです。または最後の試行では捕まえません: `catch (Exception ex) when (attempt < Attempts)`。そうすれば最後の例外は手をつけずにそのまま上がります。
 **偽の修正:** `throw new Exception(last.Message, last)` で包むと例外の型が変わり、位置は依然として `RetryAsync` だ。レポートに関数名を埋め込むと隠しケース(ヘッダー破損、ダウンロード失敗)で間違う。
 **教訓:** 例外を保存して**あとで、別の所で**投げるとき(リトライ、キュー、`await` の境界を越えたコールバック)は `ExceptionDispatchInfo` を使う。`await` が失敗した Task の例外を投げ直すとき元のスタックが生きているのも同じ仕組みのおかげだ。ラボ 7 の `throw ex;` と同じ根だが、`throw;` では直せない点が違う。
 
@@ -1074,27 +1193,45 @@ GC.CollectionCount(0)  0   ← GC が一度も回っていない
 (ウォッチで GC.Collect() を実行後) ~Texture() が「ファイナライザースレッド」(.NET Finalizer)で引っかかる
 本当の原因:  ファイナライザーは C++ のデストラクターではない。オブジェクトが要らなくなった瞬間ではなく、GC が見つけたあとファイナライザースレッドの手が空いたときに呼ばれる
 ```
-**修正:** `IDisposable` を実装し、レベルを出るとき明示的に Dispose する。
-```csharp
-class Texture : IDisposable
-{
-    bool _disposed;
-    public void Dispose()
-    {
-        if (_disposed) return;
-        _disposed = true;
-        GpuMemory.Free(Bytes);
-        GC.SuppressFinalize(this);
-    }
-    ~Texture() => Dispose();   // 安全網: Dispose を忘れたときだけ、いつか
-}
+**修正:** `IDisposable` を実装し、レベルを出るとき明示的に Dispose します。`Lab74_TextureCache.cs` で二か所を変えます。元のファイナライザー(`~Texture() { GpuMemory.Free(Bytes); }`)は消し、下の安全網のファイナライザーに置き換えます。`GpuMemory`、`Level.Enter`、`Run` はそのままです。
 
-public void Exit()
-{
-    foreach (Texture texture in _textures)
-        texture.Dispose();
-    _textures.Clear();
-}
+1. `Texture` クラスを丸ごと次のものに置き換えます。
+```csharp
+    class Texture : IDisposable
+    {
+        bool _disposed;
+
+        public string Name { get; }
+        public long Bytes { get; }
+
+        public Texture(string name, long bytes)
+        {
+            Name = name;
+            Bytes = bytes;
+            GpuMemory.Allocate(bytes);
+        }
+
+        // レベルを出るときすぐに GPU メモリを返す。二回呼ばれても一回だけ返す。
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+            GpuMemory.Free(Bytes);
+            GC.SuppressFinalize(this);
+        }
+
+        ~Texture() => Dispose();   // 安全網: Dispose を忘れたときだけ、いつか
+    }
+```
+2. `Level` クラスの `Exit` を次のものに置き換えます。
+```csharp
+        public void Exit()
+        {
+            foreach (Texture texture in _textures)
+                texture.Dispose();
+            _textures.Clear();
+            Console.WriteLine(Text.L($"  {name} 퇴장: GPU {GpuMemory.BytesInUse / (1024 * 1024)}MB", $"  {name} 退場: GPU {GpuMemory.BytesInUse / (1024 * 1024)}MB"));
+        }
 ```
 (実務では非管理ハンドルを直接ファイナライザーで扱うより `SafeHandle` を使う。)
 **教訓:** 「決まった瞬間」に返さなければならない資源は**Dispose**で。ファイナライザーは忘れたときのための安全網にすぎず、いつ呼ばれるか(そもそも呼ばれるか)保証されない。`GC.Collect()` で無理に回すのも解決策ではない。
@@ -1151,19 +1288,33 @@ throw の行で F10:      handle.Free() に行かず catch に抜ける
 GC.GetGCMemoryInfo().PinnedObjectsCount:  壊れたパケットの数だけ増えている
 本当の原因:  チェックサムが違うと throw で抜け出しながら handle.Free() を飛ばす
 ```
-**修正:** 固定はネイティブ呼び出しの間だけにし、`finally` で必ず解く。
+**修正:** 固定はネイティブ呼び出しの間だけにし、`finally` で必ず解きます。`Lab77_PacketReceive.cs` の `ReceivePacket` を丸ごと次のものに置き換えます。元は `return buffer;` の直前にあった `handle.Free();` は消します(二回解くと `InvalidOperationException` が出ます)。`using System.Runtime.InteropServices;` はファイルにすでにあり、`ReceiveAll` と `Run` はそのままです。
 ```csharp
-GCHandle handle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
-try
-{
-    NativeNet.Receive(handle.AddrOfPinnedObject(), buffer.Length, packetId, corrupt);
-}
-finally
-{
-    handle.Free();
-}
+    static byte[] ReceivePacket(int packetId, bool corrupt)
+    {
+        var buffer = new byte[256];
+        Tracked.Add(new WeakReference(buffer));
+
+        GCHandle handle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
+        try
+        {
+            NativeNet.Receive(handle.AddrOfPinnedObject(), buffer.Length, packetId, corrupt);
+        }
+        finally
+        {
+            handle.Free();   // 例外が出ても必ず解く
+        }
+
+        byte sum = 0;
+        for (int i = 0; i < buffer.Length - 1; i++)
+            sum += buffer[i];
+        if (sum != buffer[^1])
+            throw new InvalidDataException(Text.L($"패킷 {packetId} 체크섬 불일치", $"パケット {packetId} チェックサム不一致"));
+
+        return buffer;
+    }
 ```
-短くだけ固定するなら `fixed (byte* p = buffer) { ... }` の方が簡単だ (ブロックをどう抜けても解ける)。
+短くだけ固定するなら `fixed (byte* p = buffer) { ... }` の方が簡単です (ブロックをどう抜けても解けます)。
 **教訓:** `GCHandle` は GC の外の強い参照なので、`Free` を忘れると**GC があっても漏れ**だ。Pinned ハンドルはその上ヒープの圧縮も妨げる。得たら `finally` で返す。`lock`、セマフォ(ラボ 87)と同じ規則だ。
 
 ## Lab 78 — ネイティブに渡したコールバックのデリゲートが GC に回収される
@@ -1408,7 +1559,18 @@ Release:   応答なし。止まった瞬間 loader.Done == True、読んだア�
 本当の原因:  enemies.Count(e => ... player ... radius) のラムダが外の変数 player、radius をキャプチャする。
            呼ぶたびにキャプチャを入れるオブジェクト一つとデリゲート一つが新しく作られる。2000 フレームなら 4000 個。
 ```
-**修正:** ふつうの `foreach` で数える。`radius * radius` もループの外で一度だけ計算する。
+**修正:** ふつうの `foreach` で数えます。`radius * radius` もループの外で一度だけ計算します。`Lab89_ThreatMeter.cs` の `CountNearby` を次のものに置き換えます。ラムダがないので、キャプチャ用のオブジェクトもデリゲートも作られません。`Run` はそのままです。
+```csharp
+    static int CountNearby(List<Enemy> enemies, Vec player, float radius)
+    {
+        float radiusSq = radius * radius;
+        int count = 0;
+        foreach (Enemy e in enemies)
+            if (e.Alive && e.Pos.DistanceSq(player) <= radiusSq)
+                count++;
+        return count;
+    }
+```
 
 **教訓:** 1秒に数十回回るコード(Update、レンダー、サーバーティック)で LINQ とキャプチャするラムダは「見えない `new`」だ。結果が同じでも GC が頻繁に回り、そのたびにすべてのスレッドが少し止まる。キャプチャしないラムダはキャッシュされるので `static` ラムダで書いておくと、うっかりキャプチャするのをコンパイラが防いでくれる。
 
@@ -1418,7 +1580,19 @@ Release:   応答なし。止まった瞬間 loader.Done == True、読んだア�
 ウォッチ:      text.Length が行ごとに大きくなる。+= するたびにその長さぶん丸ごとコピー
 本当の原因:  string は不変なので a += b は a 全体をコピーした新しい文字列を作る。n 行なら コピー量が n² に比例する。
 ```
-**修正:** `StringBuilder` に `Append` し、最後に一度 `ToString()`。(行数が分かれば `string.Join`、ファイルに書くなら `StreamWriter` で直接書く)
+**修正:** `StringBuilder` に `Append` し、最後に一度だけ `ToString()` します。`Lab90_ChatExport.cs` の `Export` を次のものに置き換え、ファイルの先頭(`namespace BugHunt;` の上)に `using System.Text;` を追加します。`Run` はそのままです。
+```csharp
+using System.Text;
+
+    static string Export(List<ChatLine> lines)
+    {
+        var text = new StringBuilder();
+        foreach (ChatLine line in lines)
+            text.Append($"[{line.Minute / 60:00}:{line.Minute % 60:00}] {line.Sender}: {line.Text}\n");
+        return text.ToString();
+    }
+```
+(行数が分かれば `string.Join`、ファイルに書くなら `StreamWriter` で直接書く方法もあります)
 
 **教訓:** いくつかをつなぐのは問題ない(コンパイラが `string.Concat` 一つにする)。**ループ**の中の `+=` が問題だ。データが2倍になると時間が4倍になるコードは、小さいテストデータでは絶対に表に出ない。隠しケースのようにサイズを変えて測ると見える。
 
@@ -1438,7 +1612,18 @@ Release:   応答なし。止まった瞬間 loader.Done == True、読んだア�
 CPU 使用率:  時間のほとんどが List.Contains → ItemId.Equals
 本当の原因:  List.Contains は最初から一つずつ比較する。戦利品ごとに図鑑全体を走査するので、比較は 戦利品数 × 図鑑サイズ。
 ```
-**修正:** 「すでにあるか?」は `HashSet<ItemId>` に尋ね、順序は `List` に別に残す: `if (seen.Add(id)) unique.Add(id);`
+**修正:** 「すでにあるか?」は `HashSet<ItemId>` に尋ね、順序は `List` に別に残します。`Lab92_LootDedupe.cs` の `UniqueInOrder` を次のものに置き換えます。`ItemId` と `Run` はそのままです。
+```csharp
+    static List<ItemId> UniqueInOrder(List<ItemId> drops)
+    {
+        var seen = new HashSet<ItemId>();
+        var unique = new List<ItemId>();
+        foreach (ItemId id in drops)
+            if (seen.Add(id))   // 初めて見た Id のときだけ true
+                unique.Add(id);
+        return unique;
+    }
+```
 
 **教訓:** コレクションは「何をよく尋ねるか」で選ぶ。包含の有無・キーで探すは `HashSet`/`Dictionary`、前から抜くは `Queue`、ソートの維持は `SortedSet`。ループの中の `Contains`、`IndexOf`、`Remove(item)`、`Insert(0, ...)` はすべて一回で O(n) だ。ハッシュコレクションに入れる struct は `IEquatable<T>` と `GetHashCode` をきちんと実装してこそボックス化なしで速い。
 
@@ -1448,11 +1633,16 @@ CPU 使用率:  RegexParser、RegexWriter などパターン解析のコード�
 バグ状態:   メッセージあたり約2700バイト (期待: 64 以下)
 本当の原因:  new Regex(pattern) はパターンを解析して実行できる形にする。その仕事をメッセージごとにやり直す。
 ```
-**修正 (いずれか):**
-- 一度だけ作る: `static readonly Regex NameRule = new("...");`
-- ソースジェネレーター: `[GeneratedRegex("...")] private static partial Regex NameRule();` (ビルドのときに作っておく)
+**修正:** 一度だけ作ります。`Lab93_NameCheck.cs` の `IsValidName` の一行(とその上のコメント)を次のものに置き換えます。`using System.Text.RegularExpressions;` はファイルにすでにあり、`Run` はそのままです。
+```csharp
+    // 名前の規則: 英字で始まり、英字・数字・アンダースコアで 3〜16 文字。パターンは一度だけ解釈して再利用する。
+    static readonly Regex NameRule = new("^[A-Za-z][A-Za-z0-9_]{2,15}$");
 
-静的メソッド `Regex.IsMatch(name, pattern)` は内部キャッシュ(既定15個)を使うのでこのラボでは通るが、パターンが多いとキャッシュから押し出されて同じことが起きる。
+    static bool IsValidName(string name) => NameRule.IsMatch(name);
+```
+ソースジェネレーターを使ってもかまいません(ビルドのときに作っておきます)。その場合はクラスの宣言を `public static partial class Lab93` に変え、`NameRule` フィールドの代わりに `[GeneratedRegex("^[A-Za-z][A-Za-z0-9_]{2,15}$")] private static partial Regex NameRule();` を宣言して、`NameRule().IsMatch(name)` で呼びます。
+
+静的メソッド `Regex.IsMatch(name, pattern)` は内部キャッシュ(既定15個)を使うのでこのラボでは通りますが、パターンが多いとキャッシュから押し出されて同じことが起きます。
 
 **教訓:** 作るのが高価なオブジェクト(`Regex`、`JsonSerializerOptions`、`HttpClient`)は作っておいて再利用する。割り当ての追跡で「マイコードにない内部の型」(`RegexNode`、`RegexCharClass`)がたくさん見えたら、それを作らせたマイコードの `new` を呼び出し履歴で探す。
 
@@ -1463,12 +1653,24 @@ CPU 使用率:  RegexParser、RegexWriter などパターン解析のコード�
 本当の原因:  params object?[] の配列とその中の箱(int、float のボックス化)は Log.Debug に入る「前に」、呼ぶ側で作られる。
            関数の中の if (!DebugEnabled) return; はすでに費用を払ったあとだ。
 ```
-**修正 (いずれか):**
-- 呼ぶ側で包む: `if (Log.DebugEnabled) Log.Debug(...);`
-- ジェネリックのオーバーロード `Debug<T1, T2, T3, T4>(string format, T1 a, ...)` を作って配列とボックス化をなくす
-- 補間文字列ハンドラー(`[InterpolatedStringHandler]`)で切れていれば何も作らないようにする (`ILogger` が使う方式)
+**修正:** 呼ぶ側で包みます。`Lab94_DebugLog.cs` の `MoveAll` を次のものに置き換えます。ログが切れていれば `Log.Debug` の引数をまったく計算しないので、`params` 配列もボックス化の箱も作られません。`Log` クラスと `Run` はそのままです。
+```csharp
+    static void MoveAll(Unit[] units, float dx, float dy, int frame)
+    {
+        for (int i = 0; i < units.Length; i++)
+        {
+            units[i].X += dx;
+            units[i].Y += dy;
+            if (Log.DebugEnabled)   // 切れていれば引数を作らない
+                Log.Debug(Text.L("프레임 {0}: 유닛 {1} 이동 → ({2}, {3})", "フレーム {0}: ユニット {1} 移動 → ({2}, {3})"), frame, units[i].Id, units[i].X, units[i].Y);
+        }
+    }
+```
+別の方法:
+- ジェネリックのオーバーロード `Debug<T1, T2, T3, T4>(string format, T1 a, ...)` を作って、配列とボックス化をなくします。
+- 補間文字列ハンドラー(`[InterpolatedStringHandler]`)で、切れていれば何も作らないようにします (`ILogger` が使う方式です)。
 
-参考: `[Conditional("DEBUG")]` は **Release ビルドで**呼び出しと引数の計算を丸ごと消す。Debug ビルドでは `DEBUG` が定義されているので呼び出しと `params` 配列・ボックス化がそのまま残り、Debug で採点するこのラボは通らない。出荷版の費用をなくす別の手段として覚えておこう。
+参考: `[Conditional("DEBUG")]` は **Release ビルドで**呼び出しと引数の計算を丸ごと消します。Debug ビルドでは `DEBUG` が定義されているので呼び出しと `params` 配列・ボックス化がそのまま残り、Debug で採点するこのラボは通りません。出荷版の費用をなくす別の手段として覚えておきましょう。
 
 **教訓:** 引数は関数が実行される前に計算される。`params`、ボックス化、補間文字列(`$"..."`)、引数の中のメソッド呼び出しは、すべて「切った機能」でも費用を払う。似た見えない費用に、大きな struct を値で渡すコピーがある (`in`、`ref readonly` の引数)。
 
